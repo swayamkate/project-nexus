@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Deployed to Render, so full-stack API routes are enabled!
 };
 
 export default nextConfig;
