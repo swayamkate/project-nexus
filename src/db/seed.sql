@@ -1,76 +1,102 @@
 -- =============================================================================
--- NEXUS: PS-135 SEED DATA FOR DEMO & HACKATHON EVALUATION
+-- MAHA-SKILL TRACK SEED DATA SCRIPT (EXACT DATA MATCHING DESIGN)
 -- =============================================================================
 
--- 1. Insert Skills Taxonomy
-INSERT INTO skills (name, slug, category, description, difficulty_level, market_demand_index) VALUES
-('Next.js & React', 'react-nextjs', 'technical', 'Modern full-stack web application development', 3, 0.95),
-('PostgreSQL & Database Design', 'postgresql', 'technical', 'Relational database schema modeling and SQL optimization', 3, 0.90),
-('TypeScript', 'typescript', 'technical', 'Type-safe programming for scalable applications', 3, 0.92),
-('Solar PV System Installation', 'solar-pv-install', 'domain_knowledge', 'Grid-tied and off-grid solar photovoltaic installation standards', 4, 0.94),
-('EV Battery Diagnostics', 'ev-battery-diag', 'technical', 'High-voltage safety and battery management system testing', 4, 0.96),
-('CNC Machine Programming & Operation', 'cnc-machining', 'technical', 'G-code programming and precision CNC turning/milling', 3, 0.88),
-('Data Analytics with Python', 'python-data-analytics', 'technical', 'Pandas, NumPy, and business intelligence visualization', 3, 0.91),
-('Healthcare Patient Vitals & Care', 'nursing-patient-care', 'domain_knowledge', 'Clinical vitals monitoring and emergency triage care', 2, 0.89),
-('Quality Assurance & Testing', 'qa-testing', 'technical', 'Automated and manual software verification', 2, 0.85),
-('Digital Marketing & SEO', 'digital-marketing', 'domain_knowledge', 'Search engine optimization and performance marketing', 2, 0.82)
-ON CONFLICT (slug) DO NOTHING;
+-- 1. Seed Trainee Priya Sharma
+INSERT INTO trainees (
+    id, trainee_id, full_name, email, phone, dob, gender, aadhaar_masked,
+    address, district, state, pincode, avatar_url, profile_completion_pct,
+    highest_education, board_university, year_of_passing, education_percentage,
+    skills, about_me
+) VALUES (
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    'TRN123456',
+    'Priya Sharma',
+    'priya.sharma@example.com',
+    '+91 98765 43210',
+    '2002-05-15',
+    'Female',
+    'XXXX-XXXX-1234',
+    '123, Shivaji Nagar, Pune, Maharashtra - 411005',
+    'Pune',
+    'Maharashtra',
+    '411005',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    85,
+    '12th (Science)',
+    'Maharashtra State Board',
+    2020,
+    78.60,
+    ARRAY['Tailoring', 'Stitching', 'Pattern Making', 'Fabric Knowledge', 'Embroidery', 'Machine Operation'],
+    'I am passionate about tailoring and fashion designing. I have completed my training and now running my own tailoring business. I love creating new designs and delivering quality work to my customers.'
+) ON CONFLICT (email) DO NOTHING;
 
--- 2. Insert Target Roles Catalog
-INSERT INTO roles_catalog (title, industry, average_starting_salary, growth_rate_pct, typical_learning_hours, description) VALUES
-('Full Stack Web Developer', 'Information Technology', 45000.00, 18.50, 140, 'Designs and deploys scalable web applications and REST APIs'),
-('Solar PV Project Technician', 'Renewable Energy', 32000.00, 15.00, 90, 'Installs and maintains rooftop and industrial solar power plants'),
-('Electric Vehicle (EV) Service Specialist', 'Automotive', 38000.00, 22.00, 110, 'Diagnoses electric vehicle powertrains and battery management systems'),
-('Data Analyst & BI Associate', 'Analytics & Finance', 42000.00, 16.00, 100, 'Transforms operational datasets into actionable executive insights'),
-('Precision CNC Operator', 'Advanced Manufacturing', 28000.00, 11.50, 80, 'Operates multi-axis CNC machines for aerospace and auto components')
-ON CONFLICT (title) DO NOTHING;
-
--- 3. Link Roles to Required Skills
-INSERT INTO role_skill_requirements (role_id, skill_id, required_proficiency, is_mandatory, weight)
-SELECT r.id, s.id, 4, true, 1.2
-FROM roles_catalog r, skills s
-WHERE r.title = 'Full Stack Web Developer' AND s.slug IN ('react-nextjs', 'typescript', 'postgresql')
+-- 2. Seed Training Programs & Enrollments
+INSERT INTO training_programs (id, title, sector, duration_months, provider_name) VALUES
+('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'Advanced Apparel & Fashion Tailoring Masterclass', 'Apparel & Fashion', 3, 'Maharashtra State Skill Development Society (MSSDS)')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO role_skill_requirements (role_id, skill_id, required_proficiency, is_mandatory, weight)
-SELECT r.id, s.id, 4, true, 1.0
-FROM roles_catalog r, skills s
-WHERE r.title = 'Solar PV Project Technician' AND s.slug IN ('solar-pv-install')
+INSERT INTO trainee_enrollments (trainee_id, program_id, enrolled_date, completed_date, certified_date, certificate_id, status) VALUES
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', '2024-04-10', '2024-06-30', '2024-07-15', 'MS-CERT-982145', 'certified')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO role_skill_requirements (role_id, skill_id, required_proficiency, is_mandatory, weight)
-SELECT r.id, s.id, 4, true, 1.0
-FROM roles_catalog r, skills s
-WHERE r.title = 'Electric Vehicle (EV) Service Specialist' AND s.slug IN ('ev-battery-diag')
+-- 3. Seed Self-Employment Overview
+INSERT INTO trainee_employment (
+    trainee_id, status, business_name, business_type, start_date, location, monthly_income_range, exact_monthly_income, is_verified
+) VALUES (
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    'self_employed',
+    'Priya Stitch Works',
+    'Tailoring Services',
+    '2024-08-01',
+    'Pune, Maharashtra',
+    '₹10,000 - ₹20,000',
+    16500.00,
+    true
+) ON CONFLICT DO NOTHING;
+
+-- 4. Seed Follow-ups (3M, 6M, 12M)
+INSERT INTO trainee_followups (
+    trainee_id, milestone, milestone_label, scheduled_date, submitted_date, status, business_status, income_range, remarks
+) VALUES 
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '3_months', '3 Months Follow-up', '2024-11-20', '2024-11-20', 'completed', 'active', '₹5,000 - ₹10,000', 'Business is going well. Getting regular customers.'),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '6_months', '6 Months Follow-up', '2025-02-20', '2025-02-20', 'completed', 'active', '₹10,000 - ₹20,000', 'Increased client base and income.'),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '12_months', '12 Months Follow-up', '2025-08-20', NULL, 'upcoming', NULL, NULL, 'Pending')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO role_skill_requirements (role_id, skill_id, required_proficiency, is_mandatory, weight)
-SELECT r.id, s.id, 4, true, 1.0
-FROM roles_catalog r, skills s
-WHERE r.title = 'Data Analyst & BI Associate' AND s.slug IN ('python-data-analytics', 'postgresql')
+-- 5. Seed Top Skill Gaps
+INSERT INTO top_skill_gaps (skill_name, sector, demand_gap, demand_growth_pct) VALUES
+('Electric Vehicle Technician', 'Automotive', -4250, 35.0),
+('Industrial Automation', 'Advanced Manufacturing', -3870, 28.0),
+('Data Analytics', 'IT & ITeS', -3400, 24.0),
+('Cloud Computing', 'IT & ITeS', -2980, 22.0),
+('Solar Panel Technician', 'Renewable Energy', -2760, 30.0)
+ON CONFLICT (skill_name) DO NOTHING;
+
+-- 6. Seed District Stats
+INSERT INTO district_employment_stats (district_name, state_name, employed_count, total_trainees, employment_rate_pct, avg_salary) VALUES
+('Pune', 'Maharashtra', 245680, 310000, 79.2, 21500),
+('Mumbai', 'Maharashtra', 210450, 270000, 77.9, 24000),
+('Nagpur', 'Maharashtra', 125840, 180000, 69.9, 17200),
+('Nashik', 'Maharashtra', 105230, 150000, 70.1, 16800),
+('Aurangabad', 'Maharashtra', 98750, 140000, 70.5, 16200)
+ON CONFLICT (district_name) DO NOTHING;
+
+-- 7. Seed Recommended Opportunities
+INSERT INTO recommended_opportunities (title, category, provider_scheme, description, icon_type) VALUES
+('Digital Marketing Advanced Course', 'Online Course', 'Online Course', 'Learn social commerce, customer acquisition, and local SEO for retail businesses.', 'course'),
+('Government Scheme for Entrepreneurs', 'PMEGP Scheme', 'PMEGP Scheme', 'Collateral-free subsidized credit facility for micro enterprises and tailoring units.', 'scheme'),
+('Join Local Business Network', 'Connect & Grow', 'Connect & Grow', 'Collaborate with local boutiques, raw fabric suppliers, and wholesale buyers.', 'network')
 ON CONFLICT DO NOTHING;
 
--- 4. Verified Courses Catalog
-INSERT INTO courses_catalog (title, provider_name, duration_hours, verification_standard, badge_hash, course_url) VALUES
-('Full Stack Next.js & Cloud Masterclass', 'NSDC Tech Academy', 45, 'NSDC_Level_5', 'nx-badge-fs-2026', 'https://nsdc.gov.in/course/fs-nextjs'),
-('Industrial Solar Power Installation & Safety', 'National Institute of Solar Energy (NISE)', 40, 'Skill_India_Gov', 'nx-badge-solar-2026', 'https://nise.res.in/solar-cert'),
-('EV Powertrain & BMS Specialist Certification', 'Automotive Skills Development Council', 50, 'ASDC_Certified', 'nx-badge-ev-2026', 'https://asdc.org.in/ev-cert'),
-('PostgreSQL Advanced Query & Schema Design', 'Database Excellence Institute', 30, 'Industry_Standard', 'nx-badge-db-2026', 'https://dbexcellence.org/pg-cert')
+-- 8. Seed Notifications
+INSERT INTO trainee_notifications (trainee_id, title, message, notification_date) VALUES
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Your 3 Months follow-up has been recorded successfully.', 'Thank you for updating your business status.', '2024-11-20'),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'New course Advanced Tailoring Techniques is available.', 'Check out newly added advanced pattern making modules.', '2024-12-05'),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Your next follow-up is due on 20 Jun 2025.', 'Reminder to complete your 12 Months longitudinal milestone.', '2025-05-20')
 ON CONFLICT DO NOTHING;
 
--- 5. Seed Interview Insights (Glassdoor Style)
-INSERT INTO interview_insights (company_name, role_title, author_privacy_hash, difficulty_rating, interview_outcome, questions_asked, hiring_process_review, recommended_skills, upvotes) VALUES
-('Tata Power Solar', 'Solar PV Project Technician', 'hash_trainee_8921_anon', 3, 'Offer Accepted', 
- '["Explain the difference between MPPT and PWM charge controllers", "How do you calculate inverter sizing for a 10kW 3-phase grid-tied system?", "What are OSHA safety measures for rooftop rigging?"]'::jsonb,
- 'Technical round with senior engineer focused heavily on real-world installation safety standards and inverter troubleshooting. Offer came within 4 days.',
- ARRAY['Solar PV System Installation', 'Electrical Safety'], 14),
-
-('Infosys Digital', 'Full Stack Web Developer', 'hash_trainee_4129_anon', 4, 'Offer Accepted',
- '["Explain server components vs client components in Next.js App Router", "How do you prevent SQL injection in parameterized PostgreSQL queries?", "Optimize a large React table rendering 10,000 rows."]'::jsonb,
- 'Round 1 was live coding in TypeScript and Next.js. Round 2 was system design on database indexing and state management.',
- ARRAY['Next.js & React', 'TypeScript', 'PostgreSQL & Database Design'], 28),
-
-('Ola Electric', 'Electric Vehicle (EV) Service Specialist', 'hash_trainee_3312_anon', 3, 'Offer Accepted',
- '["What are the critical symptoms of thermal runaway in Lithium-ion cells?", "How do you inspect CAN bus communication between BMS and MCU?"]'::jsonb,
- 'Hands-on practical test in diagnostic lab followed by manager interview. Very supportive panel.',
- ARRAY['EV Battery Diagnostics', 'CAN Bus Troubleshooting'], 19);
+-- 9. Seed AI Insight
+INSERT INTO ai_policy_insights (insight_text, target_sector, target_districts) VALUES
+('The demand for Electric Vehicle Technicians has increased by 35% in the last 6 months, but trained candidates are only 12% of the demand in Pune and Nashik districts.', 'Automotive / EV', ARRAY['Pune', 'Nashik'])
+ON CONFLICT DO NOTHING;

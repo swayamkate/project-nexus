@@ -1,7 +1,7 @@
-# Nexus: Context Ledger & Architecture Source of Truth
+# Nexus / MahaSkill Track: Context Ledger & Architecture Source of Truth
 **Problem Statement PS-135**: Privacy-Preserving, Longitudinal Skilling-Outcomes and Impact-Measurement System  
-**Application Name**: Nexus  
-**Status**: Initialized & Schema Ready  
+**Application Name**: Nexus / MahaSkill Track  
+**Status**: Upgraded with Exact High-Fidelity UI & Unified Supabase Schema  
 **Last Updated**: 2026-08-25  
 
 ---
@@ -11,15 +11,39 @@
 | Layer | Technologies | Purpose / Role |
 | :--- | :--- | :--- |
 | **Frontend Framework** | Next.js 16 (App Router), React 19, TypeScript | High-performance server/client rendered UI with typed route handlers |
-| **Styling & Design System** | Tailwind CSS v4, Lucide Icons, Shadcn UI patterns | Accessible, modern, dark/light responsive interface with clean typography |
-| **Data Visualization** | Recharts, Lucide Icons | Longitudinal wage trajectories, retention curves, state geospatial heatmaps |
+| **Styling & Design System** | Tailwind CSS v4, Lucide Icons, Custom MahaSkill Track Theme | Clean, government-grade polished UI matching official state skilling dashboards |
+| **Data Visualization** | Recharts, Lucide Icons | Longitudinal wage trajectories, employment trend over time, course placement donut, salary progression |
 | **Database & Identity** | PostgreSQL (Self-Hosted Supabase / Cloud Supabase), Supabase Auth | Relational schema with Row Level Security (RLS) and cryptographic hashes |
 | **Privacy Preservation** | SHA-256 Hashing, Differential Privacy aggregation, Role Masking | Public dashboards show zero PII; aggregates masked at $k \ge 5$ threshold |
 | **Automation Engine** | Next.js Webhook API routes (`/api/webhooks/whatsapp`) | Automated longitudinal surveys (M+1, M+3, M+6, M+12) and follow-up logging |
 
 ---
 
-## 2. Relational PostgreSQL Database Schema (DDL)
+## 2. UI/UX Design System Specification (MahaSkill Track / Nexus)
+
+The platform provides a dual-interface architecture:
+1. **Government / State Admin Dashboard**:
+   - 6 Circular Stat KPI Cards: *Total Trainees* (25,42,180), *Certified* (20,18,560), *Employed* (14,65,320), *Employment Rate* (72.6%), *Avg Monthly Salary* (₹18,500), *6M Retention Rate* (68.4%).
+   - Area chart: *Employment Trend Over Time* (Monthly / Quarterly toggle).
+   - Donut chart: *Placement by Course Category* (IT, Engineering, Healthcare, Construction, Others).
+   - Legend breakdown: *Employment Status* (Employed 57.6%, Self-employed 12.8%, Apprenticeship 7.3%, Job Seeking 13.6%, Not Employed 4.7%).
+   - District breakdown: Pune, Mumbai, Nagpur, Nashik, Aurangabad with state map outline.
+   - Bar chart: *Salary Progression (Avg)* across Joining, 3M, 6M, 12M + Stagnation Reason breakdown.
+   - Table: *Top Skill Gaps* (EV Tech, Industrial Automation, Data Analytics, Cloud Computing, Solar).
+   - AI Insight of the Day card with robot avatar.
+
+2. **Trainee Portal (Priya Sharma)**:
+   - Trainee Hero Card: Photo, ID `TRN123456`, Active badge, Profile Completion progress (85%).
+   - *My Journey* Milestone Stepper: Enrolled -> Completed -> Certified -> Self-Employed -> Next Follow-up.
+   - *Self-Employment Overview*: Priya Stitch Works (Tailoring Services, ₹10,000 - ₹20,000).
+   - *Upcoming Follow-up* Card & *Follow-up History* Cards.
+   - *Recommended Opportunities*: Digital Marketing Advanced Course, PMEGP Scheme, Local Business Network.
+   - *Follow-ups Page*: Interactive 3M / 6M / 12M timeline cards with "Update Now" action and history table.
+   - *My Profile Page*: Personal info (masked Aadhaar), Education details, Skills pill badges, About Me.
+
+---
+
+## 3. Relational PostgreSQL Database Schema (DDL)
 
 ```sql
 -- =============================================================================

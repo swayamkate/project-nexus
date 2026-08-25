@@ -1,6 +1,6 @@
--- =============================================================================
--- NEXUS: PS-135 LONGITUDINAL SKILLING OUTCOMES & IMPACT MEASUREMENT SCHEMA
--- =============================================================================
+# =============================================================================
+# MAHA-SKILL TRACK / NEXUS (PS-135) SUPABASE POSTGRESQL MASTER SCHEMA
+# =============================================================================
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -10,337 +10,199 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ENUMS
 -- -----------------------------------------------------------------------------
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('trainee', 'employer', 'evaluator', 'admin');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+    CREATE TYPE user_role AS ENUM ('trainee', 'employer', 'evaluator', 'admin', 'state_admin');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE employment_type AS ENUM ('permanent', 'temporary', 'contract', 'self_employed', 'unemployed', 'internship');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected', 'flagged');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE attrition_reason AS ENUM (
-        'voluntary_upskilling',
-        'layoff',
-        'contract_expired',
-        'removed_no_reason',
-        'compensation',
-        'work_environment',
-        'health_personal',
-        'relocation',
-        'business_failure',
-        'other'
+    CREATE TYPE employment_status_type AS ENUM (
+        'employed', 
+        'self_employed', 
+        'apprenticeship', 
+        'job_seeking', 
+        'not_employed'
     );
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE followup_channel AS ENUM ('whatsapp', 'sms', 'email', 'in_app');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+    CREATE TYPE followup_milestone_type AS ENUM ('3_months', '6_months', '12_months', '18_months', '24_months');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE followup_status AS ENUM ('scheduled', 'sent', 'delivered', 'responded', 'failed', 'expired');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+    CREATE TYPE followup_status_type AS ENUM ('scheduled', 'completed', 'upcoming', 'overdue', 'pending');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE skill_category AS ENUM ('technical', 'soft_skill', 'domain_knowledge', 'tool_proficiency', 'certification');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+    CREATE TYPE business_status_type AS ENUM ('active', 'scaling', 'struggling', 'closed', 'transitioning');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- -----------------------------------------------------------------------------
--- 1. USERS & PRIVACY-PRESERVING PROFILES
+-- 1. PROFILES & TRAINEES TABLE
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS profiles (
+CREATE TABLE IF NOT EXISTS trainees (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    auth_user_id UUID UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    trainee_id VARCHAR(50) NOT NULL UNIQUE DEFAULT 'TRN' || LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0'),
     full_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    role user_role NOT NULL DEFAULT 'trainee',
-    privacy_hash VARCHAR(64) NOT NULL UNIQUE DEFAULT encode(digest(gen_random_bytes(32), 'sha256'), 'hex'),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL,
+    dob DATE NOT NULL DEFAULT '2002-05-15',
+    gender VARCHAR(20) NOT NULL DEFAULT 'Female',
+    aadhaar_masked VARCHAR(20) NOT NULL DEFAULT 'XXXX-XXXX-1234',
+    address TEXT NOT NULL DEFAULT '123, Shivaji Nagar, Pune, Maharashtra - 411005',
+    district VARCHAR(100) NOT NULL DEFAULT 'Pune',
     state VARCHAR(100) NOT NULL DEFAULT 'Maharashtra',
-    district VARCHAR(100) NOT NULL DEFAULT 'Mumbai Suburban',
-    pincode VARCHAR(10),
-    gender VARCHAR(30),
-    education_level VARCHAR(100),
-    baseline_income NUMERIC(12, 2) DEFAULT 0.00,
-    avatar_url TEXT,
+    pincode VARCHAR(10) NOT NULL DEFAULT '411005',
+    avatar_url TEXT DEFAULT 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    profile_completion_pct INT NOT NULL DEFAULT 85 CHECK (profile_completion_pct BETWEEN 0 AND 100),
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    
+    -- Education Details
+    highest_education VARCHAR(150) NOT NULL DEFAULT '12th (Science)',
+    board_university VARCHAR(255) NOT NULL DEFAULT 'Maharashtra State Board',
+    year_of_passing INT NOT NULL DEFAULT 2020,
+    education_percentage NUMERIC(5, 2) NOT NULL DEFAULT 78.60,
+    
+    -- Skills Array
+    skills TEXT[] NOT NULL DEFAULT ARRAY['Tailoring', 'Stitching', 'Pattern Making', 'Fabric Knowledge', 'Embroidery', 'Machine Operation'],
+    
+    -- Bio / About Me
+    about_me TEXT DEFAULT 'I am passionate about tailoring and fashion designing. I have completed my training and now running my own tailoring business. I love creating new designs and delivering quality work to my customers.',
+    
+    -- Privacy Preservation Hash (Zero-PII research token)
+    privacy_hash VARCHAR(64) NOT NULL UNIQUE DEFAULT encode(digest(gen_random_bytes(32), 'sha256'), 'hex'),
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -----------------------------------------------------------------------------
--- 2. SKILL TAXONOMY & ROLE REQUIREMENTS ENGINE
+-- 2. TRAINING PROGRAMS & CERTIFICATIONS
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS skills (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(150) NOT NULL UNIQUE,
-    slug VARCHAR(150) NOT NULL UNIQUE,
-    category skill_category NOT NULL DEFAULT 'technical',
-    description TEXT,
-    difficulty_level INT NOT NULL DEFAULT 1 CHECK (difficulty_level BETWEEN 1 AND 5),
-    market_demand_index NUMERIC(3, 2) DEFAULT 0.80,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS roles_catalog (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(150) NOT NULL UNIQUE,
-    industry VARCHAR(100) NOT NULL,
-    average_starting_salary NUMERIC(12, 2) NOT NULL,
-    growth_rate_pct NUMERIC(5, 2) DEFAULT 12.50,
-    typical_learning_hours INT NOT NULL DEFAULT 120,
-    description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS role_skill_requirements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    role_id UUID NOT NULL REFERENCES roles_catalog(id) ON DELETE CASCADE,
-    skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-    required_proficiency INT NOT NULL DEFAULT 3 CHECK (required_proficiency BETWEEN 1 AND 5),
-    is_mandatory BOOLEAN NOT NULL DEFAULT true,
-    weight NUMERIC(3, 2) NOT NULL DEFAULT 1.0,
-    CONSTRAINT unique_role_skill UNIQUE (role_id, skill_id)
-);
-
-CREATE TABLE IF NOT EXISTS trainee_skills (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-    proficiency_level INT NOT NULL DEFAULT 1 CHECK (proficiency_level BETWEEN 1 AND 5),
-    is_verified BOOLEAN NOT NULL DEFAULT false,
-    verified_at TIMESTAMPTZ,
-    badge_certificate_url TEXT,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_trainee_skill UNIQUE (trainee_id, skill_id)
-);
-
--- -----------------------------------------------------------------------------
--- 3. TARGET CAREER & ESTIMATED DAYS CALCULATION
--- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS trainee_targets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    target_role_id UUID NOT NULL REFERENCES roles_catalog(id) ON DELETE CASCADE,
-    target_company_name VARCHAR(150),
-    daily_study_hours NUMERIC(3, 1) NOT NULL DEFAULT 2.0,
-    skill_gap_percentage NUMERIC(5, 2) NOT NULL DEFAULT 100.0,
-    estimated_days_to_goal INT NOT NULL DEFAULT 60,
-    status VARCHAR(50) NOT NULL DEFAULT 'in_progress',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- -----------------------------------------------------------------------------
--- 4. VERIFIED COURSES & BADGES
--- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS courses_catalog (
+CREATE TABLE IF NOT EXISTS training_programs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
-    provider_name VARCHAR(150) NOT NULL,
-    duration_hours INT NOT NULL DEFAULT 30,
-    skills_covered JSONB NOT NULL DEFAULT '[]'::jsonb,
-    badge_hash VARCHAR(100),
-    course_url TEXT,
-    verification_standard VARCHAR(100) DEFAULT 'NSDC_Aligned',
+    sector VARCHAR(100) NOT NULL, -- e.g. 'Apparel & Fashion', 'IT & ITeS', 'Renewable Energy', 'Automotive'
+    duration_months INT NOT NULL DEFAULT 3,
+    provider_name VARCHAR(255) NOT NULL DEFAULT 'Maharashtra State Skill Development Society (MSSDS)',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS trainee_courses (
+CREATE TABLE IF NOT EXISTS trainee_enrollments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    course_id UUID NOT NULL REFERENCES courses_catalog(id) ON DELETE CASCADE,
-    progress_percentage INT NOT NULL DEFAULT 0 CHECK (progress_percentage BETWEEN 0 AND 100),
-    verification_status verification_status NOT NULL DEFAULT 'pending',
-    completed_at TIMESTAMPTZ,
-    certificate_id VARCHAR(100),
-    issued_badge_hash VARCHAR(100),
+    trainee_id UUID NOT NULL REFERENCES trainees(id) ON DELETE CASCADE,
+    program_id UUID NOT NULL REFERENCES training_programs(id) ON DELETE CASCADE,
+    enrolled_date DATE NOT NULL DEFAULT '2024-04-10',
+    completed_date DATE DEFAULT '2024-06-30',
+    certified_date DATE DEFAULT '2024-07-15',
+    certificate_id VARCHAR(100) DEFAULT 'MS-CERT-' || LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0'),
+    status VARCHAR(50) NOT NULL DEFAULT 'certified',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -----------------------------------------------------------------------------
--- 5. LONGITUDINAL EMPLOYMENT, WAGE PROGRESSION & ATTRITION LOGGING
+-- 3. EMPLOYMENT & SELF-EMPLOYMENT RECORDS
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS employment_records (
+CREATE TABLE IF NOT EXISTS trainee_employment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    company_name VARCHAR(200) NOT NULL,
-    job_title VARCHAR(150) NOT NULL,
-    employment_type employment_type NOT NULL DEFAULT 'permanent',
-    is_current BOOLEAN NOT NULL DEFAULT true,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    starting_monthly_wage NUMERIC(12, 2) NOT NULL,
-    current_monthly_wage NUMERIC(12, 2) NOT NULL,
-    currency VARCHAR(10) NOT NULL DEFAULT 'INR',
-    state VARCHAR(100),
-    district VARCHAR(100),
-    offer_letter_url TEXT,
-    verification_status verification_status NOT NULL DEFAULT 'pending',
-    verified_by UUID REFERENCES profiles(id),
+    trainee_id UUID NOT NULL REFERENCES trainees(id) ON DELETE CASCADE,
+    status employment_status_type NOT NULL DEFAULT 'self_employed',
+    
+    -- Self-Employment specifics
+    business_name VARCHAR(255) DEFAULT 'Priya Stitch Works',
+    business_type VARCHAR(150) DEFAULT 'Tailoring Services',
+    start_date DATE NOT NULL DEFAULT '2024-08-01',
+    location VARCHAR(150) DEFAULT 'Pune, Maharashtra',
+    monthly_income_range VARCHAR(50) DEFAULT '₹10,000 - ₹20,000',
+    exact_monthly_income NUMERIC(12, 2) DEFAULT 16500.00,
+    
+    trade_license_no VARCHAR(100) DEFAULT 'MH-PUN-TL-2024-8891',
+    udyam_registration_no VARCHAR(100) DEFAULT 'UDYAM-MH-26-0049182',
+    is_verified BOOLEAN NOT NULL DEFAULT true,
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS wage_progression_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    employment_record_id UUID NOT NULL REFERENCES employment_records(id) ON DELETE CASCADE,
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    recorded_at DATE NOT NULL DEFAULT CURRENT_DATE,
-    monthly_wage NUMERIC(12, 2) NOT NULL,
-    wage_increment_pct NUMERIC(5, 2) DEFAULT 0.0,
-    proof_doc_url TEXT,
-    verified BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS attrition_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    employment_record_id UUID NOT NULL REFERENCES employment_records(id) ON DELETE CASCADE,
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    exit_date DATE NOT NULL,
-    tenure_days INT NOT NULL,
-    primary_reason attrition_reason NOT NULL,
-    specific_explanation TEXT,
-    was_severance_paid BOOLEAN DEFAULT false,
-    next_expected_step VARCHAR(150),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 -- -----------------------------------------------------------------------------
--- 6. SELF-EMPLOYMENT VALIDATION MODULE
+-- 4. LONGITUDINAL FOLLOW-UPS TABLE
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS self_employment_validations (
+CREATE TABLE IF NOT EXISTS trainee_followups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    business_name VARCHAR(255) NOT NULL,
-    business_type VARCHAR(100) NOT NULL,
-    trade_license_number VARCHAR(100),
-    gst_udyam_tax_id VARCHAR(100),
-    business_identity_doc_url TEXT,
-    proof_of_income_type VARCHAR(50),
-    proof_of_income_doc_url TEXT,
-    reported_monthly_revenue NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    verified_monthly_revenue NUMERIC(12, 2),
-    portfolio_url TEXT,
-    upwork_profile_url TEXT,
-    fiverr_profile_url TEXT,
-    freelance_platform_rating NUMERIC(3, 2),
-    verification_status verification_status NOT NULL DEFAULT 'pending',
-    reviewer_notes TEXT,
-    reviewed_by UUID REFERENCES profiles(id),
-    reviewed_at TIMESTAMPTZ,
+    trainee_id UUID NOT NULL REFERENCES trainees(id) ON DELETE CASCADE,
+    milestone followup_milestone_type NOT NULL DEFAULT '3_months',
+    milestone_label VARCHAR(100) NOT NULL DEFAULT '3 Months Follow-up',
+    scheduled_date DATE NOT NULL,
+    submitted_date DATE,
+    status followup_status_type NOT NULL DEFAULT 'scheduled',
+    business_status business_status_type DEFAULT 'active',
+    income_range VARCHAR(50) DEFAULT '₹5,000 - ₹10,000',
+    remarks TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS client_references (
+-- -----------------------------------------------------------------------------
+-- 5. SKILL GAPS & DEMAND CATALOG
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS top_skill_gaps (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    self_employment_id UUID NOT NULL REFERENCES self_employment_validations(id) ON DELETE CASCADE,
-    client_name VARCHAR(150) NOT NULL,
-    client_company VARCHAR(150),
-    client_email VARCHAR(200),
-    client_phone VARCHAR(20),
-    work_scope_description TEXT,
-    invoice_amount NUMERIC(12, 2),
-    reference_letter_url TEXT,
-    is_verified BOOLEAN NOT NULL DEFAULT false,
-    verification_timestamp TIMESTAMPTZ,
+    skill_name VARCHAR(150) NOT NULL UNIQUE,
+    sector VARCHAR(100) NOT NULL,
+    demand_gap INT NOT NULL, -- Negative integer representing deficit
+    demand_growth_pct NUMERIC(5, 2) NOT NULL DEFAULT 25.00,
+    high_demand_districts TEXT[] DEFAULT ARRAY['Pune', 'Nashik', 'Nagpur', 'Mumbai'],
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -----------------------------------------------------------------------------
--- 7. COMMUNITY & FEEDBACK HUB (GLASSDOOR-STYLE INSIGHTS)
+-- 6. DISTRICT LEVEL AGGREGATIONS
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS interview_insights (
+CREATE TABLE IF NOT EXISTS district_employment_stats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_name VARCHAR(200) NOT NULL,
-    role_title VARCHAR(150) NOT NULL,
-    author_privacy_hash VARCHAR(64) NOT NULL,
-    difficulty_rating INT CHECK (difficulty_rating BETWEEN 1 AND 5),
-    interview_outcome VARCHAR(50),
-    questions_asked JSONB NOT NULL DEFAULT '[]'::jsonb,
-    hiring_process_review TEXT NOT NULL,
-    recommended_skills TEXT[],
-    is_anonymous BOOLEAN NOT NULL DEFAULT true,
-    upvotes INT NOT NULL DEFAULT 0,
-    is_moderated BOOLEAN NOT NULL DEFAULT true,
+    district_name VARCHAR(100) NOT NULL UNIQUE,
+    state_name VARCHAR(100) NOT NULL DEFAULT 'Maharashtra',
+    employed_count INT NOT NULL DEFAULT 0,
+    total_trainees INT NOT NULL DEFAULT 0,
+    employment_rate_pct NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    avg_salary NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -----------------------------------------------------------------------------
--- 8. AUTOMATED LONGITUDINAL FOLLOW-UP & WHATSAPP WEBHOOK ENGINE
+-- 7. RECOMMENDED OPPORTUNITIES & SCHEMES
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS automated_followups (
+CREATE TABLE IF NOT EXISTS recommended_opportunities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    trainee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    checkpoint_milestone VARCHAR(20) NOT NULL,
-    channel followup_channel NOT NULL DEFAULT 'whatsapp',
-    phone_number VARCHAR(20) NOT NULL,
-    scheduled_for TIMESTAMPTZ NOT NULL,
-    sent_at TIMESTAMPTZ,
-    status followup_status NOT NULL DEFAULT 'scheduled',
-    trigger_message_body TEXT NOT NULL,
-    response_received_at TIMESTAMPTZ,
-    raw_response_text TEXT,
-    parsed_employment_status employment_type,
-    parsed_current_wage NUMERIC(12, 2),
-    parsed_attrition_reason attrition_reason,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS webhook_events_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    provider VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
-    event_type VARCHAR(100) NOT NULL,
-    payload JSONB NOT NULL,
-    headers JSONB,
-    processed_status VARCHAR(50) NOT NULL DEFAULT 'received',
-    error_message TEXT,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL, -- 'Online Course', 'PMEGP Scheme', 'Connect & Grow'
+    provider_scheme VARCHAR(150) NOT NULL,
+    description TEXT,
+    badge_label VARCHAR(100),
+    action_url TEXT,
+    icon_type VARCHAR(50) DEFAULT 'course',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -----------------------------------------------------------------------------
--- 9. PERFORMANCE & GEOSPATIAL ANALYTICS (INDEXES & VIEWS)
+-- 8. NOTIFICATIONS & QUICK LINKS
 -- -----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_profiles_location ON profiles(state, district);
-CREATE INDEX IF NOT EXISTS idx_employment_trainee ON employment_records(trainee_id, is_current);
-CREATE INDEX IF NOT EXISTS idx_wage_logs_trainee ON wage_progression_logs(trainee_id, recorded_at);
-CREATE INDEX IF NOT EXISTS idx_attrition_reason ON attrition_logs(primary_reason);
-CREATE INDEX IF NOT EXISTS idx_followups_schedule ON automated_followups(status, scheduled_for);
+CREATE TABLE IF NOT EXISTS trainee_notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trainee_id UUID NOT NULL REFERENCES trainees(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    notification_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    is_read BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- Differential Privacy Aggregation View
-CREATE OR REPLACE VIEW v_geospatial_placement_summary AS
-SELECT 
-    p.state,
-    p.district,
-    COUNT(DISTINCT p.id) AS total_trainees,
-    COUNT(DISTINCT CASE WHEN er.is_current = true THEN er.trainee_id END) AS currently_employed_count,
-    ROUND(
-        (COUNT(DISTINCT CASE WHEN er.is_current = true THEN er.trainee_id END)::NUMERIC / NULLIF(COUNT(DISTINCT p.id), 0)) * 100, 
-        2
-    ) AS placement_rate_pct,
-    ROUND(AVG(er.current_monthly_wage), 2) AS average_current_wage,
-    ROUND(AVG(er.current_monthly_wage - er.starting_monthly_wage), 2) AS average_wage_gain,
-    COUNT(DISTINCT CASE WHEN er.employment_type = 'permanent' THEN er.id END) AS permanent_jobs,
-    COUNT(DISTINCT CASE WHEN er.employment_type = 'self_employed' THEN er.id END) AS self_employed_jobs,
-    COUNT(DISTINCT CASE WHEN er.employment_type = 'temporary' THEN er.id END) AS temporary_jobs
-FROM profiles p
-LEFT JOIN employment_records er ON p.id = er.trainee_id
-GROUP BY p.state, p.district;
+-- -----------------------------------------------------------------------------
+-- 9. AI INSIGHTS OF THE DAY TABLE
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_policy_insights (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    insight_text TEXT NOT NULL,
+    target_sector VARCHAR(100),
+    target_districts TEXT[],
+    created_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    is_active BOOLEAN NOT NULL DEFAULT true
+);
