@@ -52,25 +52,27 @@ export default function AdminUsersPage() {
     setLoading(false);
   };
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingAdmin(true);
+  const handlePromoteAdmin = async (userId: string) => {
+    if (!confirm('Are you sure you want to promote this user to Admin?')) return;
     try {
-      const res = await fetch('/api/create-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newAdminEmail, password: newAdminPass })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      alert('Admin created successfully!');
-      setNewAdminEmail('');
-      setNewAdminPass('');
+      const { error } = await supabase.from('user_roles').insert({ user_id: userId, role: 'admin' });
+      if (error) throw error;
+      alert('User successfully promoted to Admin!');
       fetchUsers();
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
-    } finally {
-      setCreatingAdmin(false);
+      alert(`Error promoting user: ${err.message}`);
+    }
+  };
+
+  const handleDemoteAdmin = async (userId: string) => {
+    if (!confirm('Are you sure you want to revoke Admin privileges from this user?')) return;
+    try {
+      const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'admin');
+      if (error) throw error;
+      alert('Admin privileges revoked.');
+      fetchUsers();
+    } catch (err: any) {
+      alert(`Error revoking admin privileges: ${err.message}`);
     }
   };
 
@@ -96,13 +98,13 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">User Management</h1>
-          <p className="text-sm text-slate-400 mt-1">Modify, suspend, or delete trainee accounts.</p>
+          <p className="text-sm text-slate-400 mt-1">Modify, suspend, or delete accounts.</p>
         </div>
         <div className="relative">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
           <input 
             type="text" 
-            placeholder="Search trainees..." 
+            placeholder="Search users..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-64 bg-[#0e1628] border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition"
@@ -114,22 +116,19 @@ export default function AdminUsersPage() {
         <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-2xl p-6 mb-6">
           <div className="flex items-center space-x-2 mb-4">
             <Shield className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-bold text-white">Superadmin Controls: Add New Admin</h2>
+            <h2 className="text-lg font-bold text-white">Superadmin Controls: Current Admins</h2>
           </div>
-          <form onSubmit={handleCreateAdmin} className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="w-full sm:flex-1">
-              <label className="text-xs text-slate-400 mb-1 block">Admin Email</label>
-              <input type="email" required value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white" placeholder="admin@nexus.com" />
-            </div>
-            <div className="w-full sm:flex-1">
-              <label className="text-xs text-slate-400 mb-1 block">Temporary Password</label>
-              <input type="password" required minLength={6} value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white" placeholder="••••••••" />
-            </div>
-            <button type="submit" disabled={creatingAdmin} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl flex items-center justify-center space-x-2 transition disabled:opacity-70">
-              {creatingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              <span>Create Admin</span>
-            </button>
-          </form>
+          <div className="space-y-2">
+             {admins.length === 0 ? <p className="text-slate-400 text-sm">No admins found.</p> : admins.map(a => (
+                <div key={a.id} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                  <span className="text-white text-sm font-mono">{a.email}</span>
+                  <button onClick={() => handleDemoteAdmin(a.id)} className="text-rose-400 hover:text-rose-300 text-xs font-bold px-3 py-1 bg-rose-500/10 rounded-md transition">Revoke Admin</button>
+                </div>
+             ))}
+          </div>
+          <p className="text-xs text-slate-400 mt-4">
+            * To add a new Admin, find the user in the table below and click the green Shield icon to promote them. They must first sign up via the main website.
+          </p>
         </div>
       )}
 
@@ -138,7 +137,7 @@ export default function AdminUsersPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/50 text-xs text-slate-400 uppercase tracking-wider">
-                <th className="py-4 px-6 font-semibold">Trainee</th>
+                <th className="py-4 px-6 font-semibold">User</th>
                 <th className="py-4 px-6 font-semibold">Contact</th>
                 <th className="py-4 px-6 font-semibold">Status</th>
                 <th className="py-4 px-6 font-semibold text-right">Actions</th>
@@ -173,9 +172,11 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-end space-x-2">
-                        <button className="p-2 bg-slate-800 hover:bg-blue-600 rounded-lg text-slate-400 hover:text-white transition" title="Edit">
-                          <Edit className="w-4 h-4" />
-                        </button>
+                        {isSuperadmin && (
+                           <button onClick={() => handlePromoteAdmin(user.id)} className="p-2 bg-emerald-500/10 hover:bg-emerald-600 rounded-lg text-emerald-400 hover:text-white transition border border-emerald-500/20" title="Promote to Admin">
+                             <Shield className="w-4 h-4" />
+                           </button>
+                        )}
                         <button onClick={() => handleSuspend(user.id, user.is_active ?? true)} className="p-2 bg-slate-800 hover:bg-amber-600 rounded-lg text-slate-400 hover:text-white transition" title={user.is_active ? 'Suspend' : 'Activate'}>
                           <Ban className="w-4 h-4" />
                         </button>

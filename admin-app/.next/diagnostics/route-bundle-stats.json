@@ -1,13 +1,13 @@
 [
   {
     "route": "/users",
-    "firstLoadUncompressedJsBytes": 735060,
+    "firstLoadUncompressedJsBytes": 737261,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\1wffmwqvkqye8.js",
       ".next\\static\\chunks\\2ao98szxu5nqg.js",
       ".next\\static\\chunks\\2akg4e9hy2nzr.js",
-      ".next\\static\\chunks\\2bk-uhhjnenfl.js",
+      ".next\\static\\chunks\\25oe8_xuhi35c.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\3byuobrkyz9bj.js",
