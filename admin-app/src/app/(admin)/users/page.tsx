@@ -23,18 +23,12 @@ export default function AdminUsersPage() {
 
   const checkRoleAndFetch = async () => {
     setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
-      
-      if (roleData?.role === 'superadmin') {
+    try {
+      const saRes = await fetch('/api/auth/me');
+      if (saRes.ok) {
         setIsSuperadmin(true);
       }
-    }
+    } catch (e) {}
     await fetchUsers();
   };
 
@@ -74,17 +68,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDemoteAdmin = async (userId: string) => {
-    if (!confirm('Are you sure you want to revoke Admin privileges from this user?')) return;
-    try {
-      const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'admin');
-      if (error) throw error;
-      alert('Admin privileges revoked.');
-      fetchUsers();
-    } catch (err: any) {
-      alert(`Error revoking admin privileges: ${err.message}`);
-    }
-  };
 
   const handleSuspend = async (id: string, currentStatus: boolean) => {
     if (!confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this user?`)) return;
@@ -143,15 +126,7 @@ export default function AdminUsersPage() {
             </button>
           </form>
 
-          <div className="space-y-2 border-t border-blue-500/20 pt-4">
-             <h3 className="text-sm font-bold text-white mb-3">Current Admins</h3>
-             {admins.length === 0 ? <p className="text-slate-400 text-sm">No admins found.</p> : admins.map(a => (
-                <div key={a.id} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-                  <span className="text-white text-sm font-mono">{a.email}</span>
-                  <button onClick={() => handleDemoteAdmin(a.id)} className="text-rose-400 hover:text-rose-300 text-xs font-bold px-3 py-1 bg-rose-500/10 rounded-md transition">Revoke Admin</button>
-                </div>
-             ))}
-          </div>
+
         </div>
       )}
 

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseBrowser';
-import { ShieldAlert, Users, Database, Activity, Tag, LogOut, Loader2, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Users, Database, Activity, Tag, LogOut, Loader2, ArrowLeft, FileText } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -14,6 +14,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const checkAdmin = async () => {
+      // 1. Check Superadmin Cookie
+      try {
+        const saRes = await fetch('/api/auth/me');
+        if (saRes.ok) {
+          setIsAdmin(true);
+          return;
+        }
+      } catch (e) {}
+
+      // 2. Check regular Supabase Session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -21,13 +31,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
-      // Check if user is an admin (simplified check for prototype)
-      // In production, use Supabase custom claims or an `admins` table.
-      if (session.user.email === 'admin@nexus.com' || session.user.email?.includes('admin')) {
-        setIsAdmin(true);
-      } else {
-        router.push('/dashboard');
-      }
+      // If they are logged in via Supabase, they must be an Admin for the hackathon
+      setIsAdmin(true);
     };
     checkAdmin();
   }, [router, supabase]);
@@ -44,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: 'Dashboard Overview', href: '/', icon: Activity },
     { name: 'User Management', href: '/users', icon: Users },
+    { name: 'Verifications', href: '/verifications', icon: FileText },
     { name: 'Audit & Export', href: '/audit', icon: Database },
     { name: 'Billing & Promos', href: '/billing', icon: Tag },
   ];

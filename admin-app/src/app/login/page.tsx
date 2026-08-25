@@ -23,6 +23,20 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
+        // 1. Try Superadmin Environment Variable Authentication
+        const saRes = await fetch('/api/auth/superadmin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (saRes.ok) {
+          router.push('/');
+          router.refresh();
+          return;
+        }
+
+        // 2. If not Superadmin, try standard Supabase Auth (for sub-admins/trainees)
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,

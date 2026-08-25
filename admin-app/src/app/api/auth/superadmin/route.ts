@@ -1,0 +1,30 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email, password } = await request.json();
+
+    const envUser = process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || 'superadmin@nexus.com';
+    const envPass = process.env.ADMIN_PASSWORD || 'hackathon2026';
+
+    if (email === envUser && password === envPass) {
+      const cookieStore = await cookies();
+      
+      // Set secure HTTP-only cookie
+      cookieStore.set('nexus_superadmin', 'true', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 // 1 day
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

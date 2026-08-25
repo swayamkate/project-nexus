@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { 
   User, Mail, Phone, Calendar, MapPin, Edit3, ChevronRight, GraduationCap, 
-  Sparkles, Camera, FileText, Award, Briefcase, CalendarClock, Save, X, Loader2 
+  Sparkles, Camera, FileText, Award, Briefcase, CalendarClock, Save, X, Loader2, UploadCloud 
 } from 'lucide-react';
 
 interface TraineeProfilePageProps {
@@ -13,10 +13,13 @@ interface TraineeProfilePageProps {
 
 export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNavigate }) => {
   const [profile, setProfile] = useState<any>(null);
+  const [employment, setEmployment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<any>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -28,7 +31,6 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Fetch trainee data based on email
     const { data, error } = await supabase
       .from('trainees')
       .select('*')
@@ -38,23 +40,63 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
     if (data) {
       setProfile(data);
       setFormData(data);
+      
+      const { data: empData } = await supabase
+        .from('trainee_employment')
+        .select('*')
+        .eq('trainee_id', data.id)
+        .single();
+      
+      if (empData) setEmployment(empData);
     } else {
-      // If user doesn't exist in trainees, init blank form
       setFormData({
-        full_name: '',
-        email: session.user.email,
-        phone: '',
-        dob: '2000-01-01',
-        gender: 'Female',
-        address: '',
-        district: '',
-        highest_education: '',
-        skills: [],
-        about_me: '',
+        full_name: '', email: session.user.email, phone: '', dob: '2000-01-01',
+        gender: 'Female', address: '', district: '', highest_education: '', skills: [], about_me: '',
       });
       setIsEditing(true);
     }
     setLoading(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('verifications')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('verifications').getPublicUrl(filePath);
+
+      if (employment) {
+        await supabase.from('trainee_employment').update({
+          proof_file_url: publicUrl,
+          verification_status: 'pending'
+        }).eq('id', employment.id);
+      } else {
+        await supabase.from('trainee_employment').insert({
+          trainee_id: profile.id,
+          status: 'self_employed',
+          proof_file_url: publicUrl,
+          verification_status: 'pending'
+        });
+      }
+
+      alert('Document uploaded successfully! Pending Admin verification.');
+      fetchProfile();
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -276,6 +318,70 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
 
             {/* Skills */}
             <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center space-x-2 text-slate-100 border-b border-slate-800/80 pb-3">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <h3 className="font-bold text-sm">Key Skills</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(profile?.skills || []).map((skill: string, index: number) => (
+                  <span key={index} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-lg text-xs font-semibold">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Self-Employment Verification Module */}
+          <div className="bg-gradient-to-r from-blue-900/20 to-[#0e1628] border border-blue-500/30 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2 text-white">
+                <FileText className="w-5 h-5 text-blue-400" />
+                <h3 className="font-bold text-base">Self-Employment Verification</h3>
+              </div>
+              {employment?.verification_status === 'approved' ? (
+                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-xs font-bold flex items-center"><Award className="w-3 h-3 mr-1" /> Verified</span>
+              ) : employment?.verification_status === 'pending' ? (
+                <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-full text-xs font-bold">Pending Review</span>
+              ) : (
+                <span className="px-3 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-full text-xs font-bold">Unverified</span>
+              )}
+            </div>
+            
+            <p className="text-xs text-slate-400 mb-6">Upload your Udyam Registration, GST Certificate, or Trade License to verify your self-employment status and gain access to advanced Skilling Portal benefits.</p>
+            
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              {employment?.proof_file_url && (
+                <a href={employment.proof_file_url} target="_blank" rel="noreferrer" className="flex-1 w-full bg-slate-900 border border-slate-700 p-4 rounded-xl flex items-center justify-between hover:bg-slate-800 transition">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-8 h-8 text-blue-400" />
+                    <div>
+                      <p className="text-sm font-bold text-white">Uploaded Document</p>
+                      <p className="text-[10px] text-slate-400">Click to view file</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+              
+              <div className="flex-1 w-full relative">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileUpload}
+                  className="hidden" 
+                  accept=".pdf,.jpg,.jpeg,.png" 
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full h-full min-h-[72px] border-2 border-dashed border-blue-500/40 hover:border-blue-400 bg-blue-500/5 hover:bg-blue-500/10 rounded-xl flex items-center justify-center space-x-2 text-blue-400 font-bold transition disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
+                  <span>{uploading ? 'Uploading...' : employment?.proof_file_url ? 'Replace Document' : 'Upload Proof (PDF/Image)'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
               <div className="flex items-center space-x-2 text-slate-100 border-b border-slate-800/80 pb-3">
                 <Sparkles className="w-4 h-4 text-amber-400" />
                 <h3 className="font-bold text-sm">Skills</h3>
