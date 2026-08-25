@@ -1,0 +1,11 @@
+{
+  "/(admin)/audit/page": "app/(admin)/audit/page.js",
+  "/(admin)/billing/page": "app/(admin)/billing/page.js",
+  "/(admin)/page": "app/(admin)/page.js",
+  "/(admin)/users/page": "app/(admin)/users/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/auth/callback/page": "app/auth/callback/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js"
+}

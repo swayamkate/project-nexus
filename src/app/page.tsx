@@ -71,9 +71,9 @@ export default function LandingPage() {
             <Link href="/login" className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition flex items-center justify-center text-lg">
               Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
             </Link>
-            <Link href="/admin" className="w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl border border-slate-700 transition flex items-center justify-center text-lg">
+            <a href="https://administrator.avishkark.in" className="w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl border border-slate-700 transition flex items-center justify-center text-lg">
               Admin Portal
-            </Link>
+            </a>
           </div>
         </div>
       </section>
