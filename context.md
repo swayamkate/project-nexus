@@ -391,3 +391,145 @@ GROUP BY p.state, p.district;
 
 - [x] **Project Initialization**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Lucide Icons, Recharts, Supabase Client installed.
 - [x] **Ledger Creation**: Root `context.md` created with complete Tech Stack, Schema, and Roadmap.
+- [x] **Repository Linked**: Pushed to `https://github.com/avishkarkedar-org/SIH2026`.
+
+---
+
+## 5. Production Deployment & Infrastructure Guide
+
+### A. Frontend Hosting on Cloudflare Pages (or Cloudflare Workers)
+Nexus can be deployed to Cloudflare in two ways:
+
+#### Option 1: Cloudflare Pages with Git Integration (Recommended for hackathons)
+1. **Link Repository**: Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) > **Compute (Workers & Pages)** > **Create application** > **Pages** > **Connect to Git** (`avishkarkedar-org/SIH2026`).
+2. **Build Settings**:
+   - **Framework Preset**: `Next.js`
+   - **Build Command**: `npx @cloudflare/next-on-pages@1` or `npm run build`
+   - **Output Directory**: `.vercel/output/static` (or `.next` depending on adapter)
+   - **Compatibility Flags**: Add `nodejs_compat` to runtime flags.
+3. **Environment Variables**:
+   - `NEXT_PUBLIC_SUPABASE_URL`: `https://supabase.yourdomain.com` (or your Oracle VM IP)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: `<your_anon_jwt_token>`
+   - `SUPABASE_SERVICE_ROLE_KEY`: `<your_service_role_secret>` (for secure admin/webhook routes)
+
+---
+
+### B. Self-Hosted Supabase on Oracle Cloud Free Tier (Always Free)
+
+Oracle Cloud Infrastructure (OCI) provides **Always Free** tier with:
+- **Compute**: 4 OCPUs (ARM Ampere A1) + 24 GB RAM (or 2x AMD x86 1GB VMs). An Ampere 2 OCPU / 12GB RAM instance is ideal for running the entire Supabase stack with high performance.
+- **Storage**: 200 GB Total Block Volume.
+
+#### Step 1: Create the Oracle Cloud Compute Instance
+1. Go to **OCI Console** > **Compute** > **Instances** > **Create Instance**.
+2. **Name**: `nexus-supabase-server`
+3. **Image**: `Ubuntu 22.04 LTS` (or Ubuntu 24.04).
+4. **Shape**: Choose **Ampere (ARM)** -> 2 to 4 OCPUs, 12 to 24 GB RAM (or AMD Micro instance).
+5. **Networking**: Assign a public IPv4 address.
+6. **SSH Keys**: Download and save your private SSH key (`id_rsa`).
+
+#### Step 2: Open Ingress Firewall Rules in OCI Virtual Cloud Network (VCN)
+1. Go to **Networking** > **Virtual Cloud Networks** > Click your VCN > **Security Lists** > **Default Security List**.
+2. Add **Ingress Rules** (Source CIDR: `0.0.0.0/0`):
+   - **Port 80 (HTTP)**: TCP port 80 for SSL certification
+   - **Port 443 (HTTPS)**: TCP port 443 for API and Studio traffic
+   - **Port 8000 (Kong API Gateway)**: Optional if using direct port instead of reverse proxy
+   - **Port 5432 (Postgres Direct)**: Restrict to your developer IP CIDR (optional for direct pgAdmin/DBeaver)
+3. Open ports inside the VM OS firewall (iptables/ufw):
+```bash
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 5432 -j ACCEPT
+sudo netfilter-persistent save # or sudo ufw allow 80,443,8000,5432/tcp
+```
+
+#### Step 3: Install Docker & Docker Compose on Ubuntu
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Step 4: Clone and Configure Supabase Docker Stack
+```bash
+# Clone official supabase docker repository
+git clone --depth 1 https://github.com/supabase/supabase
+cd supabase/docker
+
+# Copy default environment variables
+cp .env.example .env
+
+# Generate secure secrets
+# Generate JWT_SECRET, POSTGRES_PASSWORD, ANON_KEY, and SERVICE_ROLE_KEY
+nano .env
+```
+Key settings in `.env`:
+- `POSTGRES_PASSWORD`: Use a strong 32-character random string.
+- `JWT_SECRET`: Random 40+ character secret.
+- `ANON_KEY` & `SERVICE_ROLE_KEY`: Generate via [Supabase JWT generator](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys) or script using your `JWT_SECRET`.
+- `SITE_URL`: Your Next.js frontend URL (e.g. `https://nexus.pages.dev` or `http://localhost:3000`).
+- `API_EXTERNAL_URL`: `https://api.yourdomain.com` (or `http://<YOUR_ORACLE_IP>:8000`).
+
+#### Step 5: Start the Supabase Services
+```bash
+docker compose pull
+docker compose up -d
+```
+Verify running containers:
+```bash
+docker compose ps
+```
+The stack will run:
+- **Kong (API Gateway)** on port `8000`
+- **Supabase Studio (Dashboard)** on port `3000` (or `8000/studio` depending on config)
+- **PostgreSQL** on port `5432`
+- **GoTrue (Auth)** on port `9999`
+- **PostgREST (REST API)** on port `3001`
+- **Realtime, Storage & Meta** services
+
+#### Step 6: Setup SSL & Reverse Proxy with Caddy (Recommended - 2 mins)
+Caddy provides automatic HTTPS with free Let's Encrypt certificates.
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install caddy -y
+```
+
+Create `/etc/caddy/Caddyfile`:
+```caddy
+# Supabase API & Auth Gateway
+api.yourdomain.com {
+    reverse_proxy localhost:8000
+}
+
+# Supabase Studio Admin Dashboard (Protect with basic auth or IP restrict)
+studio.yourdomain.com {
+    basicauth {
+        admin $2a$14$Z... # hash generated via caddy hash-password
+    }
+    reverse_proxy localhost:3000
+}
+```
+Reload Caddy:
+```bash
+sudo systemctl restart caddy
+```
+
+---
+
+### C. Connecting Nexus Next.js Application to Self-Hosted Supabase
+
+Create `.env.local` in the Next.js project:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...<your_anon_key>
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...<your_service_role_key>
+NEXT_PUBLIC_APP_URL=https://nexus.pages.dev
+```
+
+Run schema initialization directly on the self-hosted Postgres database using `psql` or Supabase Studio SQL Editor by copying the SQL from Section 2 of this ledger!
+
