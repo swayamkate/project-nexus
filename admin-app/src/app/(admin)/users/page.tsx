@@ -2,23 +2,76 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
-import { Search, Edit, Trash2, Ban, Loader2 } from 'lucide-react';
+import { Search, Edit, Trash2, Ban, Loader2, UserPlus, Shield } from 'lucide-react';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const supabase = createClient();
 
+  // Create Admin Form State
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+
   useEffect(() => {
-    fetchUsers();
+    checkRoleAndFetch();
   }, []);
 
-  const fetchUsers = async () => {
+  const checkRoleAndFetch = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('trainees').select('*').order('created_at', { ascending: false }).limit(50);
-    if (data) setUsers(data);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (roleData?.role === 'superadmin') {
+        setIsSuperadmin(true);
+      }
+    }
+    await fetchUsers();
+  };
+
+  const fetchUsers = async () => {
+    // Fetch normal trainees
+    const { data: traineeData } = await supabase.from('trainees').select('*').order('created_at', { ascending: false }).limit(50);
+    if (traineeData) setUsers(traineeData);
+
+    // Fetch admins
+    const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
+    if (adminRoles && adminRoles.length > 0) {
+      // For prototype, we mock the admin display since we can't query auth.users directly from client
+      setAdmins(adminRoles.map((r, i) => ({ id: r.user_id, email: `Admin ${i+1} (Hidden by RLS)` })));
+    }
     setLoading(false);
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingAdmin(true);
+    try {
+      const res = await fetch('/api/create-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newAdminEmail, password: newAdminPass })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert('Admin created successfully!');
+      setNewAdminEmail('');
+      setNewAdminPass('');
+      fetchUsers();
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setCreatingAdmin(false);
+    }
   };
 
   const handleSuspend = async (id: string, currentStatus: boolean) => {
@@ -49,13 +102,36 @@ export default function AdminUsersPage() {
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
           <input 
             type="text" 
-            placeholder="Search users..." 
+            placeholder="Search trainees..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-64 bg-[#0e1628] border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition"
           />
         </div>
       </div>
+
+      {isSuperadmin && (
+        <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-2xl p-6 mb-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Shield className="w-5 h-5 text-blue-400" />
+            <h2 className="text-lg font-bold text-white">Superadmin Controls: Add New Admin</h2>
+          </div>
+          <form onSubmit={handleCreateAdmin} className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="w-full sm:flex-1">
+              <label className="text-xs text-slate-400 mb-1 block">Admin Email</label>
+              <input type="email" required value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white" placeholder="admin@nexus.com" />
+            </div>
+            <div className="w-full sm:flex-1">
+              <label className="text-xs text-slate-400 mb-1 block">Temporary Password</label>
+              <input type="password" required minLength={6} value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white" placeholder="••••••••" />
+            </div>
+            <button type="submit" disabled={creatingAdmin} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl flex items-center justify-center space-x-2 transition disabled:opacity-70">
+              {creatingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              <span>Create Admin</span>
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="bg-[#0e1628] border border-slate-800 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
