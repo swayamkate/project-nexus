@@ -12,16 +12,43 @@ import { TraineePortal } from '@/components/TraineePortal';
 import { LongitudinalTracker } from '@/components/LongitudinalTracker';
 import { CommunityHub } from '@/components/CommunityHub';
 import { AutomationHub } from '@/components/AutomationHub';
+import { createClient } from '@/lib/supabaseBrowser';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<'admin' | 'trainee'>('admin');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
+
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+      } else {
+        // Here we could fetch the user's role from the DB.
+        // Defaulting to trainee for demo purposes if they are a real user.
+        if (session.user.email !== 'admin@nexus.com') {
+          setViewMode('trainee');
+        }
+        setLoading(false);
+      }
+    };
+    checkUser();
+  }, [router, supabase]);
 
   const handleModeChange = (mode: 'admin' | 'trainee') => {
     setViewMode(mode);
     setActiveSection('dashboard');
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#070b14] flex items-center justify-center text-white">Loading...</div>;
+  }
+
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
