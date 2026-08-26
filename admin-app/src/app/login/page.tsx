@@ -120,7 +120,14 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form 
+            action="#" 
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAuth(e);
+            }} 
+            className="space-y-4"
+          >
             <div>
               <label className="text-xs font-bold text-slate-300 block mb-1.5">Admin Email or Username</label>
               <div className="relative">
