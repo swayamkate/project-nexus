@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Helps reduce memory usage during builds
     memoryBasedWorkersCount: true,
-  }
+  },
+  output: 'standalone',
 };
 
 export default nextConfig;
