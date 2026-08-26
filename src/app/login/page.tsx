@@ -430,7 +430,14 @@ export default function LoginPage() {
 
           {/* --- VIEW 1: SIGN IN --- */}
           {authMode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form 
+              action="#" 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleLogin(e);
+              }} 
+              className="space-y-4"
+            >
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Email Address or Username</label>
                 <div className="relative">
@@ -492,7 +499,14 @@ export default function LoginPage() {
 
           {/* --- VIEW 2: SIGN UP --- */}
           {authMode === 'signup' && (
-            <form onSubmit={handleSignUp} className="space-y-3.5">
+            <form 
+              action="#" 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSignUp(e);
+              }} 
+              className="space-y-3.5"
+            >
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Full Legal Name</label>
                 <div className="relative">
@@ -598,7 +612,14 @@ export default function LoginPage() {
 
           {/* --- VIEW 3: OTP VERIFICATION --- */}
           {authMode === 'otp_verify' && (
-            <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <form 
+              action="#" 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyOtp(e);
+              }} 
+              className="space-y-5"
+            >
               <div className="text-center space-y-1">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200 shadow-2xs">
                   <KeyRound className="w-6 h-6" />
