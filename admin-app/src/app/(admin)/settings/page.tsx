@@ -73,7 +73,8 @@ export default function AdminSettingsPage() {
       setToastMsg('System customization & security policies saved to PostgreSQL database!');
       setTimeout(() => setToastMsg(null), 4000);
     } catch (err: any) {
-      alert('Save failed: ' + err.message);
+      setToastMsg('Save error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setSaving(false);
     }

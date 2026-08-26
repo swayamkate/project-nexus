@@ -26,6 +26,7 @@ export const SelfEmploymentModule: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [docType, setDocType] = useState('udyam');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,9 +115,11 @@ export const SelfEmploymentModule: React.FC = () => {
 
       if (insertErr) throw insertErr;
       await fetchDocuments(profile.id);
-      alert('Document submitted for Administrator verification!');
+      setToastMsg('Document submitted successfully for Administrator verification!');
+      setTimeout(() => setToastMsg(null), 4000);
     } catch (err: any) {
-      alert('Upload failed: ' + err.message);
+      setToastMsg('Upload failed: ' + (err.message || 'Error uploading file.'));
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -126,6 +129,14 @@ export const SelfEmploymentModule: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
       
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="font-semibold">{toastMsg}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

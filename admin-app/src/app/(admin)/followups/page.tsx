@@ -72,7 +72,8 @@ export default function AdminFollowupsPage() {
       setTimeout(() => setToastMsg(null), 4000);
       await fetchFollowups();
     } catch (err: any) {
-      alert('Trigger failed: ' + err.message);
+      setToastMsg('Trigger error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setTriggering(false);
     }

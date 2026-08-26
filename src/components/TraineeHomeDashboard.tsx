@@ -39,6 +39,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showFollowupModal, setShowFollowupModal] = useState(false);
   const [showOpportunityModal, setShowOpportunityModal] = useState<any | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Business Edit state
@@ -97,6 +98,14 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+      
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="font-semibold">{toastMsg}</span>
+        </div>
+      )}
       
       {/* 4 Top KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
@@ -764,10 +773,11 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               </button>
               <button
                 onClick={() => {
-                  alert('Application submitted! Our district coordinator will contact you.');
+                  setToastMsg('Application submitted! Our district coordinator will contact you.');
+                  setTimeout(() => setToastMsg(null), 4000);
                   setShowOpportunityModal(null);
                 }}
-                className="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700"
+                className="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 cursor-pointer"
               >
                 Apply Now
               </button>

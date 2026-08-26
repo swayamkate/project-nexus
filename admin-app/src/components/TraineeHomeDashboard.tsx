@@ -382,8 +382,8 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               </div>
 
               <button 
-                onClick={() => alert(`Details opened for: ${opp.title}`)}
-                className="w-full py-2 rounded-xl text-xs font-bold border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                onClick={() => onNavigate('training-details')}
+                className="w-full py-2 rounded-xl text-xs font-bold border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
               >
                 View Details
               </button>
@@ -400,17 +400,17 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
           <h3 className="font-bold text-white text-sm">Quick Links</h3>
           <div className="space-y-2">
             {[
-              { label: 'Download Certificate', icon: Download },
-              { label: 'Explore Courses', icon: Compass },
-              { label: 'Update Documents', icon: FileText },
-              { label: 'Career Guidance', icon: Sparkles },
+              { label: 'Download Certificate', icon: Download, section: 'certifications' },
+              { label: 'Explore Courses', icon: Compass, section: 'training-details' },
+              { label: 'Update Documents', icon: FileText, section: 'documents' },
+              { label: 'Career Guidance', icon: Sparkles, section: 'skill-development' },
             ].map((link, idx) => {
               const Icon = link.icon;
               return (
                 <button
                   key={idx}
-                  onClick={() => alert(`Navigating to: ${link.label}`)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 text-slate-200 text-xs font-semibold transition"
+                  onClick={() => onNavigate(link.section)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 text-slate-200 text-xs font-semibold transition cursor-pointer"
                 >
                   <div className="flex items-center space-x-2.5">
                     <Icon className="w-4 h-4 text-blue-400" />

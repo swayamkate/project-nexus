@@ -72,21 +72,22 @@ export default function AdminBillingPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPromos();
     } catch (err: any) {
-      alert('Failed: ' + err.message);
+      setToastMsg('Error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeletePromo = async (id: string, code: string) => {
-    if (!confirm(`Delete promo code "${code}"?`)) return;
     try {
       await supabase.from('promo_codes').delete().eq('id', id);
       setToastMsg(`Deleted promo code ${code}`);
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPromos();
     } catch (err: any) {
-      alert('Delete failed: ' + err.message);
+      setToastMsg('Delete error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     }
   };
 

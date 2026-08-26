@@ -78,7 +78,8 @@ export default function AdminSchemesPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchSchemes();
     } catch (err: any) {
-      alert('Failed: ' + err.message);
+      setToastMsg('Failed: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setSaving(false);
     }
@@ -120,7 +121,8 @@ export default function AdminSchemesPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchSchemes();
     } catch (err: any) {
-      alert('Disbursement failed: ' + err.message);
+      setToastMsg('Disbursement error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setSaving(false);
     }

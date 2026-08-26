@@ -88,11 +88,12 @@ export default function AdminAuditPage() {
         });
 
         await fetchAuditLogs();
+        setImportStatus({ type: 'success', text: `Successfully exported ${data.length} trainee records to CSV file.` });
       } else {
-        alert('No trainee records found in database.');
+        setImportStatus({ type: 'error', text: 'No trainee records found in database to export.' });
       }
     } catch (err: any) {
-      alert(`Export failed: ${err.message}`);
+      setImportStatus({ type: 'error', text: `Export failed: ${err.message}` });
     } finally {
       setLoadingExport(false);
     }

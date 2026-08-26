@@ -359,7 +359,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     } catch (err: any) {
       console.error('Failed to update profile:', err);
-      alert('Failed to save profile: ' + (err.message || 'Unknown error'));
       return false;
     }
   };
@@ -392,7 +391,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error('Failed to update employment details:', err);
-      alert('Failed to save business details: ' + (err.message || 'Unknown error'));
       return false;
     }
   };
@@ -438,7 +436,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error('Failed to submit survey:', err);
-      alert('Failed to record survey: ' + (err.message || 'Unknown error'));
       return false;
     }
   };

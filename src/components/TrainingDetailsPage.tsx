@@ -22,6 +22,7 @@ export const TrainingDetailsPage: React.FC = () => {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -52,9 +53,11 @@ export const TrainingDetailsPage: React.FC = () => {
         status: 'enrolled'
       });
       await refreshData();
-      alert('Enrolled in program successfully!');
+      setToastMsg('Enrolled in training program successfully!');
+      setTimeout(() => setToastMsg(null), 4000);
     } catch (err: any) {
-      alert('Enrollment failed: ' + err.message);
+      setToastMsg('Enrollment failed: ' + (err.message || 'Error'));
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setEnrollingId(null);
     }
@@ -62,6 +65,14 @@ export const TrainingDetailsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+      
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="font-semibold">{toastMsg}</span>
+        </div>
+      )}
       
       {/* Header */}
       <div>

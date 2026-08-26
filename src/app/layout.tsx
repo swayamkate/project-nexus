@@ -14,8 +14,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus | National Skilling Outcomes & Longitudinal Tracking",
-  description: "Privacy-Preserving, Longitudinal Skilling-Outcomes and Impact-Measurement System.",
+  title: "MahaSkill Track | Maharashtra Skilling Outcomes & Longitudinal Tracking Registry",
+  description: "Official Privacy-Preserving, Longitudinal Skilling-Outcomes and Vocational Impact-Measurement System for the Government of Maharashtra.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' }
+    ],
+    apple: '/icon.svg',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'MahaSkill Track',
+  },
 };
 
 export default function RootLayout({

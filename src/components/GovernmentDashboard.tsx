@@ -34,6 +34,7 @@ import {
 
 export const GovernmentDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('Monthly');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Employment Trend Over Time
   const trendData = [
@@ -92,6 +93,14 @@ export const GovernmentDashboard: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 text-slate-800">
       
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="font-semibold">{toastMsg}</span>
+        </div>
+      )}
+
       {/* Date Range Selector Header */}
       <div className="flex justify-end">
         <div className="inline-flex items-center space-x-2 bg-white border border-slate-200/80 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 shadow-xs">
@@ -429,8 +438,11 @@ export const GovernmentDashboard: React.FC = () => {
         </div>
 
         <button 
-          onClick={() => alert('Automated policy action memo dispatched to Pune & Nashik District Skill Offices!')}
-          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition whitespace-nowrap shadow-sm shadow-blue-600/20 cursor-pointer"
+          onClick={() => {
+            setToastMsg('Automated policy action memo dispatched to Pune & Nashik District Skill Offices!');
+            setTimeout(() => setToastMsg(null), 4000);
+          }}
+          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition whitespace-nowrap shadow-sm shadow-blue-600/20 cursor-pointer min-h-[40px]"
         >
           Action Insight
         </button>

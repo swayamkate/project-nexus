@@ -32,6 +32,7 @@ import {
 
 export const GovernmentDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('Monthly');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Employment Trend Over Time
   const trendData = [
@@ -89,6 +90,14 @@ export const GovernmentDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 animate-in slide-in-from-top text-xs font-bold">
+          <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       {/* Date Range Selector Header */}
       <div className="flex justify-end items-center">
         <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-800 text-slate-300 text-xs px-3.5 py-1.5 rounded-xl shadow-sm">
@@ -467,8 +476,11 @@ export const GovernmentDashboard: React.FC = () => {
         </div>
 
         <button 
-          onClick={() => alert('Generated policy recommendation report sent to District Skill Officers.')}
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition whitespace-nowrap shadow-md shadow-blue-600/20"
+          onClick={() => {
+            setToastMsg('Generated policy recommendation report sent to District Skill Officers.');
+            setTimeout(() => setToastMsg(null), 4000);
+          }}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition whitespace-nowrap shadow-md shadow-blue-600/20 cursor-pointer min-h-[36px]"
         >
           Action Insight
         </button>

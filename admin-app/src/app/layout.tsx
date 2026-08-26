@@ -13,8 +13,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus | Skilling Outcomes Platform",
-  description: "Privacy-Preserving, Longitudinal Skilling-Outcomes and Impact-Measurement System.",
+  title: "MahaSkill Track | Executive Admin & District Control Center",
+  description: "Enterprise Executive Control Center for Maharashtra Skilling Outcomes, Longitudinal Surveys & MSME Verification.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' }
+    ],
+    apple: '/icon.svg',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

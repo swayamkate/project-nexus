@@ -44,9 +44,12 @@ export const TraineePortal: React.FC = () => {
     fetchData();
   }, [supabase]);
 
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
   const handleEnroll = async (programId: string) => {
     if (!profile?.id) {
-      alert('Please complete your trainee profile first.');
+      setToastMsg('Please complete your trainee profile first.');
+      setTimeout(() => setToastMsg(null), 4000);
       return;
     }
 
@@ -63,9 +66,11 @@ export const TraineePortal: React.FC = () => {
 
       if (error) throw error;
       await refreshData();
-      alert('Successfully enrolled in training program!');
+      setToastMsg('Successfully enrolled in training program!');
+      setTimeout(() => setToastMsg(null), 4000);
     } catch (err: any) {
-      alert('Enrollment failed: ' + err.message);
+      setToastMsg('Enrollment failed: ' + (err.message || 'Error'));
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setEnrollingId(null);
     }
@@ -73,6 +78,13 @@ export const TraineePortal: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="font-semibold">{toastMsg}</span>
+        </div>
+      )}
       
       {/* Header */}
       <div>

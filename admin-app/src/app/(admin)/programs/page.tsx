@@ -100,14 +100,14 @@ export default function AdminProgramsPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPrograms();
     } catch (err: any) {
-      alert('Save failed: ' + err.message);
+      setToastMsg('Save error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to remove the course "${title}"?`)) return;
     try {
       const { error } = await supabase.from('training_programs').delete().eq('id', id);
       if (error) throw error;
@@ -115,7 +115,8 @@ export default function AdminProgramsPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPrograms();
     } catch (err: any) {
-      alert('Delete failed: ' + err.message);
+      setToastMsg('Delete error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     }
   };
 

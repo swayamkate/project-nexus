@@ -86,7 +86,8 @@ export default function AdminVerificationsPage() {
       setTimeout(() => setToastMsg(null), 3500);
       await fetchVerifications();
     } catch (err: any) {
-      alert('Approval failed: ' + err.message);
+      setToastMsg('Approval error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setProcessingId(null);
     }
@@ -126,7 +127,8 @@ export default function AdminVerificationsPage() {
       setRejectReason('');
       await fetchVerifications();
     } catch (err: any) {
-      alert('Rejection failed: ' + err.message);
+      setToastMsg('Rejection error: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setProcessingId(null);
     }

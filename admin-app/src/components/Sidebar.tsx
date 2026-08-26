@@ -147,8 +147,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => alert('Logged out successfully.')}
-              className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-rose-400 transition"
+              onClick={async () => {
+                const supabase = (await import('@/lib/supabaseBrowser')).createClient();
+                await supabase.auth.signOut();
+                window.location.href = '/login';
+              }}
+              className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-rose-400 transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
