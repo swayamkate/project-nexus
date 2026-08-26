@@ -155,18 +155,18 @@ IMGPROXY_ENABLE_IMAGE_PROCESSING=true
 
 ### B. Caddy Reverse Proxy & SSL Configuration (`/etc/caddy/Caddyfile`)
 ```caddy
-# Supabase API & Auth
-api.avishkark.in {
+# Supabase API & Auth (No 308 redirect loop)
+http://api.avishkark.in, https://api.avishkark.in {
     reverse_proxy localhost:8000
 }
 
 # Supabase Studio Dashboard
-studio.avishkark.in {
+http://studio.avishkark.in, https://studio.avishkark.in {
     reverse_proxy localhost:3000
 }
 
 # Admin Panel
-administrator.avishkark.in {
+http://administrator.avishkark.in, https://administrator.avishkark.in {
     reverse_proxy localhost:3001
 }
 ```
