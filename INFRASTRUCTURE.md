@@ -25,8 +25,8 @@
 - **SMTP Port:** `465`
 - **SMTP User:** `resend`
 - **SMTP Pass:** `re_2aTnjoXB_5JtzEzhcqtUa22iZzBcpQNsE`
-- **SMTP Admin Sender:** `onboarding@resend.dev`
-- **SMTP Sender Name:** `"Nexus Platform"`
+- **SMTP Admin Sender:** `admin@avishkark.in`
+- **SMTP Sender Name:** `"Nexus Admin"`
 
 ---
 
