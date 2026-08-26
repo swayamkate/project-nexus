@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Sliders
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -99,6 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Government Schemes', href: '/schemes', icon: Landmark },
     { name: 'Promo Codes & Billing', href: '/billing', icon: Tag },
     { name: 'Audit Stream & Data Pipeline', href: '/audit', icon: Database },
+    { name: 'System Settings & Brand', href: '/settings', icon: Sliders },
   ];
 
   return (

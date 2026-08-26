@@ -22,7 +22,8 @@ import {
   Headphones,
   Compass,
   TreeDeciduous,
-  ShieldAlert
+  ShieldAlert,
+  Sliders
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 
@@ -60,20 +61,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'district-analytics', label: 'District Analytics', icon: MapPin },
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
     { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'System Settings', icon: Settings },
   ];
 
   const traineeMenuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'my-profile', label: 'My Profile', icon: User },
+    { id: 'analytics', label: 'Analytics & Insights', icon: BarChart3, isNew: true },
     { id: 'training-details', label: 'Training Details', icon: GraduationCap },
     { id: 'certifications', label: 'Certifications', icon: Award },
     { id: 'employment-status', label: 'Employment Status', icon: Briefcase },
     { id: 'follow-ups', label: 'Follow-ups', icon: CalendarClock },
-    { id: 'self-employment', label: 'Self-Employment', icon: Building2, isNew: true },
+    { id: 'self-employment', label: 'Self-Employment', icon: Building2 },
     { id: 'skill-development', label: 'Skill Development', icon: Target },
-    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'documents', label: 'Documents Vault', icon: FileText },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifs },
+    { id: 'settings', label: 'Settings & Security', icon: Settings },
     { id: 'help-support', label: 'Help & Support', icon: HelpCircle },
   ];
 
@@ -113,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setActiveSection(item.id)}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30 font-bold'
                     : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50/60'
                 }`}
               >

@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.trainees (
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.training_programs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL UNIQUE,
     sector VARCHAR(100) NOT NULL,
     duration_months INT NOT NULL DEFAULT 3,
     provider_name VARCHAR(255) NOT NULL DEFAULT 'Maharashtra State Skill Development Society (MSSDS)',

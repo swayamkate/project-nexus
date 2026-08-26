@@ -16,6 +16,8 @@ import { CertificationsPage } from '@/components/CertificationsPage';
 import { TrainingDetailsPage } from '@/components/TrainingDetailsPage';
 import { DocumentsPage } from '@/components/DocumentsPage';
 import { HelpSupportPage } from '@/components/HelpSupportPage';
+import { AnalyticsPage } from '@/components/AnalyticsPage';
+import { SettingsPage } from '@/components/SettingsPage';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
@@ -96,6 +98,7 @@ export default function DashboardPage() {
             viewMode={viewMode}
             setViewMode={handleModeChange}
             activeSection={activeSection}
+            onNavigate={setActiveSection}
             onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           />
 
@@ -111,9 +114,9 @@ export default function DashboardPage() {
                 {activeSection === 'employers' && <CommunityHub />}
                 {activeSection === 'skill-gap' && <TraineePortal />}
                 {activeSection === 'district-analytics' && <GovernmentDashboard />}
-                {activeSection === 'reports' && <GovernmentDashboard />}
+                {activeSection === 'reports' && <AnalyticsPage />}
                 {activeSection === 'ai-insights' && <GovernmentDashboard />}
-                {activeSection === 'settings' && <GovernmentDashboard />}
+                {activeSection === 'settings' && <SettingsPage />}
               </>
             )}
 
@@ -122,6 +125,7 @@ export default function DashboardPage() {
               <>
                 {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
                 {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
+                {activeSection === 'analytics' && <AnalyticsPage />}
                 {activeSection === 'training-details' && <TrainingDetailsPage />}
                 {activeSection === 'certifications' && <CertificationsPage />}
                 {activeSection === 'employment-status' && <LongitudinalTracker />}
@@ -130,6 +134,7 @@ export default function DashboardPage() {
                 {activeSection === 'skill-development' && <TraineePortal />}
                 {activeSection === 'documents' && <DocumentsPage />}
                 {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
+                {activeSection === 'settings' && <SettingsPage />}
                 {activeSection === 'help-support' && <HelpSupportPage />}
               </>
             )}
