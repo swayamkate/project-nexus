@@ -382,17 +382,6 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </div>
             </div>
           </div>
-              <div className="flex items-center space-x-2 text-slate-100 border-b border-slate-800/80 pb-3">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <h3 className="font-bold text-sm">Skills</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {profile?.skills?.length ? profile.skills.map((skill: string, idx: number) => (
-                  <span key={idx} className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs font-semibold">{skill}</span>
-                )) : <span className="text-slate-500 text-xs">No skills listed.</span>}
-              </div>
-            </div>
-          </div>
 
           <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-3">
             <div className="flex items-center space-x-2 text-slate-100 border-b border-slate-800/80 pb-3">
