@@ -32,17 +32,20 @@
 ### Database Passwords
 | Service | Credentials | Context |
 | :--- | :--- | :--- |
-| **Database User & Password** | `postgres` / `Avishkar_443322` | Direct PostgreSQL / Supavisor connection |
-| **Supabase Studio User & Pass** | `Avishkar` / `Avishkar_443322` | Web GUI for managing database tables |
+| **PostgreSQL User & Password** | `postgres` / `Avishkar_443322` | Direct PostgreSQL / Supavisor connection |
 
-- **PostgreSQL Internal Host/Port:** `localhost:5432` / `db:5432`
+### Supabase Studio Web GUI Login ([https://studio.avishkark.in](https://studio.avishkark.in))
+You can log in using **any** of the following working credential combinations:
 
-### Supabase Studio Web Login
-- **URL:** [https://studio.avishkark.in](https://studio.avishkark.in)
-- **Username:** `Avishkar`
-- **Password:** `Avishkar_443322`
+| Username | Password | Notes |
+| :--- | :--- | :--- |
+| `Avishkar` | `Avishkar@443322` | Master Primary Admin (Case-sensitive uppercase A) |
+| `avishkar` | `Avishkar_443322` | Lowercase username fallback |
+| `admin` | `Avishkar@443322` | Quick admin shortcut |
+| `superadmin` | `adminpassword2026` | Superadmin credentials alias |
+| `nexus` | `adminpassword2026` | System operator alias |
 
-### Superadmin Portal Credentials
+### Superadmin Console Credentials
 - **URL:** [https://administrator.avishkark.in/login](https://administrator.avishkark.in/login)
 - **Superadmin Username / Email:** `admin@nexus.com`
 - **Superadmin Password:** `adminpassword2026`
