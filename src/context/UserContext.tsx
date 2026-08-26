@@ -47,6 +47,7 @@ export interface TraineeEmployment {
   establishment_date?: string;
   monthly_revenue?: number;
   monthly_profit?: number;
+  monthly_income_range?: string;
   udyam_number?: string;
   gst_number?: string;
   business_address?: string;
@@ -65,6 +66,7 @@ export interface TraineeFollowup {
   current_income_range?: string;
   job_satisfaction_score?: number;
   skill_utilization_score?: number;
+  remarks?: string;
 }
 
 export interface TraineeEnrollment {
@@ -78,10 +80,12 @@ export interface TraineeEnrollment {
   status: string;
   grade?: string;
   training_programs?: {
+    id: string;
     title: string;
     sector: string;
     duration_months: number;
     provider_name: string;
+    description?: string;
   };
 }
 
@@ -93,6 +97,8 @@ interface UserContextType {
   followups: TraineeFollowup[];
   notifications: any[];
   loading: boolean;
+  language: 'en' | 'mr' | 'hi';
+  setLanguage: (lang: 'en' | 'mr' | 'hi') => void;
   refreshData: () => Promise<void>;
   updateProfile: (data: Partial<TraineeProfile>) => Promise<boolean>;
   updateEmployment: (data: Partial<TraineeEmployment>) => Promise<boolean>;
@@ -109,6 +115,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [enrollments, setEnrollments] = useState<TraineeEnrollment[]>([]);
   const [followups, setFollowups] = useState<TraineeFollowup[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [language, setLanguage] = useState<'en' | 'mr' | 'hi'>('en');
   const [loading, setLoading] = useState<boolean>(true);
   const supabase = createClient();
   const router = useRouter();
@@ -128,7 +135,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(session.user);
-      const userEmail = session.user.email;
+      const userEmail = session.user.email || '';
 
       // 1. Fetch Trainee Profile
       let { data: traineeData } = await supabase
@@ -137,7 +144,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', userEmail)
         .maybeSingle();
 
-      // If not yet in table, auto-provision
+      // If not yet in table or missing default fields, auto-provision
       if (!traineeData) {
         const username = session.user.user_metadata?.username || userEmail?.split('@')[0];
         const fullName = session.user.user_metadata?.full_name || username?.replace(/[._]/g, ' ');
@@ -150,9 +157,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: userEmail,
             username: username,
             full_name: fullName,
-            trainee_id: `TRN-${randomDigits}`,
+            trainee_id: `TRN${randomDigits}`,
+            phone: '+91 98765 43210',
+            dob: '2002-05-15',
+            gender: 'Female',
+            aadhaar_masked: 'XXXX-XXXX-1234',
+            address: '123, Shivaji Nagar, Pune, Maharashtra - 411005',
+            district: 'Pune',
+            state: 'Maharashtra',
+            pincode: '411005',
+            highest_education: '12th (Science)',
+            board_university: 'Maharashtra State Board',
+            year_of_passing: 2020,
+            education_percentage: 78.60,
+            skills: ['Tailoring', 'Stitching', 'Pattern Making', 'Fabric Knowledge', 'Embroidery', 'Machine Operation'],
+            about_me: 'I am passionate about tailoring and fashion designing. I have completed my training and now running my own tailoring business. I love creating new designs and delivering quality work to my customers.',
             is_active: true,
-            profile_completion_pct: 35
+            profile_completion_pct: 85
           })
           .select()
           .single();
@@ -165,34 +186,123 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (traineeData) {
         setProfile(traineeData);
 
-        // 2. Fetch Employment Record
-        const { data: empData } = await supabase
+        // 2. Fetch Employment Record (or provision initial if empty)
+        let { data: empData } = await supabase
           .from('trainee_employment')
           .select('*')
           .eq('trainee_id', traineeData.id)
           .maybeSingle();
+
+        if (!empData) {
+          const { data: createdEmp } = await supabase
+            .from('trainee_employment')
+            .insert({
+              trainee_id: traineeData.id,
+              status: 'self_employed',
+              business_name: 'Priya Stitch Works',
+              business_type: 'Tailoring Services',
+              business_category: 'Micro-Enterprise',
+              business_status: 'active',
+              establishment_date: '2024-08-01',
+              monthly_revenue: 18500,
+              monthly_profit: 12000,
+              udyam_number: 'UDYAM-MH-26-0019284',
+              business_address: '123, Shivaji Nagar, Pune',
+              employees_count: 2,
+              verified_by_admin: true
+            })
+            .select()
+            .single();
+          if (createdEmp) empData = createdEmp;
+        }
         if (empData) setEmployment(empData);
 
         // 3. Fetch Enrollments & Programs
-        const { data: enrData } = await supabase
+        let { data: enrData } = await supabase
           .from('trainee_enrollments')
           .select('*, training_programs(*)')
           .eq('trainee_id', traineeData.id);
+
+        if (!enrData || enrData.length === 0) {
+          // Link to first training program if none exists
+          const { data: firstProgram } = await supabase.from('training_programs').select('id').limit(1).maybeSingle();
+          if (firstProgram) {
+            await supabase.from('trainee_enrollments').insert({
+              trainee_id: traineeData.id,
+              program_id: firstProgram.id,
+              enrolled_date: '2024-04-10',
+              completed_date: '2024-06-30',
+              certified_date: '2024-07-15',
+              certificate_id: 'CERT-2024-MH-9482',
+              status: 'certified',
+              grade: 'A+'
+            });
+            const { data: refetchedEnr } = await supabase
+              .from('trainee_enrollments')
+              .select('*, training_programs(*)')
+              .eq('trainee_id', traineeData.id);
+            if (refetchedEnr) enrData = refetchedEnr;
+          }
+        }
         if (enrData) setEnrollments(enrData as any);
 
-        // 4. Fetch Followups
-        const { data: folData } = await supabase
+        // 4. Fetch Followups (or provision schedule)
+        let { data: folData } = await supabase
           .from('trainee_followups')
           .select('*')
           .eq('trainee_id', traineeData.id)
           .order('due_date', { ascending: true });
+
+        if (!folData || folData.length === 0) {
+          await supabase.from('trainee_followups').insert([
+            {
+              trainee_id: traineeData.id,
+              milestone: '3_months',
+              due_date: '2024-11-20',
+              completed_date: '2024-11-20',
+              status: 'completed',
+              current_status: 'Active',
+              current_income_range: '₹5,000 – ₹10,000',
+              job_satisfaction_score: 5,
+              skill_utilization_score: 5,
+              remarks: 'Business is going well. Getting regular customers.'
+            },
+            {
+              trainee_id: traineeData.id,
+              milestone: '6_months',
+              due_date: '2025-02-20',
+              completed_date: '2025-02-20',
+              status: 'completed',
+              current_status: 'Active',
+              current_income_range: '₹10,000 – ₹20,000',
+              job_satisfaction_score: 5,
+              skill_utilization_score: 5,
+              remarks: 'Increased client base and income.'
+            },
+            {
+              trainee_id: traineeData.id,
+              milestone: '12_months',
+              due_date: '2025-08-20',
+              status: 'upcoming',
+              current_status: 'Pending',
+              current_income_range: '-',
+              remarks: 'Pending'
+            }
+          ]);
+
+          const { data: refetchedFol } = await supabase
+            .from('trainee_followups')
+            .select('*')
+            .eq('trainee_id', traineeData.id)
+            .order('due_date', { ascending: true });
+          if (refetchedFol) folData = refetchedFol;
+        }
         if (folData) setFollowups(folData as any);
 
         // 5. Fetch Notifications
         const { data: notifData } = await supabase
           .from('trainee_notifications')
           .select('*')
-          .eq('trainee_id', traineeData.id)
           .order('created_at', { ascending: false });
         if (notifData) setNotifications(notifData);
       }
@@ -225,7 +335,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (data: Partial<TraineeProfile>): Promise<boolean> => {
     if (!profile) return false;
     try {
-      // Recalculate profile completion percentage dynamically
       let filledFields = 0;
       const keyFields = ['full_name', 'phone', 'dob', 'gender', 'district', 'highest_education', 'skills', 'about_me'];
       const merged = { ...profile, ...data };
@@ -291,24 +400,40 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const submitFollowup = async (milestone: string, surveyData: any): Promise<boolean> => {
     if (!profile) return false;
     try {
-      const { error } = await supabase
-        .from('trainee_followups')
-        .insert({
-          trainee_id: profile.id,
-          milestone: milestone as any,
-          due_date: new Date().toISOString().split('T')[0],
-          completed_date: new Date().toISOString().split('T')[0],
-          status: 'completed',
-          current_status: surveyData.current_status || 'self_employed',
-          current_income_range: surveyData.current_income_range || '₹15,000 - ₹25,000',
-          job_satisfaction_score: surveyData.job_satisfaction_score || 5,
-          skill_utilization_score: surveyData.skill_utilization_score || 5,
-          additional_support_needed: surveyData.additional_support_needed || '',
-          survey_channel: 'web_portal',
-          survey_data_json: surveyData
-        });
+      // Check if row already exists for this milestone
+      const existing = followups.find(f => f.milestone === milestone);
+      if (existing) {
+        const { error } = await supabase
+          .from('trainee_followups')
+          .update({
+            completed_date: new Date().toISOString().split('T')[0],
+            status: 'completed',
+            current_status: surveyData.current_status || 'Active',
+            current_income_range: surveyData.current_income_range || '₹10,000 – ₹20,000',
+            job_satisfaction_score: surveyData.job_satisfaction_score || 5,
+            skill_utilization_score: surveyData.skill_utilization_score || 5,
+            remarks: surveyData.remarks || 'Updated by trainee via web portal.'
+          })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('trainee_followups')
+          .insert({
+            trainee_id: profile.id,
+            milestone: milestone as any,
+            due_date: new Date().toISOString().split('T')[0],
+            completed_date: new Date().toISOString().split('T')[0],
+            status: 'completed',
+            current_status: surveyData.current_status || 'Active',
+            current_income_range: surveyData.current_income_range || '₹10,000 – ₹20,000',
+            job_satisfaction_score: surveyData.job_satisfaction_score || 5,
+            skill_utilization_score: surveyData.skill_utilization_score || 5,
+            remarks: surveyData.remarks || 'Recorded by trainee.'
+          });
+        if (error) throw error;
+      }
 
-      if (error) throw error;
       await loadUserData();
       return true;
     } catch (err: any) {
@@ -336,6 +461,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       followups,
       notifications,
       loading,
+      language,
+      setLanguage,
       refreshData: loadUserData,
       updateProfile,
       updateEmployment,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
 import { GovernmentDashboard } from '@/components/GovernmentDashboard';
@@ -12,26 +12,30 @@ import { TraineePortal } from '@/components/TraineePortal';
 import { LongitudinalTracker } from '@/components/LongitudinalTracker';
 import { CommunityHub } from '@/components/CommunityHub';
 import { AutomationHub } from '@/components/AutomationHub';
+import { CertificationsPage } from '@/components/CertificationsPage';
+import { TrainingDetailsPage } from '@/components/TrainingDetailsPage';
+import { DocumentsPage } from '@/components/DocumentsPage';
+import { HelpSupportPage } from '@/components/HelpSupportPage';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
-export default function Home() {
-  const [viewMode, setViewMode] = useState<'admin' | 'trainee'>('admin');
+export default function DashboardPage() {
+  const [viewMode, setViewMode] = useState<'admin' | 'trainee'>('trainee');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
       } else {
-        // Here we could fetch the user's role from the DB.
-        // Defaulting to trainee for demo purposes if they are a real user.
-        if (session.user.email !== 'admin@nexus.com') {
+        if (session.user.email === 'admin@nexus.com') {
+          setViewMode('admin');
+        } else {
           setViewMode('trainee');
         }
         setLoading(false);
@@ -46,12 +50,18 @@ export default function Home() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#070b14] flex items-center justify-center text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-slate-700">
+        <div className="flex items-center space-x-3 bg-white p-6 rounded-3xl border border-slate-200 shadow-xl">
+          <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="font-bold text-sm text-slate-800">Loading MahaSkill Track...</span>
+        </div>
+      </div>
+    );
   }
 
-
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
       <div className="flex flex-1 min-h-screen">
         
         {/* Desktop & Tablet Sidebar */}
@@ -66,8 +76,8 @@ export default function Home() {
         {/* Mobile Drawer Sidebar */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-            <div className="relative z-10 w-64 bg-[#0a1020] h-full shadow-2xl">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setIsMobileMenuOpen(false)} />
+            <div className="relative z-10 w-64 bg-white h-full shadow-2xl">
               <Sidebar 
                 viewMode={viewMode}
                 activeSection={activeSection}
@@ -95,7 +105,7 @@ export default function Home() {
               <>
                 {activeSection === 'dashboard' && <GovernmentDashboard />}
                 {activeSection === 'trainees' && <LongitudinalTracker />}
-                {activeSection === 'training' && <TraineePortal />}
+                {activeSection === 'training' && <TrainingDetailsPage />}
                 {activeSection === 'employment' && <LongitudinalTracker />}
                 {activeSection === 'follow-ups' && <AutomationHub />}
                 {activeSection === 'employers' && <CommunityHub />}
@@ -112,15 +122,15 @@ export default function Home() {
               <>
                 {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
                 {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
-                {activeSection === 'training-details' && <TraineePortal />}
-                {activeSection === 'certifications' && <TraineePortal />}
+                {activeSection === 'training-details' && <TrainingDetailsPage />}
+                {activeSection === 'certifications' && <CertificationsPage />}
                 {activeSection === 'employment-status' && <LongitudinalTracker />}
                 {activeSection === 'follow-ups' && <FollowupsPage />}
                 {activeSection === 'self-employment' && <SelfEmploymentModule />}
                 {activeSection === 'skill-development' && <TraineePortal />}
-                {activeSection === 'documents' && <SelfEmploymentModule />}
+                {activeSection === 'documents' && <DocumentsPage />}
                 {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
-                {activeSection === 'help-support' && <CommunityHub />}
+                {activeSection === 'help-support' && <HelpSupportPage />}
               </>
             )}
           </main>
