@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="50%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="crestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0f2fe" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background Rounded Shield / Tile -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bgGrad)" filter="url(#shadow)" />
+
+  <!-- Outer Ring Accent -->
+  <rect x="10" y="10" width="108" height="108" rx="26" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.3" />
+
+  <!-- Shield Shape -->
+  <path d="M64 26 C44 26 36 34 36 48 C36 76 64 98 64 98 C64 98 92 76 92 48 C92 34 84 26 64 26 Z" 
+        fill="url(#crestGrad)" 
+        opacity="0.95" />
+
+  <!-- Inner Skill Emblem: Upward Graduation & Growth Path -->
+  <rect x="46" y="62" width="6" height="14" rx="2" fill="#2563eb" />
+  <rect x="55" y="54" width="6" height="22" rx="2" fill="#1d4ed8" />
+  <rect x="64" y="46" width="6" height="30" rx="2" fill="#1e40af" />
+  <rect x="73" y="38" width="6" height="38" rx="2" fill="#1e3a8a" />
+
+  <!-- Star of Excellence at Top Right of Bars -->
+  <path d="M76 34 L77.5 38.5 L82 38.5 L78.5 41 L80 45.5 L76 43 L72 45.5 L73.5 41 L70 38.5 L74.5 38.5 Z" fill="#f59e0b" />
+</svg>
