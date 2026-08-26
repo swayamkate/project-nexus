@@ -1,0 +1,15 @@
+{
+  "/(admin)/audit/page": "/audit",
+  "/(admin)/billing/page": "/billing",
+  "/(admin)/page": "/",
+  "/(admin)/users/page": "/users",
+  "/(admin)/verifications/page": "/verifications",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/auth/me/route": "/api/auth/me",
+  "/api/auth/superadmin/route": "/api/auth/superadmin",
+  "/api/create-admin/route": "/api/create-admin",
+  "/auth/callback/page": "/auth/callback",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login"
+}

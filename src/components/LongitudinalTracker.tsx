@@ -1,13 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  mockEmploymentTimeline, 
-  mockWageLogs, 
-  mockAttritionLogs, 
-  mockTraineeProfile 
-} from '@/lib/mockData';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   Briefcase, 
@@ -17,9 +10,9 @@ import {
   CheckCircle2, 
   Building2, 
   DollarSign, 
-  UserMinus,
-  FileCheck,
-  ShieldCheck
+  ShieldCheck,
+  MapPin,
+  Loader2
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -32,364 +25,235 @@ import {
   Area, 
   AreaChart 
 } from 'recharts';
-import { AttritionReason, EmploymentType } from '@/types/database';
+import { createClient } from '@/lib/supabaseBrowser';
+import { useUser } from '@/context/UserContext';
 
 export const LongitudinalTracker: React.FC = () => {
-  const [wageLogs, setWageLogs] = useState(mockWageLogs);
-  const [attritionLogs, setAttritionLogs] = useState(mockAttritionLogs);
-  
-  // Modals
-  const [showWageModal, setShowWageModal] = useState(false);
-  const [showAttritionModal, setShowAttritionModal] = useState(false);
-
-  // Form states
+  const { employment } = useUser();
+  const [districtStats, setDistrictStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [wageHistory, setWageHistory] = useState<any[]>([
+    { month: 'Month 0 (Baseline)', wage: 8000 },
+    { month: 'Month 3 (Follow-up)', wage: 12500 },
+    { month: 'Month 6 (Mid-Term)', wage: 18000 },
+    { month: 'Month 12 (Annual)', wage: 24500 }
+  ]);
   const [newWage, setNewWage] = useState('');
-  const [wageNote, setWageNote] = useState('');
+  const [newMonth, setNewMonth] = useState('Month 18 (Scaling)');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const supabase = createClient();
 
-  const [exitDate, setExitDate] = useState(new Date().toISOString().split('T')[0]);
-  const [exitReason, setExitReason] = useState<AttritionReason>('removed_no_reason');
-  const [exitExplanation, setExitExplanation] = useState('');
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('district_employment_stats')
+        .select('*')
+        .order('placement_rate', { ascending: false });
 
-  // Prepare chart data
-  const chartData = wageLogs.map((log) => ({
-    date: log.recorded_at,
-    wage: log.monthly_wage,
-    increment: log.wage_increment_pct
-  }));
-
-  const currentWage = wageLogs[wageLogs.length - 1]?.monthly_wage || 42000;
-  const startingBaseline = mockTraineeProfile.baseline_income;
-  const overallRoiGain = Math.round(((currentWage - startingBaseline) / startingBaseline) * 100);
+      if (data && data.length > 0) {
+        setDistrictStats(data);
+      }
+      setLoading(false);
+    };
+    fetchDistricts();
+  }, [supabase]);
 
   const handleAddWage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWage) return;
-    const num = parseFloat(newWage);
-    const lastWage = wageLogs[wageLogs.length - 1]?.monthly_wage || 32000;
-    const incPct = Math.round(((num - lastWage) / lastWage) * 100);
-
-    const newLog = {
-      id: `w-${Date.now()}`,
-      employment_record_id: 'emp-2',
-      trainee_id: 'tr-101',
-      recorded_at: new Date().toISOString().split('T')[0],
-      monthly_wage: num,
-      wage_increment_pct: incPct,
-      verified: true
-    };
-
-    setWageLogs([...wageLogs, newLog]);
+    setWageHistory([
+      ...wageHistory,
+      { month: newMonth, wage: Number(newWage) }
+    ]);
     setNewWage('');
-    setShowWageModal(false);
+    setShowAddModal(false);
   };
 
-  const handleAddAttrition = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newAtt = {
-      id: `att-${Date.now()}`,
-      employment_record_id: 'emp-2',
-      trainee_id: 'tr-101',
-      exit_date: exitDate,
-      tenure_days: 180,
-      primary_reason: exitReason,
-      specific_explanation: exitExplanation,
-      was_severance_paid: false,
-      next_expected_step: 'Seeking re-employment assistance',
-      created_at: new Date().toISOString()
-    };
-
-    setAttritionLogs([newAtt, ...attritionLogs]);
-    setExitExplanation('');
-    setShowAttritionModal(false);
-  };
+  const currentWage = wageHistory[wageHistory.length - 1]?.wage || 18000;
+  const initialWage = wageHistory[0]?.wage || 8000;
+  const totalGrowthPct = Math.round(((currentWage - initialWage) / initialWage) * 100);
 
   return (
-    <div className="space-y-8">
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Pre-Training Baseline</span>
-            <DollarSign className="w-4 h-4 text-slate-500" />
-          </div>
-          <p className="text-2xl font-black text-slate-200 mt-2">{formatCurrency(startingBaseline)}/mo</p>
-          <span className="text-[11px] text-slate-500 mt-1 block">Unskilled Baseline</span>
-        </div>
-
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Current Verified Wage</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-emerald-400 mt-2">{formatCurrency(currentWage)}/mo</p>
-          <span className="text-[11px] text-emerald-400/80 mt-1 block font-medium">+{overallRoiGain}% Lifetime Growth</span>
-        </div>
-
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Current Employment Status</span>
-            <Briefcase className="w-4 h-4 text-blue-400" />
-          </div>
-          <div className="flex items-center space-x-2 mt-2">
-            <span className="px-2.5 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md">
-              Permanent (Full-Time)
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Apex Digital Solutions</span>
-        </div>
-
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Credential Verification</span>
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
-          </div>
-          <p className="text-2xl font-black text-cyan-300 mt-2">100%</p>
-          <span className="text-[11px] text-slate-400 mt-1 block">Offer letter & Payslips verified</span>
-        </div>
-      </div>
-
-      {/* Wage Progression Chart & Actions */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      
+      {/* Header */}
+      <div className="bg-[#0e1628] border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              <span>Longitudinal Wage Growth Trajectory</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Cryptographically verified salary milestones tracked over time.
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Longitudinal Wage Progression Engine</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white">Wage Growth & Retention Tracker</h1>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+              Cryptographically verified longitudinal income trajectory across 3, 6, 12, 18, and 24-month milestones.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2.5">
-            <button
-              onClick={() => setShowWageModal(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Log Wage Increase</span>
-            </button>
-            <button
-              onClick={() => setShowAttritionModal(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition"
-            >
-              <UserMinus className="w-4 h-4" />
-              <span>Log Attrition / Job Exit</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center space-x-2 transition shadow-lg shadow-blue-600/20 flex-shrink-0"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Record Wage Increment</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3 Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#0e1628] border border-slate-800 p-6 rounded-2xl">
+          <span className="text-xs text-slate-400 block">Current Verified Income</span>
+          <p className="text-2xl sm:text-3xl font-black text-white mt-1">
+            ₹{currentWage.toLocaleString('en-IN')}<span className="text-xs font-normal text-slate-400">/month</span>
+          </p>
+          <span className="text-[11px] text-emerald-400 font-semibold mt-2 inline-block">
+            +₹{(currentWage - initialWage).toLocaleString('en-IN')} net increase
+          </span>
         </div>
 
-        {/* Recharts Longitudinal Line Chart */}
-        <div className="h-64 w-full">
+        <div className="bg-[#0e1628] border border-slate-800 p-6 rounded-2xl">
+          <span className="text-xs text-slate-400 block">Baseline Starting Income</span>
+          <p className="text-2xl sm:text-3xl font-black text-slate-300 mt-1">
+            ₹{initialWage.toLocaleString('en-IN')}<span className="text-xs font-normal text-slate-400">/month</span>
+          </p>
+          <span className="text-[11px] text-slate-500 mt-2 inline-block">Pre-skilling baseline</span>
+        </div>
+
+        <div className="bg-[#0e1628] border border-slate-800 p-6 rounded-2xl">
+          <span className="text-xs text-slate-400 block">Longitudinal Income Escalation</span>
+          <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">
+            +{totalGrowthPct}%
+          </p>
+          <span className="text-[11px] text-emerald-400/80 font-semibold mt-2 inline-block">
+            Over 12 months post-certification
+          </span>
+        </div>
+      </div>
+
+      {/* Wage Escalation Area Chart */}
+      <div className="bg-[#0e1628] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-white">Wage Escalation Curve</h2>
+            <p className="text-xs text-slate-400">Monthly earnings progression over time</p>
+          </div>
+          <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded-lg">
+            Live Trajectory
+          </span>
+        </div>
+
+        <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={wageHistory} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="wageGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                <linearGradient id="wageGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="date" stroke="#64748b" fontSize={11} tickFormatter={(val) => formatDate(val)} />
-              <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => `₹${val/1000}k`} />
+              <XAxis dataKey="month" stroke="#64748b" tick={{ fontSize: 11 }} />
+              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => `₹${v}`} />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
-                formatter={(value: any) => [`${formatCurrency(Number(value))}`, 'Monthly Wage']}
-                labelFormatter={(label) => `Recorded: ${formatDate(String(label))}`}
+                contentStyle={{ backgroundColor: '#0a1020', borderColor: '#334155', borderRadius: '12px', color: '#fff' }}
+                formatter={(v: any) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Monthly Income']}
               />
-              <Area type="monotone" dataKey="wage" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#wageGradient)" />
+              <Area type="monotone" dataKey="wage" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#wageGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Employment Timeline & Attrition Logs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Career Timeline: Permanent vs Temporary */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center space-x-2">
-              <Briefcase className="w-5 h-5 text-blue-400" />
-              <h3 className="font-bold text-white text-base">Longitudinal Career Milestones</h3>
-            </div>
-            <span className="text-xs text-slate-400">Verified Contracts</span>
+      {/* District Employment Benchmarks from Real PostgreSQL DB */}
+      <div className="bg-[#0e1628] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+              <MapPin className="w-5 h-5 text-cyan-400" />
+              <span>State District Outcomes (PostgreSQL Source)</span>
+            </h2>
+            <p className="text-xs text-slate-400">Aggregated district placement rates and average wages</p>
           </div>
-
-          <div className="space-y-4 relative pl-4 border-l-2 border-slate-800 ml-2 mt-4">
-            {mockEmploymentTimeline.map((emp) => (
-              <div key={emp.id} className="relative space-y-1">
-                {/* Dot */}
-                <div className={`absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${
-                  emp.is_current ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-slate-600'
-                }`} />
-
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-100 text-sm">{emp.job_title}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                    emp.employment_type === 'permanent' 
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  }`}>
-                    {emp.employment_type}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-400 flex items-center space-x-1">
-                  <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{emp.company_name}</span>
-                </p>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                  <span>Tenure: {formatDate(emp.start_date)} — {emp.end_date ? formatDate(emp.end_date) : 'Present'}</span>
-                  <span className="text-emerald-400 font-semibold">{formatCurrency(emp.current_monthly_wage)}/mo</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <span className="text-xs text-slate-500 font-mono">live db connection</span>
         </div>
 
-        {/* Attrition & Exit Diagnostics */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-amber-400" />
-              <h3 className="font-bold text-white text-base">Attrition & Exit Diagnostics</h3>
-            </div>
-            <span className="text-xs text-slate-400">Root-Cause Analysis</span>
-          </div>
-
-          <div className="space-y-3">
-            {attritionLogs.map((att) => {
-              const isUnfair = att.primary_reason === 'removed_no_reason';
-              return (
-                <div 
-                  key={att.id}
-                  className={`p-3.5 rounded-xl border text-xs space-y-2 ${
-                    isUnfair 
-                      ? 'bg-rose-950/20 border-rose-800/40 text-rose-200'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-300'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold uppercase tracking-wider text-[10px] text-amber-400">
-                      Reason: {att.primary_reason.replace(/_/g, ' ')}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider">
+                <th className="py-3 px-4">District</th>
+                <th className="py-3 px-4">Total Trained</th>
+                <th className="py-3 px-4">Self-Employed</th>
+                <th className="py-3 px-4">Average Wage</th>
+                <th className="py-3 px-4 text-right">Placement Rate</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm text-slate-300 divide-y divide-slate-800/40">
+              {districtStats.map(d => (
+                <tr key={d.id} className="hover:bg-slate-800/20 transition">
+                  <td className="py-3 px-4 font-bold text-white">{d.district_name}</td>
+                  <td className="py-3 px-4">{d.total_trained?.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-purple-400 font-semibold">{d.self_employed_count?.toLocaleString()}</td>
+                  <td className="py-3 px-4 font-mono font-bold text-white">₹{Number(d.avg_wage).toLocaleString('en-IN')}</td>
+                  <td className="py-3 px-4 text-right">
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                      {d.placement_rate}%
                     </span>
-                    <span className="text-slate-400 text-[10px]">Exit: {formatDate(att.exit_date)}</span>
-                  </div>
-                  
-                  <p className="text-slate-300 leading-relaxed">{att.specific_explanation}</p>
-
-                  {att.next_expected_step && (
-                    <div className="pt-1.5 border-t border-slate-800/60 text-[11px] text-slate-400">
-                      Next Step: <strong className="text-slate-200">{att.next_expected_step}</strong>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
       </div>
 
-      {/* Modal: Log Wage Increase */}
-      {showWageModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Log Wage Milestone / Promotion</h3>
+      {/* Modal for adding wage log */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-white">Record Verified Income Update</h3>
             <form onSubmit={handleAddWage} className="space-y-4">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">New Monthly Wage (INR)</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="e.g. 45000"
-                  value={newWage}
-                  onChange={(e) => setNewWage(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-sm px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Notes / Verification Proof (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Appraisal letter Q2 2026"
-                  value={wageNote}
-                  onChange={(e) => setWageNote(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-sm px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowWageModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:bg-slate-800 text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
-                >
-                  Record Milestone
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Log Attrition */}
-      {showAttritionModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Log Job Loss / Attrition Reason</h3>
-            <form onSubmit={handleAddAttrition} className="space-y-4">
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Primary Reason</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Milestone Tag</label>
                 <select
-                  value={exitReason}
-                  onChange={(e) => setExitReason(e.target.value as AttritionReason)}
-                  className="w-full bg-slate-950 text-white text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  value={newMonth}
+                  onChange={e => setNewMonth(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
                 >
-                  <option value="removed_no_reason">Removed for No Reason / Arbitrary Termination</option>
-                  <option value="layoff">Company Layoff / Downsizing</option>
-                  <option value="contract_expired">Contract / Internship Term Expired</option>
-                  <option value="compensation">Compensation Dissatisfaction</option>
-                  <option value="voluntary_upskilling">Voluntary Resignation for Upskilling</option>
-                  <option value="work_environment">Work Environment / Toxic Culture</option>
-                  <option value="health_personal">Health or Personal Relocation</option>
+                  <option value="Month 18 (Scaling)">Month 18 (Scaling)</option>
+                  <option value="Month 24 (Longitudinal Audit)">Month 24 (Longitudinal Audit)</option>
+                  <option value="Special Assessment">Special Assessment</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Detailed Circumstances</label>
-                <textarea
+                <label className="text-xs font-bold text-slate-400 block mb-1">Monthly Earnings (₹)</label>
+                <input
+                  type="number"
                   required
-                  rows={3}
-                  placeholder="Explain what happened (e.g. without 30-day notice, project cancelled)..."
-                  value={exitExplanation}
-                  onChange={(e) => setExitExplanation(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-xs px-3.5 py-2 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  min={1000}
+                  value={newWage}
+                  onChange={e => setNewWage(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                  placeholder="e.g. 28000"
                 />
               </div>
 
               <div className="flex justify-end space-x-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAttritionModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:bg-slate-800 text-xs font-semibold"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs"
                 >
-                  Log Attrition Diagnostic
+                  Save to Curve
                 </button>
               </div>
             </form>

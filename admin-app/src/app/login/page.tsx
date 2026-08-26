@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, Mail, Lock, Loader2, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, Mail, Lock, Loader2, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -19,11 +20,13 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
+      const emailOrUser = identifier.trim();
+
       // 1. Try Superadmin Environment Variable Authentication
       const saRes = await fetch('/api/auth/superadmin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: emailOrUser, password })
       });
       
       if (saRes.ok) {
@@ -32,13 +35,41 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // 2. Try standard Supabase Auth (for created sub-admins)
-      const { error: sbError } = await supabase.auth.signInWithPassword({
-        email,
+      // 2. If username, lookup email
+      let loginEmail = emailOrUser;
+      if (!loginEmail.includes('@')) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('email')
+          .eq('username', loginEmail.toLowerCase())
+          .in('role', ['admin', 'superadmin'])
+          .maybeSingle();
+
+        if (userRole?.email) {
+          loginEmail = userRole.email;
+        }
+      }
+
+      // 3. Try standard Supabase Auth for assigned sub-admins
+      const { data: authData, error: sbError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
         password,
       });
       
-      if (sbError) throw new Error('Invalid administrative credentials.');
+      if (sbError) throw new Error('Invalid administrative credentials or account unconfirmed.');
+
+      // 4. Verify admin role exists
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .in('role', ['admin', 'superadmin', 'evaluator'])
+        .maybeSingle();
+
+      if (!roleData) {
+        await supabase.auth.signOut();
+        throw new Error('Access Denied: This account lacks administrative privileges.');
+      }
       
       router.push('/');
       router.refresh();
@@ -84,21 +115,21 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3.5 rounded-xl mb-4 text-center">
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3.5 rounded-xl mb-4 text-center leading-relaxed">
               {error}
             </div>
           )}
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Admin Email / Username</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1.5">Admin Email or Username</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
                   placeholder="admin@nexus.com"
                 />
@@ -110,13 +141,21 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
                   placeholder="••••••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -134,7 +173,7 @@ export default function AdminLoginPage() {
       </main>
 
       <footer className="text-center py-5 text-[11px] text-slate-500 z-10">
-        Unauthorized access attempts are logged and monitored.
+        Unauthorized access attempts are cryptographically audited.
       </footer>
     </div>
   );

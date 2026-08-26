@@ -30,14 +30,17 @@
 - **`JWT_SECRET`:** `super-secret-jwt-token-with-at-least-32-characters-long-sih2026-nexus`
 
 ### Database Passwords
-- **PostgreSQL User:** `postgres`
-- **PostgreSQL Password:** `Avishkar@443322`
+| Service | Credentials | Context |
+| :--- | :--- | :--- |
+| **Database User & Password** | `postgres` / `Avishkar_443322` | Direct PostgreSQL / Supavisor connection |
+| **Supabase Studio User & Pass** | `Avishkar` / `Avishkar_443322` | Web GUI for managing database tables |
+
 - **PostgreSQL Internal Host/Port:** `localhost:5432` / `db:5432`
 
 ### Supabase Studio Web Login
 - **URL:** [https://studio.avishkark.in](https://studio.avishkark.in)
 - **Username:** `Avishkar`
-- **Password:** `Avishkar@443322`
+- **Password:** `Avishkar_443322`
 
 ### Superadmin Portal Credentials
 - **URL:** [https://administrator.avishkark.in/login](https://administrator.avishkark.in/login)

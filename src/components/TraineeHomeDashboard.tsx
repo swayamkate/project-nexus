@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   GraduationCap, 
   Award, 
@@ -17,80 +17,142 @@ import {
   Compass, 
   FileText, 
   Sparkles,
-  Bell
+  Bell,
+  PlusCircle,
+  TrendingUp,
+  ShieldCheck,
+  ExternalLink
 } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
+import { createClient } from '@/lib/supabaseBrowser';
 
 interface TraineeHomeDashboardProps {
   onNavigate: (section: string) => void;
 }
 
 export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNavigate }) => {
+  const { user, profile, employment, enrollments, followups } = useUser();
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      const { data } = await supabase
+        .from('recommended_opportunities')
+        .select('*')
+        .eq('is_active', true)
+        .limit(3);
+      if (data && data.length > 0) {
+        setOpportunities(data);
+      }
+    };
+    fetchOpportunities();
+  }, [supabase]);
+
+  // Derived Real Calculations
+  const completedTrainingsCount = enrollments.filter(e => e.status === 'completed' || e.status === 'certified').length;
+  const certificationsCount = enrollments.filter(e => !!e.certificate_id || e.status === 'certified').length;
+  
+  const employmentStatusLabel = employment?.status 
+    ? employment.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+    : 'Not Recorded';
+
+  const isSelfEmployed = employment?.status === 'self_employed';
+  const hasBusinessDetails = isSelfEmployed && employment?.business_name;
+
+  // Real Milestone Timeline
+  const accountCreatedDate = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
+  const primaryEnrollment = enrollments[0];
+
   const journeySteps = [
-    { title: 'Training Enrolled', date: '10 Apr 2024', status: 'completed' },
-    { title: 'Training Completed', date: '30 Jun 2024', status: 'completed' },
-    { title: 'Certified', date: '15 Jul 2024', status: 'completed' },
-    { title: 'Self-Employed', date: '01 Aug 2024', status: 'completed' },
-    { title: 'Next Follow-up', date: '20 Jun 2025', status: 'upcoming' },
-  ];
-
-  const followUpCards = [
     {
-      title: '3 Months Follow-up',
-      status: 'Completed',
-      date: '20 Nov 2024',
-      bizStatus: 'Active',
-      income: '₹5,000 – ₹10,000',
-      actionText: 'View Details'
+      title: 'Portal Enrolled',
+      date: accountCreatedDate,
+      completed: true
     },
     {
-      title: '6 Months Follow-up',
-      status: 'Completed',
-      date: '20 Feb 2025',
-      bizStatus: 'Active',
-      income: '₹10,000 – ₹20,000',
-      actionText: 'View Details'
+      title: primaryEnrollment?.training_programs?.title || 'Skilling Course',
+      date: primaryEnrollment?.enrolled_date ? new Date(primaryEnrollment.enrolled_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'In Progress',
+      completed: !!primaryEnrollment
     },
     {
-      title: '12 Months Follow-up',
-      status: 'Upcoming',
-      date: '20 Aug 2025',
-      bizStatus: '-',
-      income: '-',
-      actionText: 'Update When Due'
-    },
-  ];
-
-  const opportunities = [
-    {
-      title: 'Digital Marketing Advanced Course',
-      type: 'Online Course',
-      icon: 'course',
-      tag: 'Online Course'
+      title: 'Certified',
+      date: primaryEnrollment?.certified_date ? new Date(primaryEnrollment.certified_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pending Assessment',
+      completed: certificationsCount > 0
     },
     {
-      title: 'Government Scheme for Entrepreneurs',
-      type: 'PMEGP Scheme',
-      icon: 'scheme',
-      tag: 'PMEGP Scheme'
+      title: employmentStatusLabel,
+      date: employment?.establishment_date || employment?.joining_date || 'Status Active',
+      completed: !!employment?.status
     },
     {
-      title: 'Join Local Business Network',
-      type: 'Connect & Grow',
-      icon: 'network',
-      tag: 'Connect & Grow'
-    },
-  ];
-
-  const notifications = [
-    { text: 'Your 3 Months follow-up has been recorded successfully.', date: '20 Nov 2024' },
-    { text: "New course 'Advanced Tailoring Techniques' is available.", date: '05 Dec 2024' },
-    { text: 'Your next follow-up is due on 20 Jun 2025.', date: '20 May 2025' },
+      title: 'Next Follow-up',
+      date: followups[0]?.due_date || 'Scheduled in 90 Days',
+      completed: followups.some(f => f.status === 'completed')
+    }
   ];
 
   return (
     <div className="space-y-6 pb-12">
+      
+      {/* Welcome Banner with Profile Completion */}
+      <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-[#0e1628] border border-blue-500/25 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xl">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Verified Trainee Profile</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              {profile?.full_name || user?.email?.split('@')[0]}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+              Track your certifications, wage growth, longitudinal milestones, and official verification proofs in real-time.
+            </p>
+          </div>
+
+          {/* Profile Completion Meter */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center space-x-4 min-w-[240px]">
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <svg className="w-14 h-14 transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-slate-800"
+                  strokeWidth="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-blue-500"
+                  strokeDasharray={`${profile?.profile_completion_pct || 40}, 100`}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <span className="absolute text-xs font-black text-white">
+                {profile?.profile_completion_pct || 40}%
+              </span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">Profile Readiness</p>
+              <button 
+                onClick={() => onNavigate('my-profile')}
+                className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold mt-0.5 flex items-center"
+              >
+                <span>Edit Profile</span>
+                <ChevronRight className="w-3 h-3 ml-0.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 4 Top KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
         {/* Training Completed */}
         <div className="bg-[#0e1628] border border-slate-800/90 p-5 rounded-2xl shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex items-center space-x-3">
@@ -98,15 +160,15 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs text-slate-400 font-medium">Training Completed</span>
-              <p className="text-2xl font-black text-white">1</p>
+              <span className="text-xs text-slate-400 font-medium">Training Programs</span>
+              <p className="text-2xl font-black text-white">{completedTrainingsCount}</p>
             </div>
           </div>
           <button 
             onClick={() => onNavigate('training-details')}
             className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center space-x-1"
           >
-            <span>View Details</span>
+            <span>View Programs</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -118,15 +180,15 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Award className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs text-slate-400 font-medium">Certifications</span>
-              <p className="text-2xl font-black text-white">1</p>
+              <span className="text-xs text-slate-400 font-medium">Verified Certifications</span>
+              <p className="text-2xl font-black text-white">{certificationsCount}</p>
             </div>
           </div>
           <button 
             onClick={() => onNavigate('certifications')}
             className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center space-x-1"
           >
-            <span>View Details</span>
+            <span>View Certificates</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -138,15 +200,17 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs text-slate-400 font-medium">Employment Status</span>
-              <p className="text-lg font-black text-white">Self-Employed</p>
+              <span className="text-xs text-slate-400 font-medium">Outcome Status</span>
+              <p className="text-base font-extrabold text-white truncate max-w-[150px]">
+                {employmentStatusLabel}
+              </p>
             </div>
           </div>
           <button 
-            onClick={() => onNavigate('employment-status')}
+            onClick={() => onNavigate(isSelfEmployed ? 'self-employment' : 'employment-status')}
             className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center space-x-1"
           >
-            <span>View Details</span>
+            <span>Update Status</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -158,294 +222,149 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs text-slate-400 font-medium">Next Follow-up</span>
-              <p className="text-xl font-black text-amber-400">85 Days Left</p>
+              <span className="text-xs text-slate-400 font-medium">Longitudinal Survey</span>
+              <p className="text-sm font-black text-amber-400">
+                {followups[0]?.milestone ? followups[0].milestone.replace('_', ' ').toUpperCase() : 'M+3 Milestone'}
+              </p>
             </div>
           </div>
           <button 
             onClick={() => onNavigate('follow-ups')}
             className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center space-x-1"
           >
-            <span>View Details</span>
+            <span>Survey Center</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* My Journey (5-Step Stepper Timeline) */}
+      {/* 5-Step Stepper Journey Timeline */}
       <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-6">
-        <h3 className="font-bold text-white text-base">My Journey</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-white text-base">Longitudinal Career Stepper</h3>
+          <span className="text-xs text-slate-400">Phase 1 Lifecycle Tracking</span>
+        </div>
 
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 px-2 sm:px-6">
-          {/* Connector Line behind steps */}
           <div className="hidden md:block absolute left-12 right-12 top-5 h-0.5 bg-slate-800 z-0" />
 
-          {journeySteps.map((step, idx) => {
-            const isCompleted = step.status === 'completed';
-            return (
-              <div key={idx} className="relative z-10 flex flex-col items-center text-center space-y-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                  isCompleted 
-                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
-                    : 'bg-blue-600/20 border-blue-400 text-blue-400'
-                }`}>
-                  {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Calendar className="w-5 h-5" />}
-                </div>
-
-                <div className="space-y-0.5">
-                  <h4 className="text-xs font-bold text-slate-100">{step.title}</h4>
-                  <p className="text-[11px] text-slate-400">{step.date}</p>
-                </div>
-
-                {isCompleted && (
-                  <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">
-                    ✓
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Middle Grid: Self-Employment Overview & Upcoming Follow-up */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Self-Employment Overview (7 cols) */}
-        <div className="lg:col-span-7 bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-5">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-white text-base">Self-Employment Overview</h3>
-            <span className="text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
-              Active
-            </span>
-          </div>
-
-          <div className="space-y-3.5 text-xs">
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60">
-              <span className="text-slate-400 flex items-center space-x-2">
-                <Building2 className="w-4 h-4 text-slate-500" />
-                <span>Business Type</span>
-              </span>
-              <span className="font-bold text-slate-200">Tailoring Services</span>
-            </div>
-
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60">
-              <span className="text-slate-400 flex items-center space-x-2">
-                <Briefcase className="w-4 h-4 text-slate-500" />
-                <span>Business Name</span>
-              </span>
-              <span className="font-bold text-slate-200">Priya Stitch Works</span>
-            </div>
-
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60">
-              <span className="text-slate-400 flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span>Start Date</span>
-              </span>
-              <span className="font-bold text-slate-200">01 Aug 2024</span>
-            </div>
-
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60">
-              <span className="text-slate-400 flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-slate-500" />
-                <span>Location</span>
-              </span>
-              <span className="font-bold text-slate-200">Pune, Maharashtra</span>
-            </div>
-
-            <div className="flex justify-between items-center py-1.5">
-              <span className="text-slate-400 flex items-center space-x-2">
-                <DollarSign className="w-4 h-4 text-slate-500" />
-                <span>Monthly Income Range</span>
-              </span>
-              <span className="font-bold text-emerald-400">₹10,000 – ₹20,000</span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <button 
-              onClick={() => onNavigate('self-employment')}
-              className="w-full py-2.5 rounded-xl border border-blue-500/40 text-blue-400 hover:bg-blue-500/10 text-xs font-bold transition text-center block"
-            >
-              Update Business Details
-            </button>
-          </div>
-        </div>
-
-        {/* Upcoming Follow-up Card (5 cols) */}
-        <div className="lg:col-span-5 bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-6">
-          <div className="flex items-center space-x-2 text-blue-400">
-            <Calendar className="w-5 h-5" />
-            <h3 className="font-bold text-white text-base">Upcoming Follow-up</h3>
-          </div>
-
-          <div className="text-center space-y-2 py-4">
-            <p className="text-xs text-slate-400">Your next follow-up is due on</p>
-            <p className="text-2xl font-black text-slate-100">20 Jun 2025</p>
-            <span className="text-xs text-blue-400 font-medium block">(6 Months Follow-up)</span>
-          </div>
-
-          <button 
-            onClick={() => onNavigate('follow-ups')}
-            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-md shadow-blue-600/20"
-          >
-            Update Follow-up
-          </button>
-        </div>
-
-      </div>
-
-      {/* Follow-up History (Cards Grid) */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-white text-base">Follow-up History</h3>
-          <span 
-            onClick={() => onNavigate('follow-ups')}
-            className="text-xs text-blue-400 font-semibold cursor-pointer"
-          >
-            View All
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {followUpCards.map((card, idx) => (
-            <div 
-              key={idx}
-              className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-100 text-sm">{card.title}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    card.status === 'Completed'
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                  }`}>
-                    {card.status}
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Date:</span>
-                    <strong className="text-slate-200">{card.date}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Business Status:</span>
-                    <span className={card.bizStatus === 'Active' ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
-                      {card.bizStatus}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Income Range:</span>
-                    <strong className="text-slate-200">{card.income}</strong>
-                  </div>
-                </div>
+          {journeySteps.map((step, idx) => (
+            <div key={idx} className="relative z-10 flex flex-col items-center text-center space-y-2">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition ${
+                step.completed 
+                  ? 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
+                  : 'bg-slate-900 border-slate-700 text-slate-500'
+              }`}>
+                {step.completed ? <CheckCircle2 className="w-5 h-5" /> : <Calendar className="w-5 h-5" />}
               </div>
 
-              <button 
-                onClick={() => onNavigate('follow-ups')}
-                className={`w-full py-2 rounded-xl text-xs font-bold border transition ${
-                  card.status === 'Completed'
-                    ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                    : 'border-blue-500/40 text-blue-400 hover:bg-blue-500/10'
-                }`}
-              >
-                {card.actionText}
-              </button>
+              <div className="space-y-0.5">
+                <h4 className="text-xs font-bold text-slate-100">{step.title}</h4>
+                <p className="text-[11px] text-slate-400">{step.date}</p>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Recommended Opportunities for You */}
+      {/* Dynamic Self-Employment Details OR Setup Prompt */}
+      {hasBusinessDetails ? (
+        <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">{employment.business_name}</h3>
+                <p className="text-xs text-slate-400">{employment.business_type || 'Micro-Enterprise'}</p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg uppercase">
+              {employment.business_status || 'Active'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-800">
+            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+              <span className="text-xs text-slate-400 block">Monthly Revenue</span>
+              <p className="text-lg font-black text-white mt-1">
+                ₹{Number(employment.monthly_revenue || 0).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+              <span className="text-xs text-slate-400 block">Udyam Registration</span>
+              <p className="text-sm font-mono font-bold text-blue-400 mt-1 truncate">
+                {employment.udyam_number || 'Pending Submission'}
+              </p>
+            </div>
+            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+              <span className="text-xs text-slate-400 block">District / Location</span>
+              <p className="text-sm font-bold text-white mt-1">
+                {profile?.district || 'Maharashtra'}, India
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigate('self-employment')}
+            className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white font-bold rounded-xl border border-slate-800 text-xs transition flex items-center justify-center space-x-2"
+          >
+            <span>Update Business & Upload GST/Udyam Documents</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-purple-950/40 via-[#0e1628] to-[#0e1628] border border-purple-500/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <Briefcase className="w-5 h-5 text-purple-400" />
+              <h3 className="font-bold text-white text-base">Record Your Employment or Self-Employment</h3>
+            </div>
+            <p className="text-xs text-slate-400 max-w-xl leading-relaxed">
+              Register your business, start-up details, or job placement to begin measuring your real-time wage progression and unlock government MSME benefits.
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigate('self-employment')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center space-x-2 text-xs flex-shrink-0"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Setup Business Details</span>
+          </button>
+        </div>
+      )}
+
+      {/* Recommended Opportunities from Real Database */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-white text-base">Recommended Opportunities for You</h3>
-          <span className="text-xs text-blue-400 font-semibold cursor-pointer">View All</span>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-white text-base">Government Schemes & Upskilling Opportunities</h3>
+          <span className="text-xs text-blue-400 font-semibold">Matched to Your Sector</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {opportunities.map((opp, idx) => (
-            <div 
-              key={idx}
-              className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between"
-            >
-              <div className="flex items-start space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-100 text-xs leading-snug">{opp.title}</h4>
-                  <span className="text-[10px] text-slate-400 font-medium block mt-1">{opp.tag}</span>
-                </div>
+            <div key={opp.id || idx} className="bg-[#0e1628] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition">
+              <div className="space-y-2">
+                <span className="inline-block px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold rounded-md uppercase">
+                  {opp.category}
+                </span>
+                <h4 className="font-bold text-white text-sm leading-snug">{opp.title}</h4>
+                <p className="text-xs text-slate-400 line-clamp-2">{opp.description}</p>
               </div>
 
-              <button 
-                onClick={() => alert(`Details opened for: ${opp.title}`)}
-                className="w-full py-2 rounded-xl text-xs font-bold border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              <a 
+                href={opp.link_url || '#'} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center space-x-1 pt-2 border-t border-slate-800"
               >
-                View Details
-              </button>
+                <span>Apply / Learn More</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Bottom Grid: Quick Links & Recent Notifications */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Quick Links */}
-        <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-white text-sm">Quick Links</h3>
-          <div className="space-y-2">
-            {[
-              { label: 'Download Certificate', icon: Download },
-              { label: 'Explore Courses', icon: Compass },
-              { label: 'Update Documents', icon: FileText },
-              { label: 'Career Guidance', icon: Sparkles },
-            ].map((link, idx) => {
-              const Icon = link.icon;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => alert(`Navigating to: ${link.label}`)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 text-slate-200 text-xs font-semibold transition"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Icon className="w-4 h-4 text-blue-400" />
-                    <span>{link.label}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Recent Notifications */}
-        <div className="bg-[#0e1628] border border-slate-800/90 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-white text-sm">Recent Notifications</h3>
-            <span className="text-xs text-blue-400 font-semibold cursor-pointer">View All</span>
-          </div>
-
-          <div className="space-y-3">
-            {notifications.map((notif, idx) => (
-              <div 
-                key={idx}
-                className="flex items-start justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800/60 text-xs gap-3"
-              >
-                <div className="flex items-start space-x-2.5">
-                  <Bell className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                  <p className="text-slate-300 leading-snug">{notif.text}</p>
-                </div>
-                <span className="text-[10px] text-slate-500 shrink-0 whitespace-nowrap">{notif.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
 
     </div>
