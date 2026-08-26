@@ -32,7 +32,7 @@ export default function LoginPage() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -40,7 +40,23 @@ export default function LoginPage() {
           },
         });
         if (error) throw error;
-        setSuccessMsg('Verification link sent! Check your inbox to confirm your account.');
+        
+        if (data.session) {
+          router.push('/dashboard');
+          router.refresh();
+        } else {
+          // If auto-confirm is on, sign them in directly
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (!signInErr) {
+            router.push('/dashboard');
+            router.refresh();
+            return;
+          }
+          setSuccessMsg('Account created! Please check your email if confirmation is required.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please try again.');
