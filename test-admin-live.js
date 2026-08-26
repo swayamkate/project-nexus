@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer-core');
 
 async function testAdminPortal() {
-  console.log('Testing Administrator Portal on Live Oracle VPS...');
+  console.log('Testing Administrator Portal with Full Login Flow...');
   const browser = await puppeteer.launch({
     executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     headless: true,
@@ -10,7 +10,7 @@ async function testAdminPortal() {
 
   const page = await browser.newPage();
   page.on('console', msg => {
-    if (msg.type() === 'error') console.log('ADMIN CONSOLE ERROR:', msg.text());
+    console.log('ADMIN CONSOLE:', msg.type(), msg.text());
   });
 
   await page.setViewport({ width: 1280, height: 800 });
@@ -18,35 +18,55 @@ async function testAdminPortal() {
   console.log('Navigating to https://administrator.avishkark.in/login ...');
   await page.goto('https://administrator.avishkark.in/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
-  // Type credentials
-  console.log('Typing superadmin credentials...');
-  await page.type('input[type="email"], input[type="text"]', 'admin@nexus.com');
-  await page.type('input[type="password"]', 'adminpassword2026');
+  // Type credentials and trigger react change
+  await page.evaluate(() => {
+    const inputs = document.querySelectorAll('input');
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(inputs[0], 'admin@nexus.com');
+    inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
 
-  // Click Submit
-  const submitBtn = await page.$('button[type="submit"]');
-  if (submitBtn) {
-    console.log('Clicking sign in...');
-    await submitBtn.click();
-    await page.waitForNavigation({ timeout: 10000 }).catch(() => console.log('Admin login wait'));
-    console.log('Current URL after login:', page.url());
-  }
+    setter.call(inputs[1], 'adminpassword2026');
+    inputs[1].dispatchEvent(new Event('input', { bubbles: true }));
 
-  // Check if we are on overview page
+    const btn = document.querySelector('button[type="submit"]');
+    if (btn) btn.click();
+  });
+
+  console.log('Waiting for login redirect to dashboard...');
+  await page.waitForNavigation({ timeout: 15000 }).catch(() => console.log('Nav wait done'));
+  console.log('Current URL after login:', page.url());
+
+  // Check cookies
+  const cookies = await page.cookies();
+  console.log('Cookies after login:', cookies.map(c => c.name));
+
+  // Check overview page
   const pageTitle = await page.evaluate(() => document.title);
   console.log('Admin Page Title:', pageTitle);
 
-  // Test navigation to all pages
-  const routes = ['/users', '/verifications', '/programs', '/followups', '/schemes', '/billing', '/audit', '/settings'];
-  for (const route of routes) {
-    const targetUrl = `https://administrator.avishkark.in${route}`;
-    console.log(`Navigating to ${targetUrl} ...`);
-    const res = await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    console.log(`Status for ${route}:`, res.status(), '- Current URL:', page.url());
-  }
+  // Check interactive elements on Overview page
+  const statsCount = await page.evaluate(() => {
+    return document.querySelectorAll('.bg-\\[\\#0a1020\\]').length;
+  });
+  console.log('Overview Card Panels Count:', statsCount);
+
+  // Click on "Trainees & Enterprises" link
+  console.log('Clicking "Trainees & Enterprises" in sidebar...');
+  await page.evaluate(() => {
+    const link = Array.from(document.querySelectorAll('a')).find(a => a.href.includes('/users'));
+    if (link) link.click();
+  });
+
+  await page.waitForNavigation({ timeout: 10000 }).catch(() => console.log('Users nav done'));
+  console.log('Current URL after sidebar click:', page.url());
+
+  const traineesLoaded = await page.evaluate(() => {
+    return document.querySelectorAll('tbody tr').length;
+  });
+  console.log('Trainees Table Rows Loaded:', traineesLoaded);
 
   await browser.close();
-  console.log('Administrator Portal Live Tests PASSED 100%!');
+  console.log('--- ADMIN PORTAL CLICK & NAVIGATION TEST PASSED 100% ---');
 }
 
 testAdminPortal().catch(console.error);

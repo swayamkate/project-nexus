@@ -30,8 +30,7 @@ export default function AdminLoginPage() {
       });
       
       if (saRes.ok) {
-        router.push('/');
-        router.refresh();
+        window.location.href = '/';
         return;
       }
 
@@ -71,8 +70,7 @@ export default function AdminLoginPage() {
         throw new Error('Access Denied: This account lacks administrative privileges.');
       }
       
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Authentication failed.');
     } finally {

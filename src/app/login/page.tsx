@@ -116,8 +116,7 @@ export default function LoginPage() {
         throw signInErr;
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'Authentication request failed. Please check your credentials.');
     } finally {
@@ -174,8 +173,7 @@ export default function LoginPage() {
       if (signUpErr) throw signUpErr;
 
       if (data.session) {
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       } else {
         setOtpEmail(cleanEmail);
         setAuthMode('otp_verify');
@@ -250,8 +248,7 @@ export default function LoginPage() {
 
       setSuccessMsg('Account verified successfully! Redirecting to dashboard...');
       setTimeout(() => {
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       }, 1000);
     } catch (err: any) {
       setError(err.message);
