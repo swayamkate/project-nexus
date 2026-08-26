@@ -42,7 +42,7 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 CREATE TABLE IF NOT EXISTS public.user_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     username VARCHAR(100),
     role user_role NOT NULL DEFAULT 'trainee',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
