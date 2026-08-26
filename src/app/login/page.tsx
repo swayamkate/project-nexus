@@ -1,93 +1,277 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
-import { Shield, Mail, Lock, Loader2, ArrowRight, CheckCircle2, Sparkles, Eye, EyeOff, User, AtSign } from 'lucide-react';
+import { 
+  Shield, 
+  Mail, 
+  Lock, 
+  Loader2, 
+  ArrowRight, 
+  CheckCircle2, 
+  Sparkles, 
+  Eye, 
+  EyeOff, 
+  User, 
+  AtSign,
+  KeyRound,
+  RotateCcw,
+  ChevronLeft
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState(''); // Email or Username
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Auth flow step: 'login' | 'signup' | 'otp_verify'
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'otp_verify'>('login');
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [resendCooldown, setResendCooldown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const supabase = createClient();
 
-  const handleAuth = async (e: React.FormEvent) => {
+  // Resend countdown timer
+  useEffect(() => {
+    let timer: any;
+    if (authMode === 'otp_verify' && resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [authMode, resendCooldown]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
 
     try {
-      if (isLogin) {
-        let authEmail = identifier.trim();
+      let authEmail = identifier.trim();
 
-        // If user entered a username (no @), look up their email from the trainees table
-        if (!authEmail.includes('@')) {
-          const { data: trainee, error: lookupErr } = await supabase
-            .from('trainees')
-            .select('email')
-            .eq('username', authEmail.toLowerCase())
-            .maybeSingle();
+      // If user entered a username (no @), look up their email from public.trainees
+      if (!authEmail.includes('@')) {
+        const { data: trainee, error: lookupErr } = await supabase
+          .from('trainees')
+          .select('email')
+          .eq('username', authEmail.toLowerCase())
+          .maybeSingle();
 
-          if (lookupErr || !trainee?.email) {
-            throw new Error(`Username "${authEmail}" not found. Please enter your registered email address.`);
-          }
-          authEmail = trainee.email;
+        if (lookupErr || !trainee?.email) {
+          throw new Error(`Username "${authEmail}" not found. Please enter your registered email address.`);
         }
+        authEmail = trainee.email;
+      }
 
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password,
-        });
+      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password,
+      });
 
-        if (signInErr) {
-          if (signInErr.message.includes('Email not confirmed')) {
-            throw new Error('Your email address has not been confirmed yet. Please check your inbox for the verification link sent by Resend.');
-          }
-          throw signInErr;
+      if (signInErr) {
+        if (signInErr.message.includes('Email not confirmed')) {
+          setOtpEmail(authEmail);
+          setAuthMode('otp_verify');
+          setResendCooldown(60);
+          setCanResend(false);
+          throw new Error('Your email address has not been confirmed yet. We have opened the verification screen for you.');
         }
+        throw signInErr;
+      }
 
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || 'Authentication request failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      if (!identifier.includes('@')) {
+        throw new Error('Please enter a valid email address for account registration.');
+      }
+
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match. Please verify and retype your password.');
+      }
+
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long.');
+      }
+
+      const cleanUsername = (username || identifier.split('@')[0]).trim().toLowerCase();
+      const cleanEmail = identifier.trim().toLowerCase();
+
+      // 1. Check if username is already taken
+      const { data: existingUser } = await supabase
+        .from('trainees')
+        .select('id')
+        .eq('username', cleanUsername)
+        .maybeSingle();
+
+      if (existingUser) {
+        throw new Error(`Username "${cleanUsername}" is already taken. Please choose another username.`);
+      }
+
+      // 2. Call Supabase SignUp (dispatches real confirmation email via Resend SMTP)
+      const { data, error: signUpErr } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            username: cleanUsername,
+            full_name: fullName.trim() || cleanUsername,
+          }
+        },
+      });
+
+      if (signUpErr) throw signUpErr;
+
+      if (data.session) {
+        // Autoconfirmed fallback
         router.push('/dashboard');
         router.refresh();
       } else {
-        // Validation for registration
-        if (!identifier.includes('@')) {
-          throw new Error('Please enter a valid email address for account registration.');
-        }
-
-        const cleanUsername = (username || identifier.split('@')[0]).trim().toLowerCase();
-
-        const { data, error: signUpErr } = await supabase.auth.signUp({
-          email: identifier.trim(),
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: {
-              username: cleanUsername,
-              full_name: fullName.trim() || cleanUsername,
-            }
-          },
-        });
-
-        if (signUpErr) throw signUpErr;
-
-        if (data.session) {
-          router.push('/dashboard');
-          router.refresh();
-        } else {
-          setSuccessMsg(`Verification email dispatched to ${identifier}! Please click the confirmation link in your inbox to activate your account.`);
-        }
+        // Transition to OTP verification screen
+        setOtpEmail(cleanEmail);
+        setAuthMode('otp_verify');
+        setResendCooldown(60);
+        setCanResend(false);
+        setSuccessMsg(`Verification code & activation link sent to ${cleanEmail}!`);
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication request failed. Please check your credentials.');
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      // Handle paste of full 6-digit code
+      const pasted = value.slice(0, 6).split('');
+      const updated = [...otpDigits];
+      pasted.forEach((char, idx) => {
+        if (idx < 6) updated[idx] = char;
+      });
+      setOtpDigits(updated);
+      const nextIdx = Math.min(pasted.length, 5);
+      otpInputRefs.current[nextIdx]?.focus();
+      return;
+    }
+
+    const updated = [...otpDigits];
+    updated[index] = value;
+    setOtpDigits(updated);
+
+    // Auto advance
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = otpDigits.join('').trim();
+    if (token.length < 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Try verifyOtp with signup type
+      let verifyRes = await supabase.auth.verifyOtp({
+        email: otpEmail,
+        token,
+        type: 'signup'
+      });
+
+      if (verifyRes.error) {
+        // Try email type
+        verifyRes = await supabase.auth.verifyOtp({
+          email: otpEmail,
+          token,
+          type: 'email'
+        });
+      }
+
+      if (verifyRes.error) {
+        throw new Error(verifyRes.error.message || 'Invalid or expired OTP code. You can also click the activation link in your email.');
+      }
+
+      setSuccessMsg('Account verified successfully! Redirecting to dashboard...');
+      setTimeout(() => {
+        router.push('/dashboard');
+        router.refresh();
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!canResend || !otpEmail) return;
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const { error: resendErr } = await supabase.auth.resend({
+        type: 'signup',
+        email: otpEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      if (resendErr) throw resendErr;
+
+      setSuccessMsg(`Fresh verification code sent to ${otpEmail}!`);
+      setResendCooldown(60);
+      setCanResend(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code.');
     } finally {
       setLoading(false);
     }
@@ -110,7 +294,7 @@ export default function LoginPage() {
         },
       });
       if (otpErr) throw otpErr;
-      setSuccessMsg(`Secure Magic Link sent to ${identifier}. Check your email.`);
+      setSuccessMsg(`Secure Magic Link dispatched to ${identifier}. Check your email.`);
     } catch (err: any) {
       setError(err.message || 'Failed to dispatch Magic Link.');
     } finally {
@@ -132,8 +316,8 @@ export default function LoginPage() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="font-black text-xl tracking-tight text-white block leading-none">NEXUS</span>
-            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">National Skilling Portal</span>
+            <span className="font-black text-xl tracking-tight text-white block leading-none">MahaSkill Track</span>
+            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">National Skilling Network</span>
           </div>
         </Link>
 
@@ -153,12 +337,14 @@ export default function LoginPage() {
               <span>Skill India Mission Registry</span>
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">
-              {isLogin ? 'Trainee Sign In' : 'Create Trainee Profile'}
+              {authMode === 'login' && 'Trainee Sign In'}
+              {authMode === 'signup' && 'Create Trainee Profile'}
+              {authMode === 'otp_verify' && 'Verify Email OTP'}
             </h1>
             <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-              {isLogin 
-                ? 'Sign in with your Email or Username to manage your career trajectory.' 
-                : 'Register your longitudinal career progression profile on the national network.'}
+              {authMode === 'login' && 'Sign in with your Email or Username to manage your career trajectory.'}
+              {authMode === 'signup' && 'Register your verified profile on the national skilling network.'}
+              {authMode === 'otp_verify' && `Enter the 6-digit security code sent to ${otpEmail}`}
             </p>
           </div>
 
@@ -177,13 +363,73 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleAuth} className="space-y-4">
-            
-            {/* Full Name (Sign Up only) */}
-            {!isLogin && (
+          {/* --- VIEW 1: SIGN IN FORM --- */}
+          {authMode === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">Full Name</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">Email Address or Username</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                    placeholder="trainee@domain.com or username"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-300">Password</label>
+                  <button 
+                    type="button"
+                    onClick={handleMagicLink}
+                    className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold transition"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                    placeholder="••••••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>Sign In to Dashboard</span>
+                {!loading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+          )}
+
+          {/* --- VIEW 2: SIGN UP FORM --- */}
+          {authMode === 'signup' && (
+            <form onSubmit={handleSignUp} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Full Legal Name</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                   <input
@@ -192,16 +438,13 @@ export default function LoginPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
-                    placeholder="e.g. Avishkar Kedar"
+                    placeholder="e.g. Priya Sharma"
                   />
                 </div>
               </div>
-            )}
 
-            {/* Username (Sign Up only) */}
-            {!isLogin && (
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">Desired Username</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Desired Username</label>
                 <div className="relative">
                   <AtSign className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                   <input
@@ -210,115 +453,173 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
-                    placeholder="e.g. avishkar2026"
+                    placeholder="e.g. priya_sharma"
                   />
                 </div>
               </div>
-            )}
 
-            {/* Email or Username for Login / Email for Sign Up */}
-            <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">
-                {isLogin ? 'Email Address or Username' : 'Registered Email Address'}
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-                <input
-                  type={isLogin ? "text" : "email"}
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
-                  placeholder={isLogin ? "trainee@domain.com or username" : "trainee@domain.com"}
-                />
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Registered Email Address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                    placeholder="priya.sharma@example.com"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Password with View Password Toggle */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-300">Password</label>
-                {isLogin && (
-                  <button 
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Create Password (min 6 chars)</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                    placeholder="••••••••••••"
+                  />
+                  <button
                     type="button"
-                    onClick={handleMagicLink}
-                    className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold transition"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
                   >
-                    Forgot password?
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                )}
+                </div>
               </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
-                  placeholder="••••••••••••"
-                />
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                    placeholder="••••••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-3"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>Register & Send Verification Code</span>
+                {!loading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+          )}
+
+          {/* --- VIEW 3: 6-DIGIT OTP VERIFICATION SCREEN --- */}
+          {authMode === 'otp_verify' && (
+            <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <div className="text-center space-y-1">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/20">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+                <p className="text-xs text-slate-400 font-medium">Enter the 6 digits from your verification email</p>
+              </div>
+
+              {/* 6 Input Boxes */}
+              <div className="flex justify-between gap-2">
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => { otpInputRefs.current[idx] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    className="w-12 h-14 bg-slate-900 border border-slate-800 rounded-xl text-center text-xl font-bold text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
+                  />
+                ))}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>Verify & Activate Profile</span>
+                {!loading && <CheckCircle2 className="w-4 h-4" />}
+              </button>
+
+              {/* Resend Code Action */}
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
-                  title={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => { setAuthMode('signup'); setError(null); setSuccessMsg(null); }}
+                  className="flex items-center space-x-1 hover:text-white transition"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Change Email</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={!canResend || loading}
+                  className={`flex items-center space-x-1 font-bold ${
+                    canResend ? 'text-blue-400 hover:text-blue-300 cursor-pointer' : 'text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{canResend ? 'Resend Code' : `Resend in ${resendCooldown}s`}</span>
                 </button>
               </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              <span>{isLogin ? 'Sign In to Dashboard' : 'Register Trainee Profile'}</span>
-              {!loading && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="mt-5 mb-5 flex items-center justify-center space-x-3">
-            <div className="h-px bg-slate-800 flex-1" />
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">or passwordless</span>
-            <div className="h-px bg-slate-800 flex-1" />
-          </div>
-
-          {/* Magic Link */}
-          <button
-            onClick={handleMagicLink}
-            disabled={loading}
-            type="button"
-            className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-xs"
-          >
-            <Mail className="w-4 h-4 text-blue-400" />
-            <span>Send One-Click Magic Link</span>
-          </button>
+            </form>
+          )}
 
           {/* Mode Switcher Footer */}
-          <div className="text-center mt-6 pt-5 border-t border-slate-800/80">
-            <p className="text-xs text-slate-400">
-              {isLogin ? "New to the Skill Mission portal?" : "Already registered?"}{' '}
-              <button
-                type="button"
-                onClick={() => { setIsLogin(!isLogin); setError(null); setSuccessMsg(null); }}
-                className="text-blue-400 font-bold hover:text-blue-300 underline underline-offset-4 ml-1"
-              >
-                {isLogin ? 'Create an Account' : 'Sign In'}
-              </button>
-            </p>
-          </div>
+          {authMode !== 'otp_verify' && (
+            <div className="text-center mt-6 pt-5 border-t border-slate-800/80">
+              <p className="text-xs text-slate-400">
+                {authMode === 'login' ? "New to the Skill Mission portal?" : "Already registered?"}{' '}
+                <button
+                  type="button"
+                  onClick={() => { 
+                    setAuthMode(authMode === 'login' ? 'signup' : 'login'); 
+                    setError(null); 
+                    setSuccessMsg(null); 
+                  }}
+                  className="text-blue-400 font-bold hover:text-blue-300 underline underline-offset-4 ml-1 cursor-pointer"
+                >
+                  {authMode === 'login' ? 'Create an Account' : 'Sign In'}
+                </button>
+              </p>
+            </div>
+          )}
+
         </div>
       </main>
 
       {/* Footer */}
       <footer className="text-center py-5 text-[11px] text-slate-500 z-10">
-        © 2026 Nexus National Skilling Framework. Protected by Zero-PII Cryptographic Enclaves.
+        © 2026 MahaSkill Track Framework. Secured with Zero-PII Cryptographic Registry.
       </footer>
     </div>
   );

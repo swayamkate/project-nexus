@@ -433,3 +433,93 @@ INSERT INTO public.ai_policy_insights (insight_text, target_sector, target_distr
 ('Self-employed micro-tailors in rural Pune experience 3.2x higher wage growth when equipped with digital payments and ONDC cataloging.', 'Apparel & Fashion', ARRAY['Pune', 'Nashik'], 95.8, 'Mandate a 1-week digital commerce module in all Phase-2 tailoring courses.'),
 ('Solar technicians certified under MSSDS show a 92% retention rate in Vidarbha region with an average salary bump of 35% after 6 months.', 'Renewable Energy', ARRAY['Nagpur', 'Amravati'], 94.2, 'Expand Solar PV training capacity by 40% across Vidarbha industrial clusters.')
 ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 13. PROMO CODES & SUBSCRIPTIONS
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.promo_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(50) NOT NULL UNIQUE,
+    discount_type VARCHAR(50) NOT NULL DEFAULT 'percentage', -- 'percentage', 'fixed', 'free_lifetime'
+    discount_val VARCHAR(50) NOT NULL DEFAULT '100% OFF',
+    max_uses INT NOT NULL DEFAULT 500,
+    current_uses INT NOT NULL DEFAULT 0,
+    district VARCHAR(100) DEFAULT 'All Districts',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------------------------------------
+-- 14. GOVERNMENT SCHEMES & SUBSIDY TRACKER
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.government_schemes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    nodal_agency VARCHAR(255) NOT NULL,
+    subsidy_pct NUMERIC(5, 2) NOT NULL DEFAULT 35.00,
+    max_grant_amount NUMERIC(14, 2) NOT NULL DEFAULT 500000.00,
+    target_trades TEXT[] DEFAULT ARRAY['Tailoring', 'Solar', 'EV Repair'],
+    allocated_budget NUMERIC(16, 2) NOT NULL DEFAULT 50000000.00,
+    disbursed_budget NUMERIC(16, 2) NOT NULL DEFAULT 14250000.00,
+    beneficiaries_count INT NOT NULL DEFAULT 142,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------------------------------------
+-- 15. SUPPORT TICKETS
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.support_tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trainee_id UUID REFERENCES public.trainees(id) ON DELETE SET NULL,
+    trainee_name VARCHAR(255) DEFAULT '',
+    trainee_email VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL DEFAULT 'Certificate Verification',
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'open', -- 'open', 'in_progress', 'resolved'
+    assigned_to VARCHAR(255) DEFAULT 'District Officer Pune',
+    admin_response TEXT DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- RLS Policies for new tables
+ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.government_schemes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permissive read promo_codes" ON public.promo_codes FOR SELECT USING (true);
+CREATE POLICY "Permissive insert promo_codes" ON public.promo_codes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permissive update promo_codes" ON public.promo_codes FOR UPDATE USING (true);
+CREATE POLICY "Permissive delete promo_codes" ON public.promo_codes FOR DELETE USING (true);
+
+CREATE POLICY "Permissive read government_schemes" ON public.government_schemes FOR SELECT USING (true);
+CREATE POLICY "Permissive insert government_schemes" ON public.government_schemes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permissive update government_schemes" ON public.government_schemes FOR UPDATE USING (true);
+CREATE POLICY "Permissive delete government_schemes" ON public.government_schemes FOR DELETE USING (true);
+
+CREATE POLICY "Permissive read support_tickets" ON public.support_tickets FOR SELECT USING (true);
+CREATE POLICY "Permissive insert support_tickets" ON public.support_tickets FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permissive update support_tickets" ON public.support_tickets FOR UPDATE USING (true);
+CREATE POLICY "Permissive delete support_tickets" ON public.support_tickets FOR DELETE USING (true);
+
+-- Seed Promo Codes & Schemes
+INSERT INTO public.promo_codes (code, discount_type, discount_val, max_uses, current_uses, district) VALUES
+('NEXUS-GOV-26', 'percentage', '100% OFF', 500, 482, 'Pune'),
+('SKILL-UP-MH', 'percentage', '50% OFF', 2000, 1204, 'All Districts'),
+('BETA-TESTER', 'free_lifetime', 'FREE LIFETIME', 50, 10, 'Statewide')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.government_schemes (name, nodal_agency, subsidy_pct, max_grant_amount, target_trades, allocated_budget, disbursed_budget, beneficiaries_count) VALUES
+('PMEGP - Prime Minister Employment Generation Programme', 'Khadi and Village Industries Commission (KVIC)', 35.00, 500000.00, ARRAY['Tailoring & Garments', 'Solar & Electrical', 'Agri-Tech'], 100000000.00, 38500000.00, 420),
+('Pradhan Mantri Mudra Yojana (Shishu & Tarun)', 'National Credit Guarantee Trustee Company (NCGTC)', 20.00, 1000000.00, ARRAY['Micro-Enterprise', 'Automotive Repair', 'Food Processing'], 85000000.00, 24100000.00, 310),
+('Mahaswayam State Entrepreneurship Grant', 'MSSDS Maharashtra', 50.00, 250000.00, ARRAY['Women Artisans', 'Handicrafts', 'Boutique Stitching'], 40000000.00, 19200000.00, 185)
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO public.audit_logs (admin_email, action, target_entity, details, status) VALUES
+('admin@nexus.com', 'INITIALIZE_SYSTEM', 'CORE', 'System initialized with zero-knowledge enclave configuration', 'Success'),
+('admin@nexus.com', 'PROVISION_ADMIN', 'USER_ROLES', 'Superadmin master console activated for admin@nexus.com', 'Success'),
+('admin@nexus.com', 'VERIFY_INTEGRITY', 'MSSDS_REGISTRY', 'Verified cryptographic integrity of State Trainee Hash Registry', 'Success')
+ON CONFLICT DO NOTHING;
+

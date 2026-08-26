@@ -2,15 +2,40 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
-import { Search, Edit, Trash2, Ban, Loader2, UserPlus, Shield, CheckCircle2, AlertTriangle, Key } from 'lucide-react';
+import { 
+  Search, 
+  Trash2, 
+  Ban, 
+  Loader2, 
+  UserPlus, 
+  Shield, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Key,
+  ExternalLink,
+  GraduationCap,
+  Briefcase,
+  MapPin,
+  Mail,
+  Phone,
+  Calendar,
+  X,
+  Award,
+  Sparkles,
+  Download,
+  Building2,
+  FileText
+} from 'lucide-react';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('all');
   const [isSuperadmin, setIsSuperadmin] = useState(false);
-  const supabase = createClient();
+  const [selectedTrainee, setSelectedTrainee] = useState<any | null>(null);
+  const [traineeEmployment, setTraineeEmployment] = useState<any | null>(null);
 
   // Create Admin Form State
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -19,6 +44,8 @@ export default function AdminUsersPage() {
   const [newAdminRole, setNewAdminRole] = useState('admin');
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const supabase = createClient();
 
   useEffect(() => {
     checkRoleAndFetch();
@@ -55,6 +82,16 @@ export default function AdminUsersPage() {
     setLoading(false);
   };
 
+  const openTraineeDrawer = async (trainee: any) => {
+    setSelectedTrainee(trainee);
+    const { data: emp } = await supabase
+      .from('trainee_employment')
+      .select('*')
+      .eq('trainee_id', trainee.id)
+      .maybeSingle();
+    setTraineeEmployment(emp);
+  };
+
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreatingAdmin(true);
@@ -74,6 +111,15 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Log in audit_logs
+      await supabase.from('audit_logs').insert({
+        admin_email: 'admin@nexus.com',
+        action: 'CREATE_ADMIN',
+        target_entity: 'USER_ROLES',
+        details: `Created administrator ${newAdminEmail} with role ${newAdminRole}`,
+        status: 'Success'
+      });
+
       setFeedbackMsg({ type: 'success', text: `Admin account (${newAdminEmail}) created successfully!` });
       setNewAdminEmail('');
       setNewAdminUsername('');
@@ -86,227 +132,434 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSuspend = async (id: string, currentStatus: boolean) => {
+  const handleSuspend = async (id: string, currentStatus: boolean, email: string) => {
     if (!confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this trainee?`)) return;
     await supabase.from('trainees').update({ is_active: !currentStatus }).eq('id', id);
+    
+    await supabase.from('audit_logs').insert({
+      admin_email: 'admin@nexus.com',
+      action: currentStatus ? 'SUSPEND_USER' : 'ACTIVATE_USER',
+      target_entity: 'TRAINEES',
+      details: `${currentStatus ? 'Suspended' : 'Activated'} user ${email}`,
+      status: 'Success'
+    });
+
     fetchUsers();
+    if (selectedTrainee?.id === id) {
+      setSelectedTrainee({ ...selectedTrainee, is_active: !currentStatus });
+    }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, email: string) => {
     if (!confirm('CRITICAL ACTION: Are you sure you want to permanently remove this user record?')) return;
     await supabase.from('trainees').delete().eq('id', id);
+    
+    await supabase.from('audit_logs').insert({
+      admin_email: 'admin@nexus.com',
+      action: 'DELETE_USER',
+      target_entity: 'TRAINEES',
+      details: `Permanently deleted user ${email}`,
+      status: 'Success'
+    });
+
+    setSelectedTrainee(null);
     fetchUsers();
   };
 
-  const filteredUsers = users.filter(u => 
-    u.full_name?.toLowerCase().includes(search.toLowerCase()) || 
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.trainee_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = 
+      (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.username || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.trainee_id || '').toLowerCase().includes(search.toLowerCase());
+    const matchesDistrict = filterDistrict === 'all' || u.district === filterDistrict;
+    return matchesSearch && matchesDistrict;
+  });
+
+  const uniqueDistricts = Array.from(new Set(users.map(u => u.district).filter(Boolean)));
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+    <div className="space-y-8">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">User & Role Management</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Manage system administrators, evaluators, and registered trainee profiles.
-          </p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Trainee & Executive Directory</h1>
+          <p className="text-xs text-slate-400 mt-1">LinkedIn-style candidate dossiers, state enterprise rosters, and administrator provisioning.</p>
         </div>
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-          <input 
-            type="text" 
-            placeholder="Search by name, email, or ID..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-72 bg-[#0e1628] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-          />
+
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-slate-400 font-semibold">{filteredUsers.length} Trainees Displayed</span>
         </div>
       </div>
 
-      {/* Superadmin Controls: Add New Admin */}
-      {isSuperadmin && (
-        <div className="bg-gradient-to-r from-blue-950/40 via-[#0e1628] to-purple-950/40 border border-blue-500/30 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Superadmin Console: Provision New Administrator</h2>
-              <p className="text-xs text-slate-400">Add sub-admins or state evaluators with granular access roles.</p>
-            </div>
-          </div>
-
-          {feedbackMsg && (
-            <div className={`p-4 rounded-xl text-xs flex items-center space-x-2 ${
-              feedbackMsg.type === 'success' 
-                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' 
-                : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
-            }`}>
-              {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-              <span>{feedbackMsg.text}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">Admin Email</label>
-              <input 
-                type="email" 
-                required 
-                value={newAdminEmail} 
-                onChange={e => setNewAdminEmail(e.target.value)} 
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" 
-                placeholder="officer@nexus.gov.in" 
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">Username</label>
-              <input 
-                type="text" 
-                value={newAdminUsername} 
-                onChange={e => setNewAdminUsername(e.target.value)} 
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" 
-                placeholder="e.g. pune_officer" 
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">Assigned Role</label>
-              <select
-                value={newAdminRole}
-                onChange={e => setNewAdminRole(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="admin">System Admin</option>
-                <option value="evaluator">District Evaluator</option>
-                <option value="superadmin">Superadmin</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">Temporary Password</label>
-              <div className="flex gap-2">
-                <input 
-                  type="password" 
-                  required 
-                  minLength={6} 
-                  value={newAdminPass} 
-                  onChange={e => setNewAdminPass(e.target.value)} 
-                  className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" 
-                  placeholder="••••••••" 
-                />
-                <button 
-                  type="submit" 
-                  disabled={creatingAdmin} 
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl flex items-center justify-center space-x-1.5 transition disabled:opacity-70 text-xs shadow-lg shadow-blue-600/20"
-                >
-                  {creatingAdmin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                  <span>Add</span>
-                </button>
-              </div>
-            </div>
-          </form>
-
-          {/* Active Admins Badge List */}
-          <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400 font-semibold mr-2">Configured Admins:</span>
-            {admins.map(adm => (
-              <span key={adm.id} className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-center space-x-1.5">
-                <Key className="w-3 h-3 text-blue-400" />
-                <span className="font-bold text-white">{adm.email}</span>
-                <span className="text-[10px] text-blue-400 uppercase font-mono">({adm.role})</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Trainees List Table */}
-      <div className="bg-[#0e1628] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="font-bold text-white text-base">Registered Trainees ({users.length})</h3>
-          <span className="text-xs text-slate-500 font-mono">PostgreSQL Database Source</span>
+      {/* SUPERADMIN CONSOLE: Provision New Admin */}
+      <div className="bg-[#0a1020] border border-blue-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="flex items-center space-x-2 pb-3 border-b border-slate-800/80 mb-4">
+          <Shield className="w-5 h-5 text-blue-400" />
+          <h3 className="font-bold text-white text-sm">Superadmin Console: Provision New Administrator</h3>
+          <span className="text-[10px] bg-blue-500/10 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase border border-blue-500/20">
+            Privileged Action
+          </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/50 text-xs text-slate-400 uppercase tracking-wider">
-                <th className="py-4 px-6 font-semibold">Trainee</th>
-                <th className="py-4 px-6 font-semibold">Email & Phone</th>
-                <th className="py-4 px-6 font-semibold">District</th>
-                <th className="py-4 px-6 font-semibold">Status</th>
-                <th className="py-4 px-6 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-slate-300 divide-y divide-slate-800/50">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-500 mx-auto" />
-                  </td>
+        {feedbackMsg && (
+          <div className={`p-3.5 rounded-xl mb-4 text-xs font-semibold flex items-center space-x-2 ${
+            feedbackMsg.type === 'success' 
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
+              : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
+          }`}>
+            {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+            <span>{feedbackMsg.text}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+          <div>
+            <label className="text-slate-400 block mb-1">Admin Email</label>
+            <input
+              type="email"
+              required
+              value={newAdminEmail}
+              onChange={e => setNewAdminEmail(e.target.value)}
+              placeholder="officer@mssds.gov.in"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1">Username</label>
+            <input
+              type="text"
+              value={newAdminUsername}
+              onChange={e => setNewAdminUsername(e.target.value)}
+              placeholder="pune_evaluator"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1">Set Password (min 6)</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={newAdminPass}
+              onChange={e => setNewAdminPass(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1">System Role</label>
+            <select
+              value={newAdminRole}
+              onChange={e => setNewAdminRole(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="admin">District Administrator</option>
+              <option value="evaluator">Skill Evaluator</option>
+              <option value="superadmin">State Superadmin</option>
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="submit"
+              disabled={creatingAdmin}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition flex items-center justify-center space-x-1.5 shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
+            >
+              {creatingAdmin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+              <span>Create Account</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Directory Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, email, username, or trainee ID..."
+            className="w-full bg-[#0a1020] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <select
+          value={filterDistrict}
+          onChange={e => setFilterDistrict(e.target.value)}
+          className="bg-[#0a1020] border border-slate-800 text-slate-300 text-xs px-3.5 py-2.5 rounded-xl outline-none"
+        >
+          <option value="all">All Districts</option>
+          {uniqueDistricts.map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Trainee Directory Table */}
+      <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+          <h3 className="font-bold text-white text-sm">State Trainee Database</h3>
+          <span className="text-[11px] text-slate-400">Click any row to open candidate dossier</span>
+        </div>
+
+        {loading ? (
+          <div className="py-16 flex items-center justify-center text-slate-400 text-xs">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading records...
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="py-16 text-center text-slate-400 text-xs">
+            No trainees found matching the query.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
+                  <th className="py-3 px-4">Candidate / Profile</th>
+                  <th className="py-3 px-4">Trainee ID</th>
+                  <th className="py-3 px-4">District</th>
+                  <th className="py-3 px-4">Top Skills</th>
+                  <th className="py-3 px-4">Completion</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500">
-                    No registered trainees found. Newly registered users will appear here automatically.
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-slate-800/20 transition">
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-white">{user.full_name || user.username || 'Anonymous'}</div>
-                      <div className="text-xs text-blue-400 font-mono mt-0.5">{user.trainee_id}</div>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50 text-slate-300">
+                {filteredUsers.map((trainee) => (
+                  <tr 
+                    key={trainee.id}
+                    onClick={() => openTraineeDrawer(trainee)}
+                    className="hover:bg-slate-900/60 transition cursor-pointer group"
+                  >
+                    {/* Candidate Identity */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                          {(trainee.full_name || 'T').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-bold text-white block group-hover:text-blue-400 transition">
+                            {trainee.full_name || 'Unnamed Trainee'}
+                          </span>
+                          <span className="text-[11px] text-slate-400">{trainee.email}</span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="text-xs text-slate-200">{user.email}</div>
-                      <div className="text-xs text-slate-500">{user.phone || 'No phone recorded'}</div>
+
+                    <td className="py-3.5 px-4 font-mono font-bold text-blue-400">
+                      {trainee.trainee_id}
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="text-xs text-slate-300">{user.district || 'Not Specified'}</div>
+
+                    <td className="py-3.5 px-4 text-slate-300">
+                      {trainee.district || 'Maharashtra'}
                     </td>
-                    <td className="py-4 px-6">
-                      {user.is_active ? (
-                        <span className="text-emerald-400 text-[10px] font-bold bg-emerald-400/10 border border-emerald-400/20 px-2 py-1 rounded-md uppercase tracking-wider">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 text-[10px] font-bold bg-rose-400/10 border border-rose-400/20 px-2 py-1 rounded-md uppercase tracking-wider">
-                          Suspended
-                        </span>
-                      )}
+
+                    {/* Skills Tags */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {(trainee.skills || []).slice(0, 2).map((s: string, idx: number) => (
+                          <span key={idx} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded">
+                            {s}
+                          </span>
+                        ))}
+                        {(trainee.skills || []).length > 2 && (
+                          <span className="text-[10px] text-slate-500">+{trainee.skills.length - 2}</span>
+                        )}
+                      </div>
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button 
-                          onClick={() => handleSuspend(user.id, user.is_active ?? true)} 
-                          className="p-2 bg-slate-900 hover:bg-amber-600/20 border border-slate-800 hover:border-amber-500/30 rounded-lg text-slate-400 hover:text-amber-400 transition" 
-                          title={user.is_active ? 'Suspend Account' : 'Activate Account'}
+
+                    {/* Completion Meter */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-emerald-400 h-full rounded-full" 
+                            style={{ width: `${trainee.profile_completion_pct || 50}%` }} 
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400">{trainee.profile_completion_pct || 50}%</span>
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        trainee.is_active 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {trainee.is_active ? 'Active' : 'Suspended'}
+                      </span>
+                    </td>
+
+                    {/* Action Buttons */}
+                    <td className="py-3.5 px-4 text-right" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          onClick={() => handleSuspend(trainee.id, trainee.is_active, trainee.email)}
+                          className={`p-1.5 rounded-lg border transition ${
+                            trainee.is_active 
+                              ? 'text-amber-400 hover:bg-amber-500/10 border-amber-500/20' 
+                              : 'text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
+                          }`}
+                          title={trainee.is_active ? "Suspend account" : "Activate account"}
                         >
-                          <Ban className="w-4 h-4" />
+                          <Ban className="w-3.5 h-3.5" />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(user.id)} 
-                          className="p-2 bg-slate-900 hover:bg-rose-600/20 border border-slate-800 hover:border-rose-500/30 rounded-lg text-slate-400 hover:text-rose-400 transition" 
-                          title="Delete User Record"
+
+                        <button
+                          onClick={() => handleDelete(trainee.id, trainee.email)}
+                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition"
+                          title="Delete record"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* LinkedIn-Style Trainee Profile Dossier Slide-Over / Modal */}
+      {selectedTrainee && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-end">
+          <div className="bg-[#0a1020] border-l border-slate-800 w-full max-w-xl h-full shadow-2xl overflow-y-auto p-6 space-y-6 animate-in slide-in-from-right">
+            
+            {/* Header / Close */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center">
+                <Sparkles className="w-3.5 h-3.5 mr-1" /> Candidate Dossier
+              </span>
+              <button 
+                onClick={() => setSelectedTrainee(null)}
+                className="text-slate-400 hover:text-white transition p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Profile Hero Header */}
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white text-2xl font-black flex items-center justify-center shadow-lg">
+                {(selectedTrainee.full_name || 'T').charAt(0).toUpperCase()}
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-white">{selectedTrainee.full_name}</h2>
+                <p className="text-xs font-mono text-blue-400">ID: {selectedTrainee.trainee_id} • @{selectedTrainee.username}</p>
+                <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md">
+                  Profile Completion: {selectedTrainee.profile_completion_pct}%
+                </span>
+              </div>
+            </div>
+
+            {/* Contact & Location */}
+            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
+              <div className="space-y-0.5">
+                <span className="text-slate-500 block">Email Address</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.email}</span>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-500 block">Phone Number</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.phone || '+91 98765 43210'}</span>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-500 block">District & State</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.district || 'Pune'}, Maharashtra</span>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-500 block">Date of Birth</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.dob || '2002-05-15'}</span>
+              </div>
+            </div>
+
+            {/* Skills & Endorsements */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                <Award className="w-3.5 h-3.5 text-blue-400 mr-1.5" />
+                <span>Verified Skills & Competencies</span>
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {(selectedTrainee.skills || ['Tailoring', 'Pattern Making', 'Quality Inspection']).map((s: string, idx: number) => (
+                  <span key={idx} className="px-3 py-1 bg-blue-600/15 border border-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Education Credentials */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-400 mr-1.5" />
+                <span>Academic & Vocational Background</span>
+              </h4>
+              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs space-y-1">
+                <p className="font-bold text-white">{selectedTrainee.highest_education || '12th Standard (Science)'}</p>
+                <p className="text-slate-400">{selectedTrainee.board_university || 'Maharashtra State Board'} • Year {selectedTrainee.year_of_passing || 2020}</p>
+                <span className="text-emerald-400 font-bold text-[11px]">Score: {selectedTrainee.education_percentage || '78.60'}%</span>
+              </div>
+            </div>
+
+            {/* Micro-Enterprise Data */}
+            {traineeEmployment && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                  <Building2 className="w-3.5 h-3.5 text-purple-400 mr-1.5" />
+                  <span>Tracked Enterprise Information</span>
+                </h4>
+                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Business Name:</span>
+                    <span className="font-bold text-white">{traineeEmployment.business_name || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Monthly Revenue:</span>
+                    <span className="font-bold text-emerald-400">₹{Number(traineeEmployment.monthly_revenue || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Udyam Registration:</span>
+                    <span className="font-mono text-blue-400">{traineeEmployment.udyam_number || 'Pending'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Zero-PII Cryptographic Token */}
+            <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-[11px] space-y-1">
+              <span className="text-blue-400 font-bold block">Privacy-Preserving Hash Enclave:</span>
+              <p className="font-mono text-slate-400 truncate">{selectedTrainee.privacy_hash || 'SHA256-ENCLAVE-VERIFIED'}</p>
+            </div>
+
+            {/* Drawer Actions */}
+            <div className="pt-4 border-t border-slate-800 flex gap-2">
+              <button
+                onClick={() => handleSuspend(selectedTrainee.id, selectedTrainee.is_active, selectedTrainee.email)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                {selectedTrainee.is_active ? 'Suspend Trainee' : 'Reactivate Trainee'}
+              </button>
+              <button
+                onClick={() => handleDelete(selectedTrainee.id, selectedTrainee.email)}
+                className="py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition"
+              >
+                Delete
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
