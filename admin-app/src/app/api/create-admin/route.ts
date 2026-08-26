@@ -3,14 +3,18 @@ import { cookies } from 'next/headers';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://api.avishkark.in';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3MjQ2ODAwMDAsImV4cCI6MjAzOTk5OTk5OX0.6dcfM62ZyvbxTPcLxYpCTVA9Tw0C_ueCORR7PqwDr9s';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJyb2xlIjogInNlcnZpY2Vfcm9sZSIsICJpc3MiOiAic3VwYWJhc2UiLCAiaWF0IjogMTc4NzY3Njg2MiwgImV4cCI6IDIxMDMwMzY4NjJ9.wx6h8pi1tmHCVfz5nX_kf45sF05_Ea-RF8KlVjbWJ44';
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, username, role = 'admin' } = await request.json();
 
     const cookieStore = await cookies();
-    const isSuperadmin = cookieStore.get('nexus_superadmin')?.value === 'true';
+    const isSuperadmin = 
+      cookieStore.get('nexus_superadmin')?.value === 'true' || 
+      cookieStore.get('superadmin_token')?.value === 'true' ||
+      request.cookies.get('nexus_superadmin')?.value === 'true' ||
+      request.cookies.get('superadmin_token')?.value === 'true';
 
     if (!isSuperadmin) {
       return NextResponse.json({ error: 'Forbidden: Only Superadmins can provision new Admin accounts.' }, { status: 403 });
