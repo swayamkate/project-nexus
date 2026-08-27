@@ -43,10 +43,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const saRes = await fetch('/api/auth/me');
         if (saRes.ok) {
           const saData = await saRes.json();
-          setIsAdmin(true);
-          setAdminUser(saData.user || { email: 'admin@nexus.com', role: 'superadmin' });
-          fetchPendingCount();
-          return;
+          if (saData.isSuperadmin) {
+            setIsAdmin(true);
+            setAdminUser(saData.user || { email: 'admin@nexus.com', role: 'superadmin' });
+            fetchPendingCount();
+            return;
+          }
         }
       } catch (e) {}
 

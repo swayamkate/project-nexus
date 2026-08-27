@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ isSuperadmin: false }, { status: 401 });
+    return NextResponse.json({ isSuperadmin: false, user: null }, { status: 200 });
   } catch (err: any) {
-    return NextResponse.json({ isSuperadmin: false, error: err.message }, { status: 401 });
+    return NextResponse.json({ isSuperadmin: false, error: err.message, user: null }, { status: 200 });
   }
 }
