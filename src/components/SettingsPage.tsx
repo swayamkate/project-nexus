@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Bell, 
@@ -8,36 +8,44 @@ import {
   ShieldCheck, 
   Lock, 
   KeyRound, 
-  Smartphone, 
   Download, 
-  Trash2, 
   CheckCircle2, 
   AlertTriangle, 
   Loader2, 
   Eye, 
   EyeOff, 
   Laptop, 
-  Fingerprint,
-  FileSpreadsheet,
-  X
+  Send,
+  MessageSquare,
+  Smartphone,
+  Info,
+  LogOut
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
 
 export const SettingsPage: React.FC = () => {
-  const { user, profile, employment, enrollments, followups, language, setLanguage, signOut } = useUser();
+  const { user, profile, employment, enrollments, followups, language, setLanguage, t, signOut } = useUser();
   const supabase = createClient();
 
-  // Notification Preferences State
-  const [notifs, setNotifs] = useState({
-    whatsapp: true,
-    sms: true,
-    email: true,
-    opportunities: true
+  // Notification Permission State
+  const [notifPerm, setNotifPerm] = useState<string>('default');
+  const [inAppAlerts, setInAppAlerts] = useState(true);
+
+  // Active Session Info State
+  const [sessionInfo, setSessionInfo] = useState<{
+    browser: string;
+    os: string;
+    screen: string;
+    lastSignIn: string;
+  }>({
+    browser: 'Web Browser',
+    os: 'Unknown OS',
+    screen: 'Desktop',
+    lastSignIn: 'Active Now'
   });
 
   // Password Change State
-  const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmNewPass, setConfirmNewPass] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -49,6 +57,64 @@ export const SettingsPage: React.FC = () => {
 
   // Toast
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 1. Detect Real Notification Permission
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPerm(Notification.permission);
+    }
+
+    // 2. Detect Real Active Browser & OS Session
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent;
+      let detectedBrowser = 'Chrome / Chromium';
+      if (ua.includes('Edg/')) detectedBrowser = 'Microsoft Edge';
+      else if (ua.includes('Firefox/')) detectedBrowser = 'Mozilla Firefox';
+      else if (ua.includes('Safari/') && !ua.includes('Chrome/')) detectedBrowser = 'Apple Safari';
+      else if (ua.includes('OPR/') || ua.includes('Opera/')) detectedBrowser = 'Opera';
+
+      let detectedOS = 'Windows OS';
+      if (ua.includes('Mac OS') || ua.includes('Macintosh')) detectedOS = 'macOS';
+      else if (ua.includes('Android')) detectedOS = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) detectedOS = 'iOS';
+      else if (ua.includes('Linux')) detectedOS = 'Linux';
+
+      const lastSignIn = user?.last_sign_in_at 
+        ? new Date(user.last_sign_in_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+        : 'Active Session';
+
+      setSessionInfo({
+        browser: detectedBrowser,
+        os: detectedOS,
+        screen: `${window.innerWidth} x ${window.innerHeight}`,
+        lastSignIn
+      });
+    }
+  }, [user]);
+
+  const handleRequestPushPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setToastMsg('Browser notifications are not supported on this browser.');
+      setTimeout(() => setToastMsg(null), 3500);
+      return;
+    }
+
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPerm(perm);
+      if (perm === 'granted') {
+        setToastMsg('Browser notifications enabled! You will receive longitudinal & survey alerts.');
+        new Notification('Nexus Notification Enclave', {
+          body: 'Notifications are active for longitudinal milestones and state survey alerts.',
+        });
+      } else if (perm === 'denied') {
+        setToastMsg('Notifications blocked in browser. Please grant permission in browser settings.');
+      }
+      setTimeout(() => setToastMsg(null), 4000);
+    } catch (err) {
+      console.error('Push notification error:', err);
+    }
+  };
 
   const calculateStrength = (pass: string) => {
     if (!pass) return 0;
@@ -82,7 +148,6 @@ export const SettingsPage: React.FC = () => {
       if (error) throw error;
 
       setPassMsg({ type: 'success', text: 'Password updated successfully!' });
-      setCurrentPass('');
       setNewPass('');
       setConfirmNewPass('');
     } catch (err: any) {
@@ -99,14 +164,12 @@ export const SettingsPage: React.FC = () => {
       privacy_enclave_hash: profile?.privacy_hash || 'SHA256-ENCLAVE-VERIFIED',
       trainee_profile: {
         trainee_id: profile?.trainee_id,
+        username: profile?.username,
         full_name: profile?.full_name,
         email: profile?.email,
         phone: profile?.phone,
         district: profile?.district,
         state: profile?.state,
-        highest_education: profile?.highest_education,
-        skills: profile?.skills,
-        profile_completion: `${profile?.profile_completion_pct}%`
       },
       employment_record: employment,
       certifications: enrollments,
@@ -126,15 +189,6 @@ export const SettingsPage: React.FC = () => {
     setTimeout(() => setToastMsg(null), 4000);
   };
 
-  const toggleNotif = (key: keyof typeof notifs) => {
-    setNotifs(prev => {
-      const updated = { ...prev, [key]: !prev[key] };
-      setToastMsg(`Notification preference updated.`);
-      setTimeout(() => setToastMsg(null), 2500);
-      return updated;
-    });
-  };
-
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16 text-slate-800 animate-in fade-in-50">
       
@@ -149,71 +203,107 @@ export const SettingsPage: React.FC = () => {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-          <span>Settings & Privacy Controls</span>
+          <span>{t('settings.title', 'Settings & Preferences')}</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Manage your account preferences, multi-channel alerts, security keys, and Zero-PII privacy tokens.
+          {t('settings.subtitle', 'Manage your real-time notification alerts, active device sessions, security keys, and language.')}
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left 2 Columns: Notifications, Security, Language */}
+        {/* Left 2 Columns: Notifications & Security */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Section 1: Notifications Preferences */}
+          {/* Section 1: Real Push Notification Permission */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Bell className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Longitudinal & Survey Alerts</h3>
-                <p className="text-[11px] text-slate-500">Choose how the state mission notifies you of 3M–24M wage check-ins.</p>
+                <h3 className="font-bold text-slate-900 text-sm">{t('settings.notifications', 'Survey & Milestone Notification Alerts')}</h3>
+                <p className="text-[11px] text-slate-500">{t('settings.notificationsDesc', 'Enable browser push notifications for timely wage survey reminders and verification alerts.')}</p>
               </div>
             </div>
 
             <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <div>
-                  <span className="font-bold text-xs text-slate-800 block">WhatsApp Survey Reminders</span>
-                  <span className="text-[11px] text-slate-500">Receive 1-click survey links directly on your registered WhatsApp.</span>
+              {/* Browser Push Permission Card */}
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-xs text-slate-800">{t('settings.browserPush', 'Browser / Web Push Notifications')}</span>
+                    {notifPerm === 'granted' ? (
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
+                        {t('settings.permissionGranted', 'Permission Enabled')}
+                      </span>
+                    ) : notifPerm === 'denied' ? (
+                      <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-bold rounded-full">
+                        {t('settings.permissionDenied', 'Blocked')}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">
+                        Action Required
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Get instant desktop & mobile alerts whenever a 3M–24M wage survey or scheme approval is ready.
+                  </p>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => toggleNotif('whatsapp')}
-                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${notifs.whatsapp ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                  onClick={handleRequestPushPermission}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+                    notifPerm === 'granted'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                      : notifPerm === 'denied'
+                      ? 'bg-slate-200 text-slate-600 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/20'
+                  }`}
                 >
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${notifs.whatsapp ? 'left-6' : 'left-1'}`} />
+                  {notifPerm === 'granted' 
+                    ? 'Active' 
+                    : notifPerm === 'denied' 
+                    ? 'Blocked in Browser' 
+                    : 'Enable Notifications'}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+              {/* In-App Live Popups Toggle */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl">
                 <div>
-                  <span className="font-bold text-xs text-slate-800 block">SMS Gateway Alerts</span>
-                  <span className="text-[11px] text-slate-500">Receive important verification updates and OTPs via national telecom gateway.</span>
+                  <span className="font-bold text-xs text-slate-800 block">In-App Live Bell Alerts</span>
+                  <span className="text-[11px] text-slate-500">Real-time counter and notification bell alerts in the top bar.</span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => toggleNotif('sms')}
-                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${notifs.sms ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                  onClick={() => {
+                    setInAppAlerts(!inAppAlerts);
+                    setToastMsg(`In-app alerts ${!inAppAlerts ? 'enabled' : 'disabled'}.`);
+                    setTimeout(() => setToastMsg(null), 2500);
+                  }}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${inAppAlerts ? 'bg-blue-600' : 'bg-slate-300'}`}
                 >
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${notifs.sms ? 'left-6' : 'left-1'}`} />
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${inAppAlerts ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <div>
-                  <span className="font-bold text-xs text-slate-800 block">Email Digest & Career Schemes</span>
-                  <span className="text-[11px] text-slate-500">Receive monthly skill mission reports, PMEGP grant alerts, and job openings.</span>
+              {/* Telegram Roadmap Pill */}
+              <div className="p-3.5 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <Send className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleNotif('email')}
-                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${notifs.email ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                >
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${notifs.email ? 'left-6' : 'left-1'}`} />
-                </button>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-xs text-blue-950">Telegram Direct Bot Alerts</span>
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 bg-blue-600 text-white rounded">Roadmap</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                    Direct Telegram Bot integration will allow you to link your Telegram chat ID to receive survey check-in prompts directly on Telegram.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -225,8 +315,8 @@ export const SettingsPage: React.FC = () => {
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Account Security & Password</h3>
-                <p className="text-[11px] text-slate-500">Update your access password and review active device sessions.</p>
+                <h3 className="font-bold text-slate-900 text-sm">{t('settings.security', 'Account Security & Password')}</h3>
+                <p className="text-[11px] text-slate-500">Update your account password and review authenticated credentials.</p>
               </div>
             </div>
 
@@ -256,7 +346,7 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -277,7 +367,6 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password Strength Indicator */}
               {newPass && (
                 <div className="space-y-1 pt-1">
                   <div className="flex justify-between text-[10px] font-bold">
@@ -307,97 +396,66 @@ export const SettingsPage: React.FC = () => {
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
                 >
                   {passSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-                  <span>Update Password</span>
+                  <span>{t('settings.updatePassword', 'Update Password')}</span>
                 </button>
               </div>
             </form>
-
-            {/* Two-Factor Authentication (2FA) */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-xs text-slate-800 block">Two-Factor Authentication (2FA)</span>
-                <span className="text-[11px] text-slate-500">Require an email OTP code whenever logging in from an unrecognized device.</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTwoFactorEnabled(!twoFactorEnabled);
-                  setToastMsg(`Two-Factor Authentication is now ${!twoFactorEnabled ? 'Enabled' : 'Disabled'}.`);
-                  setTimeout(() => setToastMsg(null), 3000);
-                }}
-                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${twoFactorEnabled ? 'bg-blue-600' : 'bg-slate-300'}`}
-              >
-                <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${twoFactorEnabled ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
           </div>
 
-          {/* Section 3: Active Device Sessions */}
+          {/* Section 3: REAL Active Device Sessions */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Laptop className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Active Enclave Sessions</h3>
-                <p className="text-[11px] text-slate-500">Devices currently authenticated to your Trainee account.</p>
+                <h3 className="font-bold text-slate-900 text-sm">{t('settings.activeSessions', 'Active Authenticated Sessions')}</h3>
+                <p className="text-[11px] text-slate-500">Real-time device and token session currently authenticated.</p>
               </div>
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Laptop className="w-4 h-4 text-blue-600" />
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Laptop className="w-5 h-5" />
+                  </div>
                   <div>
-                    <span className="font-bold text-slate-800 block">Chrome on Windows (Current Session)</span>
-                    <span className="text-[10px] text-slate-500">Pune, Maharashtra • IP: 129.146.164.75</span>
+                    <span className="font-bold text-slate-900 block text-xs">
+                      {sessionInfo.browser} on {sessionInfo.os} (Current Device)
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Screen: {sessionInfo.screen} • Authenticated: {sessionInfo.lastSignIn}
+                    </span>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded-md">
+                <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-bold rounded-lg shrink-0">
                   Active Now
                 </span>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Smartphone className="w-4 h-4 text-slate-400" />
-                  <div>
-                    <span className="font-bold text-slate-700 block">Android Mobile App</span>
-                    <span className="text-[10px] text-slate-400">Nashik, Maharashtra • 2 days ago</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setToastMsg('Terminated remote mobile session.');
-                    setTimeout(() => setToastMsg(null), 3000);
-                  }}
-                  className="text-[11px] text-rose-600 hover:underline font-bold cursor-pointer"
-                >
-                  Revoke
-                </button>
               </div>
             </div>
           </div>
 
         </div>
 
-        {/* Right 1 Column: Language & Privacy Enclave */}
+        {/* Right 1 Column: Language & Dossier */}
         <div className="space-y-6">
           
-          {/* Section 4: Language & Regional Dialect */}
+          {/* Section 4: Language Selection */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <Globe className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Language</h3>
-                <p className="text-[11px] text-slate-500">Interface localization</p>
+                <h3 className="font-bold text-slate-900 text-sm">{t('settings.language', 'Interface Language')}</h3>
+                <p className="text-[11px] text-slate-500">Instant multilingual localization</p>
               </div>
             </div>
 
             <div className="space-y-2">
               <button
+                type="button"
                 onClick={() => {
                   setLanguage('en');
                   setToastMsg('Interface switched to English');
@@ -412,9 +470,10 @@ export const SettingsPage: React.FC = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setLanguage('mr');
-                  setToastMsg('इंटरफेस मराठीत बदलला आहे');
+                  setToastMsg('भाषा मराठीत बदलली गेली आहे');
                   setTimeout(() => setToastMsg(null), 2500);
                 }}
                 className={`w-full p-3 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between cursor-pointer ${
@@ -426,53 +485,56 @@ export const SettingsPage: React.FC = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setLanguage('hi');
-                  setToastMsg('इंटरफ़ेस हिंदी में बदला गया');
+                  setToastMsg('भाषा हिंदी में परिवर्तित कर दी गई है');
                   setTimeout(() => setToastMsg(null), 2500);
                 }}
                 className={`w-full p-3 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                   language === 'hi' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <span>हिंदी (राष्ट्रीय)</span>
+                <span>हिंदी (राष्ट्रीय मानक)</span>
                 {language === 'hi' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
               </button>
             </div>
           </div>
 
-          {/* Section 5: Zero-PII Cryptographic Enclave */}
-          <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md space-y-4">
-            <div className="flex items-center space-x-2">
-              <Fingerprint className="w-5 h-5 text-blue-400" />
-              <h3 className="font-bold text-white text-sm">Zero-PII Privacy Vault</h3>
+          {/* Section 5: Skilling Dossier Export */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                <Download className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Download Verified Dossier</h3>
+                <p className="text-[11px] text-slate-500">Portable cryptographic data export</p>
+              </div>
             </div>
 
-            <p className="text-xs text-blue-200 leading-relaxed">
-              Your identity is protected using mathematical zero-knowledge proofs. State analytics only see aggregate metrics, never personal PII.
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Export your complete vocational record, verified certificates, and employment history in structured JSON format.
             </p>
 
-            <div className="p-3 bg-white/10 rounded-xl border border-white/10 space-y-1">
-              <span className="text-[10px] text-blue-300 font-bold uppercase tracking-wider block">Cryptographic Hash Token:</span>
-              <p className="font-mono text-[11px] text-white truncate">{profile?.privacy_hash || 'SHA256-ENCLAVE-VERIFIED-HASH'}</p>
-            </div>
-
             <button
+              type="button"
               onClick={handleExportDossier}
-              className="w-full py-2.5 bg-blue-500 hover:bg-blue-400 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-md cursor-pointer"
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>Export Career Dossier (JSON)</span>
+              <span>Export Dossier (JSON)</span>
             </button>
           </div>
 
-          {/* Sign Out Card */}
+          {/* Section 6: Sign Out Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
             <button
+              type="button"
               onClick={signOut}
               className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <Trash2 className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
               <span>Sign Out of Account</span>
             </button>
           </div>

@@ -23,7 +23,8 @@ import {
   X,
   Sparkles,
   ExternalLink,
-  Sliders
+  Sliders,
+  Headphones
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -97,6 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: 'Dashboard Overview', href: '/', icon: Activity },
     { name: 'Trainees & Enterprises', href: '/users', icon: Users },
+    { name: 'Support & Feedback', href: '/support', icon: Headphones },
     { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
     { name: 'Training Programs', href: '/programs', icon: GraduationCap },
     { name: 'Follow-ups & Surveys', href: '/followups', icon: CalendarClock },

@@ -34,7 +34,7 @@ interface TraineeHomeDashboardProps {
 }
 
 export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNavigate }) => {
-  const { user, profile, employment, enrollments, followups, notifications, opportunities, updateEmployment, submitFollowup } = useUser();
+  const { user, profile, employment, enrollments, followups, notifications, opportunities, updateEmployment, submitFollowup, t } = useUser();
   
   // Modals state
   const [showBusinessModal, setShowBusinessModal] = useState(false);
@@ -157,7 +157,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs font-semibold text-slate-500">Training Completed</span>
+              <span className="text-xs font-semibold text-slate-500">{t('dash.trainingsCompleted', 'Completed Courses')}</span>
               <p className="text-2xl font-black text-slate-900 mt-0.5">{completedTrainingsCount}</p>
             </div>
           </div>
@@ -177,7 +177,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs font-semibold text-slate-500">Certifications</span>
+              <span className="text-xs font-semibold text-slate-500">{t('dash.verifiedCerts', 'Verified Certificates')}</span>
               <p className="text-2xl font-black text-slate-900 mt-0.5">{certificationsCount}</p>
             </div>
           </div>
@@ -197,15 +197,15 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Briefcase className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs font-semibold text-slate-500">Employment Status</span>
-              <p className="text-lg font-black text-slate-900 mt-0.5">{employmentStatusLabel}</p>
+              <span className="text-xs font-semibold text-slate-500">{t('dash.employmentStatus', 'Employment Status')}</span>
+              <p className="text-sm font-black text-slate-900 mt-1">{employmentStatusLabel}</p>
             </div>
           </div>
           <button 
-            onClick={() => onNavigate('employment-status')}
+            onClick={() => onNavigate('self-employment')}
             className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center space-x-1 cursor-pointer pt-2 border-t border-slate-100"
           >
-            <span>View Details</span>
+            <span>View Enterprise</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -217,15 +217,15 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Calendar className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs font-semibold text-slate-500">Next Follow-up</span>
-              <p className="text-lg font-black text-amber-600 mt-0.5 capitalize">{nextFollowupLabel}</p>
+              <span className="text-xs font-semibold text-slate-500">{t('dash.nextFollowup', 'Next Milestone Follow-up')}</span>
+              <p className="text-sm font-black text-slate-900 mt-1">{nextFollowupLabel}</p>
             </div>
           </div>
           <button 
             onClick={() => onNavigate('follow-ups')}
             className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center space-x-1 cursor-pointer pt-2 border-t border-slate-100"
           >
-            <span>View Details</span>
+            <span>View Schedule</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

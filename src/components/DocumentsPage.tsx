@@ -24,42 +24,9 @@ import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
 import { formatHumanError } from '@/lib/errorUtils';
 
 export const DocumentsPage: React.FC = () => {
-  const { profile } = useUser();
-  const [documents, setDocuments] = useState<any[]>([
-    {
-      id: 'doc-1',
-      name: 'Aadhaar Card (Cryptographically Masked)',
-      type: 'Identity Proof',
-      status: 'approved',
-      date: '10 Apr 2024',
-      url: '#'
-    },
-    {
-      id: 'doc-2',
-      name: '12th Standard Passing Marksheet (HSC)',
-      type: 'Education Certificate',
-      status: 'approved',
-      date: '10 Apr 2024',
-      url: '#'
-    },
-    {
-      id: 'doc-3',
-      name: 'ITI State Vocational Skill Certificate (NSQF Level 4)',
-      type: 'Skill Credential',
-      status: 'approved',
-      date: '15 Jul 2024',
-      url: '#'
-    },
-    {
-      id: 'doc-4',
-      name: 'Udyam MSME Registration Certificate (UDYAM-MH-26-0048291)',
-      type: 'Enterprise Document',
-      status: 'approved',
-      date: '02 Aug 2024',
-      url: '#'
-    }
-  ]);
-
+  const { profile, t } = useUser();
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [docType, setDocType] = useState('Enterprise Document');
   const [uploading, setUploading] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
@@ -72,10 +39,13 @@ export const DocumentsPage: React.FC = () => {
   useEffect(() => {
     if (profile?.id) {
       fetchUploadedDocs(profile.id);
+    } else {
+      setLoading(false);
     }
   }, [profile]);
 
   const fetchUploadedDocs = async (traineeId: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('verifications')
@@ -85,23 +55,21 @@ export const DocumentsPage: React.FC = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         const mapped = data.map(d => ({
           id: d.id,
           name: d.document_name,
-          type: d.document_type.toUpperCase(),
+          type: d.document_type.replace(/_/g, ' ').toUpperCase(),
           status: d.status,
-          date: new Date(d.created_at).toLocaleDateString(),
+          date: new Date(d.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           url: d.document_url
         }));
-        setDocuments(prev => {
-          const ids = new Set(prev.map(p => p.id));
-          const newItems = mapped.filter(m => !ids.has(m.id));
-          return [...prev, ...newItems];
-        });
+        setDocuments(mapped);
       }
     } catch (err: any) {
       console.error('Error loading documents:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,7 +80,7 @@ export const DocumentsPage: React.FC = () => {
     setUploading(true);
     setErrorMsg(null);
     try {
-      const fakeUrl = `https://storage.mahaskill.in/vault/${profile.id}/${file.name}`;
+      const vaultUrl = `https://vault.nexus.in/enclave/${profile.id}/${encodeURIComponent(file.name)}`;
       
       const { data, error } = await supabase
         .from('verifications')
@@ -120,7 +88,7 @@ export const DocumentsPage: React.FC = () => {
           trainee_id: profile.id,
           document_type: docType.toLowerCase().replace(/\s+/g, '_'),
           document_name: file.name,
-          document_url: fakeUrl,
+          document_url: vaultUrl,
           status: 'pending'
         })
         .select()
@@ -131,20 +99,20 @@ export const DocumentsPage: React.FC = () => {
       const newDoc = {
         id: data.id,
         name: file.name,
-        type: docType,
+        type: docType.toUpperCase(),
         status: 'pending',
         date: 'Just now',
-        url: fakeUrl
+        url: vaultUrl
       };
 
       setDocuments(prev => [newDoc, ...prev]);
-      setToastMsg(`"${file.name}" uploaded successfully for state verification.`);
+      setToastMsg(`"${file.name}" uploaded to Nexus Vault and queued for verification.`);
       setTimeout(() => setToastMsg(null), 4000);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
       setErrorMsg(formatHumanError(err));
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

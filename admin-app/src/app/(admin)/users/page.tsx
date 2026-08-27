@@ -24,7 +24,9 @@ import {
   Sparkles,
   Download,
   Building2,
-  FileText
+  FileText,
+  Bell,
+  Send
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
@@ -48,6 +50,15 @@ export default function AdminUsersPage() {
   const [newAdminRole, setNewAdminRole] = useState('admin');
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Notification Dispatcher State
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [notifTarget, setNotifTarget] = useState<'broadcast' | 'single'>('broadcast');
+  const [targetTrainee, setTargetTrainee] = useState<any | null>(null);
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifType, setNotifType] = useState('info');
+  const [sendingNotif, setSendingNotif] = useState(false);
 
   const supabase = createClient();
 
@@ -180,6 +191,44 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleSendNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingNotif(true);
+    try {
+      const payload = {
+        trainee_id: notifTarget === 'single' ? targetTrainee?.id : null,
+        title: notifTitle.trim(),
+        message: notifMessage.trim(),
+        type: notifType,
+        is_read: false
+      };
+
+      const { error } = await supabase.from('trainee_notifications').insert(payload);
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_email: 'admin@nexus.com',
+        action: 'DISPATCH_NOTIFICATION',
+        target_entity: 'TRAINEE_NOTIFICATIONS',
+        target_id: targetTrainee?.id || 'ALL_BROADCAST',
+        details: `Dispatched ${notifType} notification "${notifTitle}" to ${notifTarget === 'single' ? targetTrainee?.email : 'All Trainees (Broadcast)'}`,
+        status: 'Success'
+      });
+
+      setFeedbackMsg({ 
+        type: 'success', 
+        text: `Notification "${notifTitle}" dispatched successfully to ${notifTarget === 'single' ? targetTrainee?.full_name : 'All Trainees'}!` 
+      });
+      setIsNotifModalOpen(false);
+      setNotifTitle('');
+      setNotifMessage('');
+    } catch (err: any) {
+      setFeedbackMsg({ type: 'error', text: err.message || 'Failed to dispatch notification.' });
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = 
       (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -199,11 +248,22 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight">Trainee & Executive Directory</h1>
-          <p className="text-xs text-slate-400 mt-1">LinkedIn-style candidate dossiers, state enterprise rosters, and administrator provisioning.</p>
+          <p className="text-xs text-slate-400 mt-1">Candidate dossiers, state enterprise rosters, and real-time push notification dispatch.</p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="text-xs text-slate-400 font-semibold">{filteredUsers.length} Trainees Displayed</span>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => {
+              setNotifTarget('broadcast');
+              setTargetTrainee(null);
+              setIsNotifModalOpen(true);
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-blue-600/20 cursor-pointer"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Send Broadcast Notification</span>
+          </button>
+          <span className="text-xs text-slate-400 font-semibold">{filteredUsers.length} Trainees</span>
         </div>
       </div>
 
@@ -563,21 +623,122 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Drawer Actions */}
-            <div className="pt-4 border-t border-slate-800 flex gap-2">
+            <div className="pt-4 border-t border-slate-800 space-y-2">
               <button
-                onClick={() => handleSuspend(selectedTrainee.id, selectedTrainee.is_active, selectedTrainee.email)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition"
+                onClick={() => {
+                  setNotifTarget('single');
+                  setTargetTrainee(selectedTrainee);
+                  setIsNotifModalOpen(true);
+                }}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
               >
-                {selectedTrainee.is_active ? 'Suspend Trainee' : 'Reactivate Trainee'}
+                <Bell className="w-4 h-4" />
+                <span>Send Direct Notification</span>
               </button>
-              <button
-                onClick={() => handleDelete(selectedTrainee)}
-                className="py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition cursor-pointer"
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSuspend(selectedTrainee.id, selectedTrainee.is_active, selectedTrainee.email)}
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {selectedTrainee.is_active ? 'Suspend Trainee' : 'Reactivate Trainee'}
+                </button>
+                <button
+                  onClick={() => handleDelete(selectedTrainee)}
+                  className="py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Delete Record
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Send Custom Notification Modal */}
+      {isNotifModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {notifTarget === 'single' ? `Notify ${targetTrainee?.full_name}` : 'Broadcast Notification to All'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {notifTarget === 'single' ? targetTrainee?.email : 'All enrolled candidate accounts across Maharashtra'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsNotifModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
-                Delete Record
+                <X className="w-5 h-5" />
               </button>
             </div>
 
+            <form onSubmit={handleSendNotification} className="space-y-3.5 text-xs">
+              <div>
+                <label className="text-slate-400 font-bold block mb-1">Notification Type</label>
+                <select
+                  value={notifType}
+                  onChange={e => setNotifType(e.target.value)}
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-blue-500 outline-none"
+                >
+                  <option value="info">General Information (Info)</option>
+                  <option value="survey">Longitudinal Survey Prompt</option>
+                  <option value="grant">MSME Capital Grant / Subsidy Alert</option>
+                  <option value="verification">Credential Verification Update</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-bold block mb-1">Notification Title</label>
+                <input
+                  type="text"
+                  required
+                  value={notifTitle}
+                  onChange={e => setNotifTitle(e.target.value)}
+                  placeholder="e.g. 6-Month Longitudinal Wage Survey Now Open"
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-blue-500 outline-none font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-bold block mb-1">Message Content</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={notifMessage}
+                  onChange={e => setNotifMessage(e.target.value)}
+                  placeholder="Provide detailed instructions or milestone requirements..."
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsNotifModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingNotif}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-blue-600/20 disabled:opacity-60 cursor-pointer"
+                >
+                  {sendingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  <span>{sendingNotif ? 'Dispatching...' : 'Dispatch Notification'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
+import { Language, getTranslation } from '@/lib/i18n';
+
 export interface TraineeProfile {
   id: string;
   user_id?: string;
@@ -11,31 +13,32 @@ export interface TraineeProfile {
   username?: string;
   full_name: string;
   email: string;
-  phone: string;
-  dob: string;
-  gender: string;
-  aadhaar_masked: string;
-  address: string;
-  district: string;
-  state: string;
-  pincode: string;
+  phone?: string;
+  dob?: string;
+  gender?: string;
+  aadhaar_masked?: string;
+  address?: string;
+  district?: string;
+  state?: string;
+  pincode?: string;
   avatar_url?: string;
   profile_completion_pct: number;
-  is_active: boolean;
   highest_education?: string;
   board_university?: string;
   year_of_passing?: number | null;
   education_percentage?: number | null;
-  skills: string[];
+  skills?: string[];
   about_me?: string;
+  notification_preferences?: any;
   privacy_hash?: string;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TraineeEmployment {
   id?: string;
   trainee_id?: string;
-  status: 'employed' | 'self_employed' | 'apprenticeship' | 'job_seeking' | 'not_employed';
+  status: string;
   company_name?: string;
   designation?: string;
   joining_date?: string;
@@ -43,7 +46,7 @@ export interface TraineeEmployment {
   business_name?: string;
   business_type?: string;
   business_category?: string;
-  business_status?: 'active' | 'scaling' | 'struggling' | 'closed' | 'transitioning';
+  business_status?: string;
   establishment_date?: string;
   monthly_revenue?: number;
   monthly_profit?: number;
@@ -53,20 +56,7 @@ export interface TraineeEmployment {
   business_address?: string;
   employees_count?: number;
   verified_by_admin?: boolean;
-}
-
-export interface TraineeFollowup {
-  id: string;
-  trainee_id: string;
-  milestone: '3_months' | '6_months' | '12_months' | '18_months' | '24_months';
-  due_date: string;
-  completed_date?: string;
-  status: 'scheduled' | 'completed' | 'upcoming' | 'overdue' | 'pending';
-  current_status?: string;
-  current_income_range?: string;
-  job_satisfaction_score?: number;
-  skill_utilization_score?: number;
-  remarks?: string;
+  verified_at?: string;
 }
 
 export interface TraineeEnrollment {
@@ -89,6 +79,21 @@ export interface TraineeEnrollment {
   };
 }
 
+export interface TraineeFollowup {
+  id: string;
+  trainee_id: string;
+  milestone: '3_months' | '6_months' | '12_months' | '18_months' | '24_months';
+  due_date: string;
+  completed_date?: string;
+  status: string;
+  current_status?: string;
+  current_income_range?: string;
+  job_satisfaction_score?: number;
+  skill_utilization_score?: number;
+  remarks?: string;
+  survey_data_json?: any;
+}
+
 export interface RecommendedOpportunity {
   id: string;
   title: string;
@@ -109,8 +114,11 @@ interface UserContextType {
   notifications: any[];
   opportunities: RecommendedOpportunity[];
   loading: boolean;
-  language: 'en' | 'mr' | 'hi';
-  setLanguage: (lang: 'en' | 'mr' | 'hi') => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string, fallback?: string) => string;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
   refreshData: () => Promise<void>;
   updateProfile: (data: Partial<TraineeProfile>) => Promise<boolean>;
   updateEmployment: (data: Partial<TraineeEmployment>) => Promise<boolean>;
@@ -128,10 +136,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [followups, setFollowups] = useState<TraineeFollowup[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [opportunities, setOpportunities] = useState<RecommendedOpportunity[]>([]);
-  const [language, setLanguage] = useState<'en' | 'mr' | 'hi'>('en');
+  const [language, setLanguageState] = useState<Language>('en');
   const [loading, setLoading] = useState<boolean>(true);
   const supabase = createClient();
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('nexus_language') as Language;
+      if (savedLang && ['en', 'mr', 'hi'].includes(savedLang)) {
+        setLanguageState(savedLang);
+      }
+    }
+  }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nexus_language', lang);
+    }
+  };
+
+  const t = (key: string, fallback?: string) => {
+    return getTranslation(language, key, fallback);
+  };
 
   const loadUserData = useCallback(async () => {
     try {
@@ -273,6 +301,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (data: Partial<TraineeProfile>): Promise<boolean> => {
     if (!profile) return false;
     try {
+      if (data.username) {
+        data.username = data.username.toLowerCase().trim().replace(/[^a-z0-9_.]/g, '');
+        if (data.username !== profile.username) {
+          const { data: existing } = await supabase
+            .from('trainees')
+            .select('id')
+            .eq('username', data.username)
+            .neq('id', profile.id)
+            .maybeSingle();
+          if (existing) {
+            alert('This username is already claimed by another trainee. Please choose a unique username.');
+            return false;
+          }
+        }
+      }
+
+      // Calculate real completion percentage based on filled profile attributes
+      const merged = { ...profile, ...data };
+      let filledCount = 0;
+      const keyFields = ['full_name', 'email', 'phone', 'dob', 'gender', 'address', 'district', 'highest_education', 'board_university', 'about_me'];
+      keyFields.forEach(f => { if ((merged as any)[f]) filledCount++; });
+      if (merged.skills && merged.skills.length > 0) filledCount += 2;
+      const completionPct = Math.min(100, Math.max(35, Math.round((filledCount / (keyFields.length + 2)) * 100)));
+      data.profile_completion_pct = completionPct;
+
       const { error } = await supabase
         .from('trainees')
         .update({
@@ -282,10 +335,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', profile.id);
 
       if (error) throw error;
-      setProfile((prev) => (prev ? { ...prev, ...data } : null));
+      setProfile((prev) => (prev ? { ...prev, ...data, profile_completion_pct: completionPct } : null));
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating profile:', err);
+      alert(err.message || 'Failed to update profile.');
       return false;
     }
   };
@@ -383,6 +437,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await supabase
+        .from('trainee_notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    if (!profile?.id) return;
+    try {
+      await supabase
+        .from('trainee_notifications')
+        .update({ is_read: true })
+        .or(`trainee_id.eq.${profile.id},trainee_id.is.null`);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -408,6 +487,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         language,
         setLanguage,
+        t,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
         refreshData: loadUserData,
         updateProfile,
         updateEmployment,

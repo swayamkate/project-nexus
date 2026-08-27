@@ -48,19 +48,19 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     setError(null);
 
     try {
-      const email = userEmail || 'anonymous.trainee@nexus.in';
-      const category = feedbackType === 'bug' ? 'Bug Report' : feedbackType === 'feature' ? 'Feature Suggestion' : 'General Feedback';
+      const email = userEmail || 'user@nexus.in';
+      const name = userName || 'Nexus Trainee';
       
       const { error: dbError } = await supabase
-        .from('support_tickets')
+        .from('platform_feedback')
         .insert({
-          email: email,
-          name: userName || 'Nexus Trainee',
-          subject: `[${category}] ${subject.trim()}`,
-          message: `Category: ${category}\nExperience Rating: ${rating}/5 Stars\n\n${message.trim()}`,
-          category: feedbackType === 'bug' ? 'Technical' : 'General',
-          status: 'open',
-          priority: feedbackType === 'bug' ? 'high' : 'medium'
+          user_email: email,
+          user_name: name,
+          category: feedbackType,
+          title: subject.trim(),
+          description: message.trim(),
+          rating: rating,
+          status: 'open'
         });
 
       if (dbError) throw dbError;

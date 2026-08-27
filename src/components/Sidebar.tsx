@@ -46,38 +46,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeSection, 
   setActiveSection 
 }) => {
-  const { signOut, notifications } = useUser();
+  const { signOut, notifications, t } = useUser();
 
-  const unreadNotifs = notifications?.filter(n => !n.is_read)?.length || 3;
+  const unreadNotifs = notifications?.filter(n => !n.is_read)?.length || 0;
 
   const adminMenuItems: MenuItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'trainees', label: 'Trainees', icon: Users },
-    { id: 'training', label: 'Training & Courses', icon: GraduationCap },
+    { id: 'training', label: t('nav.training', 'Training & Courses'), icon: GraduationCap },
     { id: 'employment', label: 'Employment', icon: Briefcase },
-    { id: 'follow-ups', label: 'Follow-ups', icon: CalendarClock },
+    { id: 'follow-ups', label: t('nav.followups', 'Follow-ups'), icon: CalendarClock },
     { id: 'employers', label: 'Employers', icon: Building2 },
     { id: 'skill-gap', label: 'Skill Gap Analysis', icon: Target },
     { id: 'district-analytics', label: 'District Analytics', icon: MapPin },
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
     { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
-    { id: 'settings', label: 'System Settings', icon: Settings },
+    { id: 'settings', label: t('nav.settings', 'System Settings'), icon: Settings },
   ];
 
   const traineeMenuItems: MenuItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'my-profile', label: 'My Profile', icon: User },
-    { id: 'analytics', label: 'Analytics & Insights', icon: BarChart3, isNew: true },
-    { id: 'training-details', label: 'Training Details', icon: GraduationCap },
-    { id: 'certifications', label: 'Certifications', icon: Award },
-    { id: 'employment-status', label: 'Employment Status', icon: Briefcase },
-    { id: 'follow-ups', label: 'Follow-ups', icon: CalendarClock },
-    { id: 'self-employment', label: 'Self-Employment', icon: Building2 },
-    { id: 'skill-development', label: 'Skill Development', icon: Target },
-    { id: 'documents', label: 'Documents Vault', icon: FileText },
-    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifs },
-    { id: 'settings', label: 'Settings & Security', icon: Settings },
-    { id: 'help-support', label: 'Help & Support', icon: HelpCircle },
+    { id: 'dashboard', label: t('nav.dashboard', 'Overview'), icon: LayoutDashboard },
+    { id: 'my-profile', label: t('nav.profile', 'My Profile'), icon: User },
+    { id: 'analytics', label: t('nav.analytics', 'Career Analytics'), icon: BarChart3 },
+    { id: 'training-details', label: t('nav.training', 'Training Details'), icon: GraduationCap },
+    { id: 'certifications', label: t('nav.certifications', 'Certifications'), icon: Award },
+    { id: 'follow-ups', label: t('nav.followups', 'Follow-ups'), icon: CalendarClock },
+    { id: 'self-employment', label: t('nav.selfEmployment', 'Self-Employment'), icon: Building2 },
+    { id: 'documents', label: t('nav.documents', 'Documents Vault'), icon: FileText },
+    { id: 'notifications', label: t('nav.notifications', 'Notifications'), icon: Bell, badge: unreadNotifs },
+    { id: 'settings', label: t('nav.settings', 'Settings & Security'), icon: Settings },
+    { id: 'help-support', label: t('nav.help', 'Help & Support'), icon: HelpCircle },
   ];
 
   const currentMenuItems = viewMode === 'admin' ? adminMenuItems : traineeMenuItems;

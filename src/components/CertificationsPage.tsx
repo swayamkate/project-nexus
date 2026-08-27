@@ -6,23 +6,23 @@ import { useUser } from '@/context/UserContext';
 import { EmptyState } from '@/components/EmptyState';
 
 export const CertificationsPage: React.FC = () => {
-  const { profile, enrollments } = useUser();
+  const { profile, enrollments, t } = useUser();
 
   const certifiedEnrollment = enrollments.find(e => !!e.certificate_id || e.status === 'certified') || enrollments[0];
 
   const hasCertificate = !!certifiedEnrollment?.certificate_id || certifiedEnrollment?.status === 'certified';
 
   const certData = {
-    id: certifiedEnrollment?.certificate_id || `MS-CERT-${profile?.trainee_id?.replace(/[^0-9]/g, '') || '904302'}`,
+    id: certifiedEnrollment?.certificate_id || `NX-CERT-${profile?.trainee_id?.replace(/[^0-9]/g, '') || '904302'}`,
     traineeName: profile?.full_name || 'Registered Trainee',
     traineeId: profile?.trainee_id || 'TRN-PENDING',
-    courseTitle: certifiedEnrollment?.training_programs?.title || 'State Vocational Training Program',
-    sector: certifiedEnrollment?.training_programs?.sector || 'Skill Development',
+    courseTitle: certifiedEnrollment?.training_programs?.title || 'Advanced Vocational Skill Program',
+    sector: certifiedEnrollment?.training_programs?.sector || 'Vocational & Applied Technology',
     issueDate: certifiedEnrollment?.certified_date || certifiedEnrollment?.completed_date || new Date().toISOString().split('T')[0],
     completionDate: certifiedEnrollment?.completed_date || certifiedEnrollment?.enrolled_date || new Date().toISOString().split('T')[0],
     grade: certifiedEnrollment?.grade ? `Grade ${certifiedEnrollment.grade}` : 'Grade A (Distinction)',
     nsqfLevel: 'NSQF Level 4/5',
-    issuingAuthority: certifiedEnrollment?.training_programs?.provider_name || 'Maharashtra State Skill Development Society (MSSDS)',
+    issuingAuthority: certifiedEnrollment?.training_programs?.provider_name || 'Nexus State Skilling & Assessment Authority',
   };
 
   const handlePrint = () => {
@@ -33,14 +33,14 @@ export const CertificationsPage: React.FC = () => {
     return (
       <div className="space-y-6 max-w-5xl mx-auto pb-12 text-slate-800">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Verified Certifications</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Official NSDC & State Mission Skill Credentials with QR Verification</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t('cert.title', 'Verified Certifications')}</h1>
+          <p className="text-xs text-slate-500 mt-0.5">{t('cert.subtitle', 'Official NSDC & State Mission Skill Credentials with QR Verification.')}</p>
         </div>
         <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-sm">
           <EmptyState
             icon={Award}
             title="No Certificates Issued Yet"
-            description="You do not have any issued certificates. Enroll in a skill program and complete your final evaluation to receive an NSQF-compliant digital credential."
+            description="You do not have any issued certificates. Enroll in an NSQF skilling program and complete your final evaluation to receive an authenticated digital credential."
           />
         </div>
       </div>
@@ -53,15 +53,15 @@ export const CertificationsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Verified Certifications</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Official NSDC & State Mission Skill Credentials with QR Verification</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t('cert.title', 'Verified Certifications')}</h1>
+          <p className="text-xs text-slate-500 mt-0.5">{t('cert.subtitle', 'Official NSDC & State Mission Skill Credentials with QR Verification.')}</p>
         </div>
         <button
           onClick={handlePrint}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
         >
           <Printer className="w-4 h-4" />
-          <span>Print / Save PDF</span>
+          <span>{t('cert.print', 'Print / Save PDF')}</span>
         </button>
       </div>
 
@@ -75,14 +75,14 @@ export const CertificationsPage: React.FC = () => {
           <div className="text-center space-y-2">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-100/60 border border-blue-200 text-blue-800 text-[11px] font-bold rounded-full uppercase tracking-wider">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>Government of Maharashtra • Skill Development & Entrepreneurship Department</span>
+              <span>Nexus Skilling & Enterprise Authority</span>
             </div>
             
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-slate-900 tracking-tight pt-2">
-              Certificate of Competency
+              {t('cert.competency', 'Certificate of Competency')}
             </h2>
             <p className="text-xs text-slate-500 font-medium tracking-widest uppercase">
-              National Skills Qualifications Framework (NSQF)
+              {t('cert.nsqf', 'National Skills Qualifications Framework (NSQF)')}
             </p>
           </div>
 
