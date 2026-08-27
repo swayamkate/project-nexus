@@ -175,27 +175,6 @@ export default function AdminLoginPage() {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
-
-          {/* Quick Demo Access Badge */}
-          <div className="mt-5 pt-4 border-t border-slate-800/80">
-            <span className="text-[11px] font-semibold text-slate-400 block mb-2 text-center">Quick Demo Access</span>
-            <button
-              type="button"
-              onClick={() => {
-                setIdentifier('Avishkar0');
-                setPassword('Avishkar@admin6198');
-              }}
-              className="w-full py-2 px-3.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl text-left flex items-center justify-between transition group cursor-pointer text-xs"
-            >
-              <div>
-                <span className="font-bold text-slate-200 block">Executive Superadmin</span>
-                <span className="text-[10px] text-slate-400 font-mono">Avishkar0</span>
-              </div>
-              <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 group-hover:bg-blue-500/20 transition">
-                Auto-fill
-              </span>
-            </button>
-          </div>
         </div>
       </main>
 
