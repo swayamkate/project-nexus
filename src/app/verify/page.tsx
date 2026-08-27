@@ -75,7 +75,7 @@ function CertificateVerifyContent() {
 
       if (dbErr) throw dbErr;
 
-      if (enrollment) {
+      if (enrollment && enrollment.status === 'certified' && Boolean(enrollment.certificate_id?.trim())) {
         setRecord(enrollment as unknown as VerifiedRecord);
         setActiveCertId(clean);
       } else {
@@ -148,7 +148,7 @@ function CertificateVerifyContent() {
               type="text"
               value={certInput}
               onChange={e => { setCertInput(e.target.value); setError(''); }}
-              placeholder="e.g. CERT-2026-849201"
+              placeholder="Enter certificate ID"
               className="w-full bg-transparent border-none text-sm text-white placeholder-slate-500 focus:outline-none px-2 py-2 font-mono uppercase"
             />
             <button
@@ -162,7 +162,7 @@ function CertificateVerifyContent() {
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 px-2">
-            <span>Verified Registry Demo: <button type="button" onClick={() => { setCertInput('CERT-2026-849201'); performLookup('CERT-2026-849201'); }} className="text-blue-400 underline font-mono cursor-pointer">CERT-2026-849201</button></span>
+            <span>Only registry-issued certificates are accepted.</span>
             <span>Zero-PII SHA-256 Protected</span>
           </div>
         </form>

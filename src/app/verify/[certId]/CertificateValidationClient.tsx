@@ -56,7 +56,7 @@ export function CertificateValidationClient({ certId }: Props) {
 
         if (dbErr) throw dbErr;
 
-        if (enrollment) {
+        if (enrollment && enrollment.status === 'certified' && Boolean(enrollment.certificate_id?.trim())) {
           setRecord(enrollment);
         } else {
           setError(`No active state credential matching reference "${certId}" was found in the official registry.`);
@@ -143,15 +143,15 @@ export function CertificateValidationClient({ certId }: Props) {
                 <span className="text-slate-500 flex items-center">
                   <User className="w-3.5 h-3.5 mr-1 text-blue-400" /> Candidate Name
                 </span>
-                <p className="text-base font-bold text-white">{record.trainees?.full_name || 'Verified Candidate'}</p>
-                <p className="text-[11px] text-slate-400">{record.trainees?.district || 'Pune'}, {record.trainees?.state || 'Maharashtra'}</p>
+                <p className="text-base font-bold text-white">{record.trainees?.full_name || 'Name not recorded'}</p>
+                <p className="text-[11px] text-slate-400">{record.trainees?.district || 'District not recorded'}, {record.trainees?.state || 'State not recorded'}</p>
               </div>
 
               <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 space-y-1">
                 <span className="text-slate-500 flex items-center">
                   <Award className="w-3.5 h-3.5 mr-1 text-purple-400" /> Qualification Grade
                 </span>
-                <p className="text-base font-bold text-emerald-400">{record.grade || 'Grade A+ (Distinction)'}</p>
+                <p className="text-base font-bold text-emerald-400">{record.grade || 'Grade not recorded'}</p>
                 <p className="text-[11px] text-slate-400">Duration: {record.training_programs?.duration_months || 3} Months</p>
               </div>
             </div>
@@ -162,12 +162,12 @@ export function CertificateValidationClient({ certId }: Props) {
                 <Building2 className="w-3.5 h-3.5 mr-1 text-amber-400" /> Vocational Trade Program
               </span>
               <p className="text-sm font-bold text-white leading-snug">
-                {record.training_programs?.title || 'Advanced Industrial Skill Program'}
+                {record.training_programs?.title || 'Program title not recorded'}
               </p>
               <div className="flex flex-wrap gap-3 text-[11px] text-slate-400 pt-1">
-                <span>Sector: <strong className="text-slate-200">{record.training_programs?.sector || 'Industrial'}</strong></span>
+                <span>Sector: <strong className="text-slate-200">{record.training_programs?.sector || 'Sector not recorded'}</strong></span>
                 <span>•</span>
-                <span>Issuing Body: <strong className="text-slate-200">{record.training_programs?.provider_name || 'State Skill Development Mission'}</strong></span>
+                <span>Issuing Body: <strong className="text-slate-200">{record.training_programs?.provider_name || 'Issuing authority not recorded'}</strong></span>
               </div>
             </div>
 
@@ -178,7 +178,7 @@ export function CertificateValidationClient({ certId }: Props) {
                 <span>Cryptographic Proof & Zero-PII Enclave Signature</span>
               </div>
               <p className="font-mono text-[11px] text-slate-400 break-all leading-relaxed">
-                SHA-256 Digest: {record.trainees?.privacy_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+                SHA-256 Digest: {record.trainees?.privacy_hash || 'Digest not recorded'}
               </p>
               <p className="text-[10px] text-slate-500">
                 Verified against state blockchain node timestamp at {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}.

@@ -33,8 +33,11 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const certId = enrollments?.[0]?.certificate_id || `CERT-2026-${profile?.trainee_id?.replace('TRN-', '') || '849201'}`;
-  const verifyUrl = `https://sih2026.avishkark.in/verify?id=${encodeURIComponent(certId)}`;
+  const verifiedEnrollments = (enrollments || []).filter(
+    enr => enr.status === 'certified' && Boolean(enr.certificate_id?.trim())
+  );
+  const certId = verifiedEnrollments[0]?.certificate_id || null;
+  const verifyUrl = certId ? `https://sih2026.avishkark.in/verify?id=${encodeURIComponent(certId)}` : null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -84,13 +87,13 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
             </div>
 
             {/* QR Code Validation Target */}
-            <div className="flex flex-col items-center p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-1 flex-shrink-0">
+            {certId && <div className="flex flex-col items-center p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-1 flex-shrink-0">
               <div className="w-20 h-20 bg-slate-900 text-white rounded-xl flex items-center justify-center p-2">
                 <QrCode className="w-16 h-16 text-white" />
               </div>
               <span className="text-[9px] font-mono text-slate-500 uppercase font-bold">Scan to Verify</span>
               <span className="text-[8px] font-mono text-blue-600">{certId}</span>
-            </div>
+            </div>}
           </div>
 
           {/* Section: Professional Summary */}
@@ -113,26 +116,25 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
             </h3>
 
             <div className="space-y-3">
-              {enrollments && enrollments.length > 0 ? (
-                enrollments.map((enr, idx) => (
+              {verifiedEnrollments.length > 0 ? (
+                verifiedEnrollments.map((enr, idx) => (
                   <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1">
                     <div className="flex justify-between items-start">
                       <h4 className="font-bold text-xs text-slate-900">{enr.training_programs?.title || 'Vocational Trade Program'}</h4>
                       <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                        {enr.grade || 'Grade A+ (Distinction)'}
+                        {enr.grade || 'Grade not recorded'}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      {enr.training_programs?.provider_name || 'Maharashtra State Skill Development Society (MSSDS)'} • Duration: {enr.training_programs?.duration_months || 3} Months
+                      {enr.training_programs?.provider_name || 'Issuing authority not recorded'} • Duration: {enr.training_programs?.duration_months || 'Not recorded'} Months
                     </p>
-                    <p className="text-[10px] font-mono text-slate-400">Credential Reference: {enr.certificate_id || certId}</p>
+                    <p className="text-[10px] font-mono text-slate-400">Credential Reference: {enr.certificate_id}</p>
                   </div>
                 ))
               ) : (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1">
-                  <h4 className="font-bold text-xs text-slate-900">Advanced Industrial Apparel Construction & Pattern Engineering</h4>
-                  <p className="text-[11px] text-slate-500">Maharashtra State Skill Development Society (MSSDS) • NSQF Level 4</p>
-                  <p className="text-[10px] font-mono text-slate-400">Credential Reference: {certId}</p>
+                  <h4 className="font-bold text-xs text-slate-900">No verified certifications</h4>
+                  <p className="text-[11px] text-slate-500">Only certificates issued by the registry appear here.</p>
                 </div>
               )}
             </div>
@@ -183,7 +185,7 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
           {/* Footer Security Notice */}
           <div className="border-t border-slate-200 pt-4 text-[10px] text-slate-400 flex items-center justify-between">
             <span>Cryptographically Verified on Nexus Outcome Registry</span>
-            <span className="font-mono">{verifyUrl}</span>
+            {verifyUrl && <span className="font-mono">{verifyUrl}</span>}
           </div>
 
         </div>

@@ -8,28 +8,33 @@ import { EmptyState } from '@/components/EmptyState';
 export const CertificationsPage: React.FC = () => {
   const { profile, enrollments, t } = useUser();
 
-  const certifiedEnrollment = enrollments.find(e => !!e.certificate_id || e.status === 'certified') || enrollments[0];
+  // A certificate is real only when the registry has both a certified status
+  // and a non-empty certificate reference. Never manufacture credentials from
+  // an enrollment that is still in progress (or from UI defaults).
+  const certifiedEnrollment = enrollments.find(
+    e => e.status === 'certified' && Boolean(e.certificate_id?.trim())
+  );
 
-  const hasCertificate = !!certifiedEnrollment?.certificate_id || certifiedEnrollment?.status === 'certified';
+  const hasCertificate = Boolean(certifiedEnrollment);
 
   const certData = {
-    id: certifiedEnrollment?.certificate_id || `NX-CERT-${profile?.trainee_id?.replace(/[^0-9]/g, '') || '904302'}`,
-    traineeName: profile?.full_name || 'Registered Trainee',
-    traineeId: profile?.trainee_id || 'TRN-PENDING',
-    courseTitle: certifiedEnrollment?.training_programs?.title || 'Advanced Vocational Skill Program',
-    sector: certifiedEnrollment?.training_programs?.sector || 'Vocational & Applied Technology',
-    issueDate: certifiedEnrollment?.certified_date || certifiedEnrollment?.completed_date || new Date().toISOString().split('T')[0],
-    completionDate: certifiedEnrollment?.completed_date || certifiedEnrollment?.enrolled_date || new Date().toISOString().split('T')[0],
-    grade: certifiedEnrollment?.grade ? `Grade ${certifiedEnrollment.grade}` : 'Grade A (Distinction)',
-    nsqfLevel: 'NSQF Level 4/5',
-    issuingAuthority: certifiedEnrollment?.training_programs?.provider_name || 'Nexus State Skilling & Assessment Authority',
+    id: certifiedEnrollment?.certificate_id || '',
+    traineeName: profile?.full_name || 'Name not recorded',
+    traineeId: profile?.trainee_id || 'Registration number not recorded',
+    courseTitle: certifiedEnrollment?.training_programs?.title || 'Program title not recorded',
+    sector: certifiedEnrollment?.training_programs?.sector || 'Sector not recorded',
+    issueDate: certifiedEnrollment?.certified_date || 'Date not recorded',
+    completionDate: certifiedEnrollment?.completed_date || 'Date not recorded',
+    grade: certifiedEnrollment?.grade ? `Grade ${certifiedEnrollment.grade}` : 'Grade not recorded',
+    nsqfLevel: 'NSQF level not recorded',
+    issuingAuthority: certifiedEnrollment?.training_programs?.provider_name || 'Issuing authority not recorded',
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  if (!hasCertificate && enrollments.length === 0) {
+  if (!hasCertificate) {
     return (
       <div className="space-y-6 max-w-5xl mx-auto pb-12 text-slate-800">
         <div>

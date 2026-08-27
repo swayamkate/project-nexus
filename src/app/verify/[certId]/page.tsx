@@ -1,11 +1,9 @@
 import { CertificateValidationClient } from './CertificateValidationClient';
 
 export function generateStaticParams() {
-  return [
-    { certId: 'CERT-2026-849201' },
-    { certId: 'MSSDS-2026-A101' },
-    { certId: 'TRN-2026-001' },
-  ];
+  // Certificate pages must be reached with an ID issued by the registry.
+  // Do not prebuild demo credentials that look genuine.
+  return [];
 }
 
 export default async function CertificateValidationPage({

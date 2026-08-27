@@ -10,17 +10,11 @@ import {
   ShieldCheck,
   User,
   ChevronDown,
-  Globe,
   X,
   Settings,
-  BarChart3,
-  Award,
-  Sun,
-  Moon,
-  Monitor
+  BarChart3
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
-import { useTheme } from '@/context/ThemeContext';
 
 interface NavbarProps {
   viewMode: 'admin' | 'trainee';
@@ -37,8 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate, 
   onMobileMenuToggle 
 }) => {
-  const { user, profile, notifications, signOut, language, setLanguage, t, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { user, profile, notifications, signOut, t, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -50,12 +43,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleDropdownNavigate = (sec: string) => {
     if (onNavigate) onNavigate(sec);
     setShowUserMenu(false);
-  };
-
-  const handleCycleTheme = () => {
-    if (theme === 'system') setTheme('light');
-    else if (theme === 'light') setTheme('dark');
-    else setTheme('system');
   };
 
   return (
@@ -83,44 +70,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Right Controls */}
       <div className="flex items-center space-x-2 sm:space-x-3.5">
         
-        {/* Language Switcher */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 border border-transparent dark:border-slate-800">
-          <button
-            onClick={() => setLanguage('en')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => setLanguage('mr')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-          >
-            मराठी
-          </button>
-          <button
-            onClick={() => setLanguage('hi')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-          >
-            हिंदी
-          </button>
-        </div>
-
-        {/* Quick Theme Toggle Button */}
-        <button
-          type="button"
-          onClick={handleCycleTheme}
-          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer btn-interactive"
-          title={`Theme: ${theme.toUpperCase()} (Click to cycle)`}
-        >
-          {theme === 'system' ? (
-            <Monitor className="w-4 h-4 text-blue-500" />
-          ) : theme === 'dark' ? (
-            <Moon className="w-4 h-4 text-indigo-400" />
-          ) : (
-            <Sun className="w-4 h-4 text-amber-500" />
-          )}
-        </button>
-
         {/* Superadmin Console Quick Access (Only if admin email) */}
         {user?.email === 'admin@nexus.com' && (
           <a

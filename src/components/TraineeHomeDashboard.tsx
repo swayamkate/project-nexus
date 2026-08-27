@@ -64,7 +64,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
 
   const displayName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trainee';
   const completedTrainingsCount = enrollments.filter(e => e.status === 'completed' || e.status === 'certified').length;
-  const certificationsCount = enrollments.filter(e => !!e.certificate_id || e.status === 'certified').length;
+  const certificationsCount = enrollments.filter(e => e.status === 'certified' && Boolean(e.certificate_id?.trim())).length;
   
   const employmentStatusLabel = employment?.status 
     ? (employment.status === 'self_employed' ? 'Self-Employed' : employment.status === 'employed' ? 'Employed' : employment.status === 'apprenticeship' ? 'Apprentice' : 'Job Seeking')
@@ -122,7 +122,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
       title: 'Certified', 
       date: firstEnrollment?.certified_date || (firstEnrollment?.certificate_id ? 'Certified' : 'Pending Exam'), 
       icon: Award, 
-      completed: !!firstEnrollment?.certificate_id || firstEnrollment?.status === 'certified' 
+      completed: firstEnrollment?.status === 'certified' && Boolean(firstEnrollment?.certificate_id?.trim())
     },
     { 
       title: employmentStatusLabel, 

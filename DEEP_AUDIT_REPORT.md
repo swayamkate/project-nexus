@@ -33,6 +33,10 @@ The live browser also emitted React minified error #418 on interactive public ro
 
 `src/app/api/docs/page.tsx:67` advertises `/api/schemes/apply`, but live HTTP returns 404. Implement an authenticated route with validation/RLS or remove it from the public API documentation.
 
+### C6 — Certification UI manufactured credentials
+
+`CertificationsPage`, `ResumeDossierModal`, and the public verification routes previously filled missing certificate IDs, grades, dates, programs, and demo registry references with realistic-looking values. A newly registered trainee could therefore see a “verified” credential before completing training. The UI now requires both `status = 'certified'` and a non-empty database `certificate_id`; otherwise it shows an empty state or an invalid lookup.
+
 ## High-priority findings
 
 ### H1 — Signup availability errors must not be presented as “taken”
@@ -67,6 +71,7 @@ The database setting is now standardized to `support@nexus.in`, but all public/a
 - The public portal sends notification inserts from client code; enforce server-side authorization and rate limits even if RLS currently blocks unauthorized writes.
 - API docs state “Bearer JWT Authenticated,” but public health/verification routes are unauthenticated. Document public vs authenticated endpoints accurately.
 - The service worker caches navigations; bump the cache version on releases and ensure stale HTML cannot preserve obsolete client auth code.
+- The dashboard header exposed language and theme controls that were not consistently reflected across the product. Those non-functional quick toggles were removed from the header; language/theme configuration remains available only in Settings until each translation/theme surface is fully verified.
 
 ## Recommended execution order
 
