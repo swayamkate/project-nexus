@@ -30,7 +30,9 @@ export default function AdminLoginPage() {
       });
       
       if (saRes.ok) {
-        window.location.href = '/';
+        document.cookie = "nexus_superadmin=true; path=/; max-age=604800; SameSite=Lax";
+        document.cookie = "superadmin_token=true; path=/; max-age=604800; SameSite=Lax";
+        window.location.assign('/');
         return;
       }
 
