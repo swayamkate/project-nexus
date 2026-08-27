@@ -121,11 +121,7 @@ export default function AdminLoginPage() {
           )}
 
           <form 
-            action="#" 
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAuth(e);
-            }} 
+            onSubmit={handleAuth} 
             className="space-y-4"
           >
             <div>

@@ -428,11 +428,7 @@ export default function LoginPage() {
           {/* --- VIEW 1: SIGN IN --- */}
           {authMode === 'login' && (
             <form 
-              action="#" 
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleLogin(e);
-              }} 
+              onSubmit={handleLogin} 
               className="space-y-4"
             >
               <div>
@@ -497,11 +493,7 @@ export default function LoginPage() {
           {/* --- VIEW 2: SIGN UP --- */}
           {authMode === 'signup' && (
             <form 
-              action="#" 
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSignUp(e);
-              }} 
+              onSubmit={handleSignUp} 
               className="space-y-3.5"
             >
               <div>
@@ -610,11 +602,7 @@ export default function LoginPage() {
           {/* --- VIEW 3: OTP VERIFICATION --- */}
           {authMode === 'otp_verify' && (
             <form 
-              action="#" 
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleVerifyOtp(e);
-              }} 
+              onSubmit={handleVerifyOtp} 
               className="space-y-5"
             >
               <div className="text-center space-y-1">
