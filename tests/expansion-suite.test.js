@@ -1,5 +1,10 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert');
+
+if (typeof globalThis.WebSocket === 'undefined') {
+  globalThis.WebSocket = class DummyWebSocket {};
+}
+
 const { createClient } = require('@supabase/supabase-js');
 
 // Master Role Competency Database (NSQF Aligned)
