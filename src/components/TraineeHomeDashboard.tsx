@@ -27,13 +27,14 @@ import {
   Loader2
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { EmptyState } from '@/components/EmptyState';
 
 interface TraineeHomeDashboardProps {
   onNavigate: (section: string) => void;
 }
 
 export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNavigate }) => {
-  const { user, profile, employment, enrollments, followups, notifications, updateEmployment, submitFollowup } = useUser();
+  const { user, profile, employment, enrollments, followups, notifications, opportunities, updateEmployment, submitFollowup } = useUser();
   
   // Modals state
   const [showBusinessModal, setShowBusinessModal] = useState(false);
@@ -44,36 +45,47 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
 
   // Business Edit state
   const [businessForm, setBusinessForm] = useState({
-    business_name: employment?.business_name || 'Priya Stitch Works',
-    business_type: employment?.business_type || 'Tailoring Services',
-    location: profile?.district ? `${profile.district}, Maharashtra` : 'Pune, Maharashtra',
-    monthly_income_range: employment?.monthly_income_range || '₹10,000 – ₹20,000',
-    monthly_revenue: employment?.monthly_revenue || 18500
+    business_name: employment?.business_name || '',
+    business_type: employment?.business_type || '',
+    location: profile?.district ? `${profile.district}, Maharashtra` : 'Maharashtra',
+    monthly_income_range: employment?.monthly_income_range || '',
+    monthly_revenue: employment?.monthly_revenue || 0
   });
 
   // Followup Quick state
   const [surveyForm, setSurveyForm] = useState({
     milestone: '6_months',
-    current_status: 'Active',
-    current_income_range: '₹10,000 – ₹20,000',
-    remarks: 'Increased client base and revenue.'
+    current_status: 'self_employed',
+    current_income_range: '₹20,000 – ₹35,000',
+    remarks: 'Consistent growth and regular client orders.'
   });
 
-  const displayName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Priya';
-  const completedTrainingsCount = enrollments.filter(e => e.status === 'completed' || e.status === 'certified').length || 1;
-  const certificationsCount = enrollments.filter(e => !!e.certificate_id || e.status === 'certified').length || 1;
+  const displayName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trainee';
+  const completedTrainingsCount = enrollments.filter(e => e.status === 'completed' || e.status === 'certified').length;
+  const certificationsCount = enrollments.filter(e => !!e.certificate_id || e.status === 'certified').length;
   
+  const employmentStatusLabel = employment?.status 
+    ? (employment.status === 'self_employed' ? 'Self-Employed' : employment.status === 'employed' ? 'Employed' : employment.status === 'apprenticeship' ? 'Apprentice' : 'Job Seeking')
+    : 'Not Registered';
+
+  const nextPendingFollowup = followups.find(f => f.status !== 'completed');
+  const nextFollowupLabel = nextPendingFollowup 
+    ? `${nextPendingFollowup.milestone.replace('_', ' ')}` 
+    : (followups.length > 0 ? 'All Completed' : 'Pending');
+
   const handleSaveBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     await updateEmployment({
       business_name: businessForm.business_name,
       business_type: businessForm.business_type,
-      monthly_revenue: businessForm.monthly_revenue,
+      monthly_revenue: Number(businessForm.monthly_revenue) || 0,
       monthly_income_range: businessForm.monthly_income_range
     });
     setSaving(false);
     setShowBusinessModal(false);
+    setToastMsg('Business profile successfully updated.');
+    setTimeout(() => setToastMsg(null), 3000);
   };
 
   const handleSaveFollowup = async (e: React.FormEvent) => {
@@ -86,14 +98,42 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
     });
     setSaving(false);
     setShowFollowupModal(false);
+    setToastMsg('Milestone followup survey submitted.');
+    setTimeout(() => setToastMsg(null), 3000);
   };
 
+  const firstEnrollment = enrollments[0];
   const journeySteps = [
-    { title: 'Training Enrolled', date: '10 Apr 2024', icon: GraduationCap, completed: true },
-    { title: 'Training Completed', date: '30 Jun 2024', icon: BookOpen, completed: true },
-    { title: 'Certified', date: '15 Jul 2024', icon: Award, completed: true },
-    { title: 'Self-Employed', date: '01 Aug 2024', icon: Building2, completed: true },
-    { title: 'Next Follow-up', date: '20 Jun 2025', icon: Calendar, completed: false }
+    { 
+      title: 'Training Enrolled', 
+      date: firstEnrollment?.enrolled_date || (firstEnrollment ? 'Enrolled' : 'Not Enrolled'), 
+      icon: GraduationCap, 
+      completed: !!firstEnrollment 
+    },
+    { 
+      title: 'Training Completed', 
+      date: firstEnrollment?.completed_date || (firstEnrollment?.status === 'completed' || firstEnrollment?.status === 'certified' ? 'Completed' : 'In Progress'), 
+      icon: BookOpen, 
+      completed: !!firstEnrollment?.completed_date || firstEnrollment?.status === 'completed' || firstEnrollment?.status === 'certified' 
+    },
+    { 
+      title: 'Certified', 
+      date: firstEnrollment?.certified_date || (firstEnrollment?.certificate_id ? 'Certified' : 'Pending Exam'), 
+      icon: Award, 
+      completed: !!firstEnrollment?.certificate_id || firstEnrollment?.status === 'certified' 
+    },
+    { 
+      title: employmentStatusLabel, 
+      date: employment?.establishment_date || employment?.joining_date || (employment ? 'Active' : 'Unregistered'), 
+      icon: Building2, 
+      completed: !!employment 
+    },
+    { 
+      title: nextPendingFollowup ? `${nextPendingFollowup.milestone.replace('_', ' ')} Milestone` : 'Longitudinal Tracking', 
+      date: nextPendingFollowup?.due_date || (followups.length > 0 ? 'Completed' : 'Scheduled at M+3'), 
+      icon: Calendar, 
+      completed: followups.length > 0 && !nextPendingFollowup 
+    }
   ];
 
   return (
@@ -158,7 +198,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
             </div>
             <div>
               <span className="text-xs font-semibold text-slate-500">Employment Status</span>
-              <p className="text-lg font-black text-slate-900 mt-0.5">Self-Employed</p>
+              <p className="text-lg font-black text-slate-900 mt-0.5">{employmentStatusLabel}</p>
             </div>
           </div>
           <button 
@@ -178,7 +218,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
             </div>
             <div>
               <span className="text-xs font-semibold text-slate-500">Next Follow-up</span>
-              <p className="text-xl font-black text-amber-600 mt-0.5">85 Days Left</p>
+              <p className="text-lg font-black text-amber-600 mt-0.5 capitalize">{nextFollowupLabel}</p>
             </div>
           </div>
           <button 
@@ -234,62 +274,80 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">Self-Employment Overview</h3>
-              <span className="px-2.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold rounded-full">
-                Active
+              <h3 className="font-bold text-slate-900 text-sm">Self-Employment & Enterprise</h3>
+              <span className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${
+                employment?.verified_by_admin 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                  : employment 
+                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}>
+                {employment?.business_status ? employment.business_status.toUpperCase() : (employment ? 'ACTIVE' : 'UNREGISTERED')}
               </span>
             </div>
 
-            <div className="space-y-3 pt-3 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <Building2 className="w-4 h-4 text-slate-400" />
-                  <span>Business Type</span>
+            {employment ? (
+              <div className="space-y-3 pt-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-slate-500">
+                    <Building2 className="w-4 h-4 text-slate-400" />
+                    <span>Business Type</span>
+                  </div>
+                  <span className="font-semibold text-slate-800">{employment.business_type || employment.business_category || 'Micro-Enterprise'}</span>
                 </div>
-                <span className="font-semibold text-slate-800">{employment?.business_type || 'Tailoring Services'}</span>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <Briefcase className="w-4 h-4 text-slate-400" />
-                  <span>Business Name</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-slate-500">
+                    <Briefcase className="w-4 h-4 text-slate-400" />
+                    <span>Enterprise Name</span>
+                  </div>
+                  <span className="font-bold text-slate-900">{employment.business_name || employment.company_name || 'Registered Unit'}</span>
                 </div>
-                <span className="font-bold text-slate-900">{employment?.business_name || 'Priya Stitch Works'}</span>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span>Start Date</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-slate-500">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span>Established Date</span>
+                  </div>
+                  <span className="font-semibold text-slate-800">{employment.establishment_date || employment.joining_date || 'Active'}</span>
                 </div>
-                <span className="font-semibold text-slate-800">{employment?.establishment_date || '01 Aug 2024'}</span>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>Location</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-slate-500">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    <span>Location</span>
+                  </div>
+                  <span className="font-semibold text-slate-800">{employment.business_address || (profile?.district ? `${profile.district}, Maharashtra` : 'Maharashtra')}</span>
                 </div>
-                <span className="font-semibold text-slate-800">{profile?.district ? `${profile.district}, Maharashtra` : 'Pune, Maharashtra'}</span>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <TrendingUp className="w-4 h-4 text-slate-400" />
-                  <span>Monthly Income Range</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-slate-500">
+                    <TrendingUp className="w-4 h-4 text-slate-400" />
+                    <span>Monthly Revenue / Income</span>
+                  </div>
+                  <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                    {employment.monthly_revenue ? `₹${employment.monthly_revenue.toLocaleString('en-IN')}` : (employment.monthly_income_range || '₹15,000 – ₹25,000')}
+                  </span>
                 </div>
-                <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                  {employment?.monthly_income_range || '₹10,000 – ₹20,000'}
-                </span>
               </div>
-            </div>
+            ) : (
+              <div className="py-4">
+                <EmptyState
+                  icon={Building2}
+                  title="No Enterprise Registered"
+                  description="Add your micro-enterprise, shop, or freelance practice to track monthly income growth and qualify for MUDRA & PMEGP subsidies."
+                  actionLabel="Register Enterprise"
+                  onAction={() => setShowBusinessModal(true)}
+                />
+              </div>
+            )}
           </div>
 
           <button
             onClick={() => setShowBusinessModal(true)}
-            className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer"
+            className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer mt-4"
           >
-            <span>Update Business Details</span>
+            <span>{employment ? 'Update Business Details' : 'Register New Enterprise'}</span>
           </button>
         </div>
 
@@ -297,151 +355,96 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-6">
           <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
             <Calendar className="w-4 h-4 text-blue-600" />
-            <h3 className="font-bold text-slate-900 text-sm">Upcoming Follow-up</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Longitudinal Tracking Status</h3>
           </div>
 
           <div className="text-center py-4 space-y-1.5">
-            <span className="text-xs text-slate-500">Your next follow-up is due on</span>
-            <p className="text-2xl font-black text-slate-900 tracking-tight">20 Jun 2025</p>
-            <span className="text-xs text-slate-500 font-medium">(6 Months Follow-up)</span>
+            <span className="text-xs text-slate-500">
+              {nextPendingFollowup ? 'Your next milestone survey is due on' : 'Longitudinal Outcome Verification'}
+            </span>
+            <p className="text-2xl font-black text-slate-900 tracking-tight">
+              {nextPendingFollowup ? nextPendingFollowup.due_date : 'All Milestones Up-to-Date'}
+            </p>
+            <span className="text-xs text-slate-500 font-medium">
+              {nextPendingFollowup ? `(${nextPendingFollowup.milestone.replace('_', ' ')} Milestone)` : `${followups.length} completed longitudinal records`}
+            </span>
           </div>
 
           <button
             onClick={() => setShowFollowupModal(true)}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
           >
-            <span>Update Follow-up</span>
+            <span>{nextPendingFollowup ? 'Submit Milestone Survey' : 'Log New Update'}</span>
           </button>
         </div>
 
       </div>
 
-      {/* Follow-up History (3 Cards) */}
+      {/* Follow-up History */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-base">Follow-up History</h3>
+          <h3 className="font-bold text-slate-900 text-base">Longitudinal Follow-up History</h3>
           <button 
             onClick={() => onNavigate('follow-ups')}
             className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
           >
-            View All
+            View All ({followups.length})
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Card 1: 3M */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <h4 className="font-bold text-slate-900 text-xs">3 Months Follow-up</h4>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
-                  Completed
-                </span>
-              </div>
-
-              <div className="text-[11px] text-slate-600 space-y-1 pt-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Date:</span>
-                  <span className="font-semibold">20 Nov 2024</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Business Status:</span>
-                  <span className="font-semibold text-emerald-600">Active</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Income Range:</span>
-                  <span className="font-semibold">₹5,000 – ₹10,000</span>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => onNavigate('follow-ups')}
-              className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-            >
-              View Details
-            </button>
+        {followups.length === 0 ? (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6">
+            <EmptyState
+              icon={Calendar}
+              title="No Follow-up Surveys Logged"
+              description="Longitudinal surveys track your employment and income outcomes at 3, 6, 12, 18, and 24 months post-training."
+              actionLabel="Submit Initial Follow-up"
+              onAction={() => setShowFollowupModal(true)}
+            />
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {followups.slice(0, 3).map((fol) => (
+              <div key={fol.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle2 className={`w-4 h-4 ${fol.status === 'completed' ? 'text-emerald-500' : 'text-blue-500'}`} />
+                      <h4 className="font-bold text-slate-900 text-xs capitalize">{fol.milestone.replace('_', ' ')} Follow-up</h4>
+                    </div>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md capitalize ${
+                      fol.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      {fol.status}
+                    </span>
+                  </div>
 
-          {/* Card 2: 6M */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <h4 className="font-bold text-slate-900 text-xs">6 Months Follow-up</h4>
+                  <div className="text-[11px] text-slate-600 space-y-1 pt-1">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Date:</span>
+                      <span className="font-semibold">{fol.completed_date || fol.due_date}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Status:</span>
+                      <span className="font-semibold text-emerald-600 capitalize">{fol.current_status ? fol.current_status.replace('_', ' ') : 'Active'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Income Range:</span>
+                      <span className="font-semibold">{fol.current_income_range || '₹15,000 – ₹25,000'}</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
-                  Completed
-                </span>
+
+                <button 
+                  onClick={() => onNavigate('follow-ups')}
+                  className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer"
+                >
+                  View Details
+                </button>
               </div>
-
-              <div className="text-[11px] text-slate-600 space-y-1 pt-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Date:</span>
-                  <span className="font-semibold">20 Feb 2025</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Business Status:</span>
-                  <span className="font-semibold text-emerald-600">Active</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Income Range:</span>
-                  <span className="font-semibold">₹10,000 – ₹20,000</span>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => onNavigate('follow-ups')}
-              className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-            >
-              View Details
-            </button>
+            ))}
           </div>
-
-          {/* Card 3: 12M */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  <h4 className="font-bold text-slate-900 text-xs">12 Months Follow-up</h4>
-                </div>
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md">
-                  Upcoming
-                </span>
-              </div>
-
-              <div className="text-[11px] text-slate-600 space-y-1 pt-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Date:</span>
-                  <span className="font-semibold">20 Aug 2025</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Business Status:</span>
-                  <span className="font-semibold">-</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Income Range:</span>
-                  <span className="font-semibold">-</span>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setShowFollowupModal(true)}
-              className="w-full py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-            >
-              Update When Due
-            </button>
-          </div>
-
-        </div>
+        )}
       </div>
 
       {/* Recommended Opportunities for You */}
@@ -452,82 +455,50 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
             onClick={() => onNavigate('training-details')}
             className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
           >
-            View All
+            View All ({opportunities.length})
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Opportunity 1 */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
-            <div className="flex items-start space-x-3.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5">
-                <h4 className="font-bold text-slate-900 text-xs leading-snug">Digital Marketing Advanced Course</h4>
-                <span className="text-[11px] text-slate-500">Online Course</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowOpportunityModal({
-                title: 'Digital Marketing Advanced Course',
-                type: 'Online Skill Booster',
-                desc: 'Learn how to market tailoring and micro-enterprise products on WhatsApp Business, Instagram, and local business directories.'
-              })}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-            >
-              View Details
-            </button>
+        {opportunities.length === 0 ? (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6">
+            <EmptyState
+              icon={Sparkles}
+              title="No Opportunities Catalogued"
+              description="Government subsidies, MUDRA loans, and upskilling courses for your district will appear here."
+              actionLabel="Explore Programs"
+              onAction={() => onNavigate('training-details')}
+            />
           </div>
-
-          {/* Opportunity 2 */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
-            <div className="flex items-start space-x-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <Megaphone className="w-5 h-5" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {opportunities.slice(0, 3).map((opp) => (
+              <div key={opp.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                <div className="flex items-start space-x-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="font-bold text-slate-900 text-xs leading-snug">{opp.title}</h4>
+                    <span className="text-[11px] text-slate-500">{opp.category} • {opp.provider}</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                  {opp.description || 'Verified government skilling and micro-enterprise grant opportunity.'}
+                </p>
+                <button 
+                  onClick={() => setShowOpportunityModal({
+                    title: opp.title,
+                    type: opp.category,
+                    desc: opp.description || `Offered by ${opp.provider}. Connect with your District Mission Officer to apply.`
+                  })}
+                  className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  View Details
+                </button>
               </div>
-              <div className="space-y-0.5">
-                <h4 className="font-bold text-slate-900 text-xs leading-snug">Government Scheme for Entrepreneurs</h4>
-                <span className="text-[11px] text-slate-500">PMEGP Scheme</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowOpportunityModal({
-                title: 'PMEGP Financial Subsidy Scheme',
-                type: 'Government MSME Grant',
-                desc: 'Avail up to 35% government capital subsidy on machinery and expansion loans through Prime Minister Employment Generation Programme.'
-              })}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-            >
-              View Details
-            </button>
+            ))}
           </div>
-
-          {/* Opportunity 3 */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
-            <div className="flex items-start space-x-3.5">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5">
-                <h4 className="font-bold text-slate-900 text-xs leading-snug">Join Local Business Network</h4>
-                <span className="text-[11px] text-slate-500">Connect & Grow</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowOpportunityModal({
-                title: 'Pune District Women Entrepreneurs Network',
-                type: 'Peer Community Hub',
-                desc: 'Connect with 1,200+ certified women entrepreneurs in Pune for bulk stitching orders, raw material discounts, and exhibitions.'
-              })}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-            >
-              View Details
-            </button>
-          </div>
-
-        </div>
+        )}
       </div>
 
       {/* Bottom 2 Columns: Quick Links & Recent Notifications */}
@@ -543,8 +514,8 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
             {[
               { label: 'Download Certificate', icon: Download, action: () => onNavigate('certifications') },
               { label: 'Explore Courses', icon: BookOpen, action: () => onNavigate('training-details') },
-              { label: 'Update Documents', icon: FileText, action: () => onNavigate('documents') },
-              { label: 'Career Guidance', icon: Sparkles, action: () => onNavigate('skill-development') },
+              { label: 'Update Documents Vault', icon: FileText, action: () => onNavigate('documents') },
+              { label: 'Career Progression & Skills', icon: Sparkles, action: () => onNavigate('skill-development') },
             ].map((link, idx) => {
               const Icon = link.icon;
               return (
@@ -567,30 +538,37 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         {/* Recent Notifications */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900 text-sm">Recent Notifications</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Official Notifications</h3>
             <button 
               onClick={() => onNavigate('notifications')}
               className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
             >
-              View All
+              View All ({notifications.length})
             </button>
           </div>
 
-          <div className="space-y-3 pt-1">
-            {[
-              { text: 'Your 3 Months follow-up has been recorded successfully.', date: '20 Nov 2024' },
-              { text: "New course 'Advanced Tailoring Techniques' is available.", date: '05 Dec 2024' },
-              { text: 'Your next follow-up is due on 20 Jun 2025.', date: '20 May 2025' }
-            ].map((notif, idx) => (
-              <div key={idx} className="flex items-start justify-between gap-4 text-xs py-1.5 border-b border-slate-50 last:border-0">
-                <div className="flex items-start space-x-2.5">
-                  <Bell className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-700 font-medium leading-relaxed">{notif.text}</span>
+          {notifications.length === 0 ? (
+            <div className="py-6 text-center text-xs text-slate-400 font-medium">
+              No recent notifications logged.
+            </div>
+          ) : (
+            <div className="space-y-3 pt-1">
+              {notifications.slice(0, 3).map((notif) => (
+                <div key={notif.id} className="flex items-start justify-between gap-4 text-xs py-1.5 border-b border-slate-50 last:border-0">
+                  <div className="flex items-start space-x-2.5">
+                    <Bell className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-slate-800 block">{notif.title}</span>
+                      <span className="text-slate-600 font-normal leading-relaxed">{notif.message}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
+                    {notif.created_at ? new Date(notif.created_at).toLocaleDateString('en-IN') : ''}
+                  </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-mono whitespace-nowrap">{notif.date}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

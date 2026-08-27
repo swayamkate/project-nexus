@@ -1,30 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Award, Download, Printer, ShieldCheck, CheckCircle2, QrCode, ExternalLink, Calendar, User } from 'lucide-react';
+import React from 'react';
+import { Award, Printer, ShieldCheck, QrCode } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { EmptyState } from '@/components/EmptyState';
 
 export const CertificationsPage: React.FC = () => {
   const { profile, enrollments } = useUser();
-  const [selectedCert, setSelectedCert] = useState<any | null>(null);
+
+  const certifiedEnrollment = enrollments.find(e => !!e.certificate_id || e.status === 'certified') || enrollments[0];
+
+  const hasCertificate = !!certifiedEnrollment?.certificate_id || certifiedEnrollment?.status === 'certified';
 
   const certData = {
-    id: 'CERT-2024-MH-9482',
-    traineeName: profile?.full_name || 'Priya Sharma',
-    traineeId: profile?.trainee_id || 'TRN123456',
-    courseTitle: 'Advanced Tailoring & Garment Manufacturing',
-    sector: 'Apparel, Made-Ups & Home Furnishing',
-    issueDate: '15 Jul 2024',
-    completionDate: '30 Jun 2024',
-    grade: 'Grade A+ (Distinction)',
-    nsqfLevel: 'NSQF Level 4',
-    issuingAuthority: 'Maharashtra State Skill Development Society (MSSDS)',
-    verificationUrl: `https://sih2026.avishkark.in/verify/CERT-2024-MH-9482`
+    id: certifiedEnrollment?.certificate_id || `MS-CERT-${profile?.trainee_id?.replace(/[^0-9]/g, '') || '904302'}`,
+    traineeName: profile?.full_name || 'Registered Trainee',
+    traineeId: profile?.trainee_id || 'TRN-PENDING',
+    courseTitle: certifiedEnrollment?.training_programs?.title || 'State Vocational Training Program',
+    sector: certifiedEnrollment?.training_programs?.sector || 'Skill Development',
+    issueDate: certifiedEnrollment?.certified_date || certifiedEnrollment?.completed_date || new Date().toISOString().split('T')[0],
+    completionDate: certifiedEnrollment?.completed_date || certifiedEnrollment?.enrolled_date || new Date().toISOString().split('T')[0],
+    grade: certifiedEnrollment?.grade ? `Grade ${certifiedEnrollment.grade}` : 'Grade A (Distinction)',
+    nsqfLevel: 'NSQF Level 4/5',
+    issuingAuthority: certifiedEnrollment?.training_programs?.provider_name || 'Maharashtra State Skill Development Society (MSSDS)',
   };
 
   const handlePrint = () => {
     window.print();
   };
+
+  if (!hasCertificate && enrollments.length === 0) {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto pb-12 text-slate-800">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Verified Certifications</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Official NSDC & State Mission Skill Credentials with QR Verification</p>
+        </div>
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-sm">
+          <EmptyState
+            icon={Award}
+            title="No Certificates Issued Yet"
+            description="You do not have any issued certificates. Enroll in a skill program and complete your final evaluation to receive an NSQF-compliant digital credential."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12 text-slate-800">
@@ -99,7 +120,7 @@ export const CertificationsPage: React.FC = () => {
 
             {/* Middle: Signature Mock */}
             <div className="text-center space-y-1">
-              <div className="font-serif italic text-lg font-bold text-slate-800 text-blue-900">
+              <div className="font-serif italic text-lg font-bold text-blue-900">
                 P. K. Deshmukh
               </div>
               <div className="w-36 h-0.5 bg-slate-400 mx-auto" />

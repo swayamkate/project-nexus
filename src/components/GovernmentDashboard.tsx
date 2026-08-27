@@ -31,10 +31,29 @@ import {
   BarChart, 
   Bar 
 } from 'recharts';
+import { createClient } from '@/lib/supabaseBrowser';
 
 export const GovernmentDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('Monthly');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [districtList, setDistrictList] = useState<any[]>([]);
+  const [skillGapList, setSkillGapList] = useState<any[]>([]);
+  const supabase = createClient();
+
+  React.useEffect(() => {
+    const loadStateData = async () => {
+      try {
+        const { data: dists } = await supabase.from('district_employment_stats').select('*').limit(6);
+        if (dists && dists.length > 0) setDistrictList(dists);
+
+        const { data: gaps } = await supabase.from('top_skill_gaps').select('*').limit(5);
+        if (gaps && gaps.length > 0) setSkillGapList(gaps);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadStateData();
+  }, [supabase]);
 
   // Employment Trend Over Time
   const trendData = [
@@ -74,7 +93,7 @@ export const GovernmentDashboard: React.FC = () => {
     { name: 'Other Reasons', value: 10, color: '#64748b' },
   ];
 
-  const districtList = [
+  const fallbackDistricts = [
     { name: 'Pune', count: '2,45,680' },
     { name: 'Mumbai', count: '2,10,450' },
     { name: 'Nagpur', count: '1,25,840' },
@@ -82,13 +101,21 @@ export const GovernmentDashboard: React.FC = () => {
     { name: 'Aurangabad', count: '98,750' },
   ];
 
-  const topSkillGaps = [
+  const fallbackGaps = [
     { skill: 'Electric Vehicle Technician', gap: '-4,250' },
     { skill: 'Industrial Automation', gap: '-3,870' },
     { skill: 'Data Analytics', gap: '-3,400' },
     { skill: 'Cloud Computing', gap: '-2,980' },
     { skill: 'Solar Panel Technician', gap: '-2,760' },
   ];
+
+  const displayedDistricts = districtList.length > 0 
+    ? districtList.map(d => ({ name: d.district_name || d.name, count: d.total_trained ? `${d.total_trained.toLocaleString('en-IN')}` : `${d.placement_rate}% placement` }))
+    : fallbackDistricts;
+
+  const displayedGaps = skillGapList.length > 0
+    ? skillGapList.map(g => ({ skill: g.skill_name || g.skill, gap: g.gap_count ? `-${g.gap_count.toLocaleString('en-IN')}` : `High Demand` }))
+    : fallbackGaps;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 text-slate-800">
@@ -331,7 +358,7 @@ export const GovernmentDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-2 text-xs">
-            {districtList.map((d, idx) => (
+            {displayedDistricts.map((d, idx) => (
               <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
                 <span className="font-semibold text-slate-700">{d.name}</span>
                 <span className="font-bold text-slate-900">{d.count}</span>
@@ -404,7 +431,7 @@ export const GovernmentDashboard: React.FC = () => {
               <span>Skill</span>
               <span>Demand Gap</span>
             </div>
-            {topSkillGaps.map((item, idx) => (
+            {displayedGaps.map((item, idx) => (
               <div key={idx} className="flex justify-between items-center py-1">
                 <span className="text-slate-700 font-medium">{item.skill}</span>
                 <span className="font-bold text-rose-500">{item.gap}</span>

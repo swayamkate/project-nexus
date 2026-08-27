@@ -34,38 +34,29 @@ export const FollowupsPage: React.FC = () => {
     remarks: 'Business is running smoothly with steady customer flow.'
   });
 
-  const schedules = [
-    {
-      milestone: '3_months',
-      title: '3 Months Follow-up',
-      status: 'completed',
-      scheduledDate: '20 Nov 2024',
-      submittedDate: '20 Nov 2024',
-      businessStatus: 'Active',
-      incomeRange: '₹5,000 – ₹10,000',
-      remarks: 'Business is going well. Getting regular customers.'
-    },
-    {
-      milestone: '6_months',
-      title: '6 Months Follow-up',
-      status: 'completed',
-      scheduledDate: '20 Feb 2025',
-      submittedDate: '20 Feb 2025',
-      businessStatus: 'Active',
-      incomeRange: '₹10,000 – ₹20,000',
-      remarks: 'Increased client base and income.'
-    },
-    {
-      milestone: '12_months',
-      title: '12 Months Follow-up',
-      status: 'upcoming',
-      scheduledDate: '20 Aug 2025',
-      submittedDate: '-',
-      businessStatus: 'Pending',
-      incomeRange: '-',
-      remarks: 'Pending'
-    }
+  const standardMilestones: Array<{ milestone: '3_months' | '6_months' | '12_months' | '18_months' | '24_months'; title: string; defaultMonths: number }> = [
+    { milestone: '3_months', title: '3 Months Follow-up', defaultMonths: 3 },
+    { milestone: '6_months', title: '6 Months Follow-up', defaultMonths: 6 },
+    { milestone: '12_months', title: '12 Months Follow-up', defaultMonths: 12 },
+    { milestone: '18_months', title: '18 Months Follow-up', defaultMonths: 18 },
+    { milestone: '24_months', title: '24 Months Follow-up', defaultMonths: 24 },
   ];
+
+  const schedules = standardMilestones.map((m) => {
+    const existing = followups.find((f) => f.milestone === m.milestone);
+    return {
+      milestone: m.milestone,
+      title: m.title,
+      status: existing?.status || 'upcoming',
+      scheduledDate: existing?.due_date || `M+${m.defaultMonths} Post-Training`,
+      submittedDate: existing?.completed_date || (existing?.status === 'completed' ? existing.due_date : '-'),
+      businessStatus: existing?.current_status ? existing.current_status.replace('_', ' ') : (existing?.status === 'completed' ? 'Active' : 'Pending'),
+      incomeRange: existing?.current_income_range || (existing?.status === 'completed' ? 'Reported' : '-'),
+      remarks: existing?.remarks || (existing?.status === 'completed' ? 'Verified' : 'Pending submission'),
+      satisfactionScore: existing?.job_satisfaction_score || 5,
+      skillScore: existing?.skill_utilization_score || 5,
+    };
+  });
 
   const handleSurveySubmit = async (e: React.FormEvent) => {
     e.preventDefault();

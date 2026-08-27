@@ -51,8 +51,9 @@ export const AnalyticsPage: React.FC = () => {
     fetchAnalytics();
   }, [supabase]);
 
-  const marketReadinessScore = 88;
-  const verifiedSkillsCount = profile?.skills?.length || 4;
+  const baseScore = profile?.profile_completion_pct || 30;
+  const marketReadinessScore = Math.min(100, Math.round(baseScore * 0.4 + (enrollments.length > 0 ? 30 : 0) + (employment ? 30 : 0)));
+  const verifiedSkillsCount = profile?.skills?.length || 0;
 
   const wageMilestones = [
     { period: '0M (Baseline)', wage: 12000, label: 'Pre-Training' },

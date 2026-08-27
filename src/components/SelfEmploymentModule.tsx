@@ -36,34 +36,34 @@ export const SelfEmploymentModule: React.FC = () => {
     if (employment) {
       setFormData({
         status: employment.status || 'self_employed',
-        business_name: employment.business_name || 'Priya Stitch Works',
-        business_type: employment.business_type || 'Tailoring Services',
+        business_name: employment.business_name || '',
+        business_type: employment.business_type || '',
         business_category: employment.business_category || 'Micro-Enterprise',
         business_status: employment.business_status || 'active',
-        establishment_date: employment.establishment_date || '2024-08-01',
-        monthly_revenue: employment.monthly_revenue || 18500,
-        monthly_profit: employment.monthly_profit || 12000,
-        monthly_income_range: employment.monthly_income_range || '₹10,000 – ₹20,000',
-        udyam_number: employment.udyam_number || 'UDYAM-MH-26-0019284',
+        establishment_date: employment.establishment_date || '',
+        monthly_revenue: employment.monthly_revenue || 0,
+        monthly_profit: employment.monthly_profit || 0,
+        monthly_income_range: employment.monthly_income_range || '',
+        udyam_number: employment.udyam_number || '',
         gst_number: employment.gst_number || '',
-        business_address: employment.business_address || '123, Shivaji Nagar, Pune',
-        employees_count: employment.employees_count || 2,
+        business_address: employment.business_address || '',
+        employees_count: employment.employees_count || 1,
       });
     } else {
       setFormData({
         status: 'self_employed',
-        business_name: 'Priya Stitch Works',
-        business_type: 'Tailoring Services',
+        business_name: '',
+        business_type: '',
         business_category: 'Micro-Enterprise',
         business_status: 'active',
-        establishment_date: '2024-08-01',
-        monthly_revenue: 18500,
-        monthly_profit: 12000,
-        monthly_income_range: '₹10,000 – ₹20,000',
-        udyam_number: 'UDYAM-MH-26-0019284',
+        establishment_date: new Date().toISOString().split('T')[0],
+        monthly_revenue: 0,
+        monthly_profit: 0,
+        monthly_income_range: '₹15,000 – ₹25,000',
+        udyam_number: '',
         gst_number: '',
-        business_address: '123, Shivaji Nagar, Pune',
-        employees_count: 2,
+        business_address: profile?.district ? `${profile.district}, Maharashtra` : '',
+        employees_count: 1,
       });
     }
 
@@ -192,7 +192,7 @@ export const SelfEmploymentModule: React.FC = () => {
                 value={formData.business_name || ''}
                 onChange={e => setFormData({ ...formData, business_name: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:bg-white focus:border-blue-600 outline-none"
-                placeholder="e.g. Priya Stitch Works"
+                placeholder="e.g. Omkar Electricals & Solar / Swastik Apparel"
               />
             </div>
 

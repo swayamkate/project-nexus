@@ -37,26 +37,24 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
   useEffect(() => {
     if (profile) {
       setFormData({
-        full_name: profile.full_name || 'Priya Sharma',
-        username: profile.username || user?.email?.split('@')[0] || 'priya_sharma',
-        email: profile.email || user?.email || 'priya.sharma@example.com',
-        phone: profile.phone || '+91 98765 43210',
-        dob: profile.dob || '2002-05-15',
-        gender: profile.gender || 'Female',
-        aadhaar_masked: profile.aadhaar_masked || 'XXXX-XXXX-1234',
-        address: profile.address || '123, Shivaji Nagar, Pune, Maharashtra - 411005',
-        district: profile.district || 'Pune',
+        full_name: profile.full_name || '',
+        username: profile.username || user?.email?.split('@')[0] || '',
+        email: profile.email || user?.email || '',
+        phone: profile.phone || '',
+        dob: profile.dob || '2000-01-01',
+        gender: profile.gender || 'Not specified',
+        aadhaar_masked: profile.aadhaar_masked || 'XXXX-XXXX-XXXX',
+        address: profile.address || '',
+        district: profile.district || 'Maharashtra',
         state: profile.state || 'Maharashtra',
-        pincode: profile.pincode || '411005',
+        pincode: profile.pincode || '',
         avatar_url: profile.avatar_url || '',
-        highest_education: profile.highest_education || '12th (Science)',
-        board_university: profile.board_university || 'Maharashtra State Board',
-        year_of_passing: profile.year_of_passing || 2020,
-        education_percentage: profile.education_percentage || 78.60,
-        skills: profile.skills && profile.skills.length > 0 
-          ? profile.skills 
-          : ['Tailoring', 'Stitching', 'Pattern Making', 'Fabric Knowledge', 'Embroidery', 'Machine Operation'],
-        about_me: profile.about_me || 'I am passionate about tailoring and fashion designing. I have completed my training and now running my own tailoring business. I love creating new designs and delivering quality work to my customers.',
+        highest_education: profile.highest_education || 'Secondary / Higher Secondary',
+        board_university: profile.board_university || '',
+        year_of_passing: profile.year_of_passing || null,
+        education_percentage: profile.education_percentage || null,
+        skills: profile.skills || [],
+        about_me: profile.about_me || '',
       });
     }
   }, [profile, user]);

@@ -66,18 +66,6 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [authMode, resendCooldown]);
 
-  const handleFillDemo = (type: 'priya' | 'admin') => {
-    setError(null);
-    setSuccessMsg(null);
-    if (type === 'priya') {
-      setIdentifier('priya.sharma@mahaskill.in');
-      setPassword('priya123456');
-    } else {
-      setIdentifier('Avishkar0');
-      setPassword('Avishkar@admin6198');
-    }
-  };
-
   const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
@@ -391,29 +379,6 @@ export default function LoginPage() {
               >
                 Create Account
               </button>
-            </div>
-          )}
-
-          {/* Quick Demo Login Helpers */}
-          {authMode === 'login' && (
-            <div className="mb-5 p-3 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Quick Test Logins:</span>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleFillDemo('priya')}
-                  className="px-2.5 py-1 bg-white hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs"
-                >
-                  👤 Trainee Demo (Priya)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFillDemo('admin')}
-                  className="px-2.5 py-1 bg-white hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs"
-                >
-                  🛡️ Admin Demo (Superadmin)
-                </button>
-              </div>
             </div>
           )}
 

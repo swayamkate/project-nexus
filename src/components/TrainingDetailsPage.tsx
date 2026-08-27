@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useUser } from '@/context/UserContext';
+import { EmptyState } from '@/components/EmptyState';
 
 export const TrainingDetailsPage: React.FC = () => {
   const { profile, enrollments, refreshData } = useUser();
@@ -80,69 +81,65 @@ export const TrainingDetailsPage: React.FC = () => {
         <p className="text-xs text-slate-500 mt-0.5">Comprehensive syllabus breakdown, attendance history, and course catalog</p>
       </div>
 
-      {/* Active Enrolled Program Card */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div className="space-y-1">
-            <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md uppercase">
-              Completed & Certified
-            </span>
-            <h2 className="text-xl font-bold text-slate-900">Advanced Tailoring & Garment Manufacturing</h2>
-            <p className="text-xs text-slate-500">Government ITI Aundh, Pune • Batch 2024-Q2</p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <span className="text-xs text-slate-400 block">Overall Grade</span>
-              <span className="text-lg font-black text-emerald-600">A+ (92%)</span>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Award className="w-6 h-6" />
-            </div>
-          </div>
+      {/* Active Enrolled Program Card or Empty State */}
+      {enrollments.length === 0 ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+          <EmptyState
+            icon={GraduationCap}
+            title="No Enrolled Programs"
+            description="You are not yet enrolled in any skill certification courses. Browse the catalog below and enroll to begin your longitudinal career tracking."
+          />
         </div>
+      ) : (
+        <div className="space-y-4">
+          {enrollments.map((enr) => {
+            const prog = enr.training_programs;
+            return (
+              <div key={enr.id} className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div className="space-y-1">
+                    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md uppercase ${
+                      enr.status === 'certified' 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      {enr.status}
+                    </span>
+                    <h2 className="text-xl font-bold text-slate-900">{prog?.title || 'State Vocational Training Program'}</h2>
+                    <p className="text-xs text-slate-500">{prog?.provider_name || 'Maharashtra Skill Development Center'} • Sector: {prog?.sector || 'Vocational'}</p>
+                  </div>
 
-        {/* 3 Metric Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <span className="text-slate-400 text-xs block">Training Duration</span>
-            <p className="text-base font-bold text-slate-800 mt-0.5">360 Hours (3 Months)</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <span className="text-slate-400 text-xs block">Verified Attendance</span>
-            <p className="text-base font-bold text-emerald-600 mt-0.5">96.4% Attendance</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <span className="text-slate-400 text-xs block">Certificate ID</span>
-            <p className="text-base font-mono font-bold text-blue-600 mt-0.5">CERT-2024-MH-9482</p>
-          </div>
-        </div>
-
-        {/* Course Modules Breakdown */}
-        <div className="space-y-3 pt-2">
-          <h3 className="font-bold text-slate-900 text-sm">Curriculum Modules & Assessment Scores</h3>
-          
-          <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden">
-            {modules.map((m, idx) => (
-              <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50 transition text-xs">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <div>
-                    <h4 className="font-bold text-slate-800">{m.name}</h4>
-                    <span className="text-slate-400 text-[11px]">{m.hours} Hours Practical</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 block">Grade</span>
+                      <span className="text-lg font-black text-emerald-600">{enr.grade || 'Verified'}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <Award className="w-6 h-6" />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <span className="font-bold text-slate-900">{m.score}</span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded">
-                    {m.status}
-                  </span>
+
+                {/* Metric Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-xs block">Duration</span>
+                    <p className="text-base font-bold text-slate-800 mt-0.5">{prog?.duration_months || 3} Months</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-xs block">Enrolled Date</span>
+                    <p className="text-base font-bold text-slate-800 mt-0.5">{enr.enrolled_date || 'Active'}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-xs block">Certificate ID</span>
+                    <p className="text-base font-mono font-bold text-blue-600 mt-0.5">{enr.certificate_id || 'In Progress'}</p>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      </div>
+      )}
 
       {/* Available Secondary Courses */}
       <div className="space-y-4 pt-4">
