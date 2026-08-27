@@ -23,6 +23,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatHumanError } from '@/lib/errorUtils';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState(''); // Email or Username
@@ -120,7 +121,7 @@ export default function LoginPage() {
 
       window.location.href = '/dashboard';
     } catch (err: any) {
-      setError(err.message || 'Authentication request failed. Please check your credentials.');
+      setError(formatHumanError(err));
     } finally {
       setLoading(false);
     }
@@ -186,7 +187,7 @@ export default function LoginPage() {
         setSuccessMsg(`Verification code sent to ${cleanEmail}! Enter the 6-digit code below.`);
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(formatHumanError(err));
     } finally {
       setLoading(false);
     }
@@ -257,7 +258,7 @@ export default function LoginPage() {
         window.location.href = '/dashboard';
       }, 1000);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatHumanError(err));
     } finally {
       setLoading(false);
     }
@@ -283,7 +284,7 @@ export default function LoginPage() {
       setResendCooldown(60);
       setCanResend(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend code.');
+      setError(formatHumanError(err));
     } finally {
       setLoading(false);
     }
@@ -308,7 +309,7 @@ export default function LoginPage() {
       if (otpErr) throw otpErr;
       setSuccessMsg(`Secure Magic Link dispatched to ${identifier}. Check your email.`);
     } catch (err: any) {
-      setError(err.message || 'Failed to dispatch Magic Link.');
+      setError(formatHumanError(err));
     } finally {
       setLoading(false);
     }

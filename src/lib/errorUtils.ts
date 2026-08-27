@@ -31,8 +31,8 @@ export function formatHumanError(error: any): string {
     return 'Your email address is not yet verified. Please enter the 6-digit OTP code sent to your inbox to activate your profile.';
   }
 
-  if (message.includes('JWT') || message.includes('token is expired') || message.includes('session expired')) {
-    return 'Your security session has expired. Please log in again to continue safely.';
+  if (message.includes('JWT') || message.includes('token is expired') || message.includes('session expired') || message.includes('Unauthorized') || message.includes("Unexpected token 'U'")) {
+    return 'Authentication failed or session expired. Please verify your credentials and try again.';
   }
 
   // 3. Row Level Security & Access Denied

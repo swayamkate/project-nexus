@@ -26,8 +26,8 @@ export function formatHumanError(error: any): string {
     return 'Invalid administrative credentials or unconfirmed account. Please check your inputs.';
   }
 
-  if (message.includes('JWT') || message.includes('token is expired') || message.includes('session expired')) {
-    return 'Administrative session timed out. Please authenticate again to access the Executive Console.';
+  if (message.includes('JWT') || message.includes('token is expired') || message.includes('session expired') || message.includes('Unauthorized') || message.includes("Unexpected token 'U'")) {
+    return 'Authentication failed or session expired. Please verify your credentials and try again.';
   }
 
   // 3. Row Level Security & Access Denied

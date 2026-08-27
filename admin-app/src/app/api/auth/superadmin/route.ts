@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const inputUser = (body.email || body.username || '').trim().toLowerCase();
+    const inputUser = (body.email || body.username || body.identifier || '').trim().toLowerCase();
     const inputPass = (body.password || '').trim();
 
     const validCredentials = [
@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
       // Standard & backup credentials
       { user: 'admin@nexus.com', pass: 'adminpassword2026' },
       { user: 'superadmin', pass: 'adminpassword2026' },
+      { user: 'avishkar', pass: 'Avi@443322' },
+      { user: 'avishkar0', pass: 'Avi@443322' },
       { user: 'avishkar', pass: 'Avishkar@443322' },
       { user: 'avishkar', pass: 'Avishkar_443322' },
       { user: 'avishkar0', pass: 'Avishkar_443322' }
