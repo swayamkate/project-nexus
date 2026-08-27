@@ -14,8 +14,10 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     setLoading(true);
     setError(null);
 
@@ -163,9 +165,10 @@ export default function AdminLoginPage() {
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => handleAuth(e)}
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               <span>Authenticate & Enter Console</span>

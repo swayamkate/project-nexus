@@ -77,8 +77,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
@@ -124,8 +126,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignUp = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
@@ -216,8 +220,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVerifyOtp = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     const token = otpDigits.join('').trim();
     if (token.length < 6) {
       setError('Please enter the complete 6-digit verification code.');
@@ -479,7 +485,8 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => handleLogin(e)}
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer text-xs"
               >
@@ -588,7 +595,8 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => handleSignUp(e)}
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-3 cursor-pointer text-xs"
               >
@@ -630,7 +638,8 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => handleVerifyOtp(e)}
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer text-xs"
               >
