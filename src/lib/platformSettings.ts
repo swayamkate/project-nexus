@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabaseBrowser';
+import { createPublicClient } from '@/lib/supabaseBrowser';
 
 /**
  * Public subset of the admin-configurable platform settings, mirrored from
@@ -73,7 +73,7 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicPlatformSettings = {
 export async function fetchPublicSettings(): Promise<PublicPlatformSettings> {
   const settings: PublicPlatformSettings = { ...DEFAULT_PUBLIC_SETTINGS };
   try {
-    const supabase = createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from('platform_settings')
       .select('key, value')
