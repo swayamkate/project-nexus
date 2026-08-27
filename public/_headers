@@ -5,3 +5,15 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-XSS-Protection: 1; mode=block
+
+/api/health
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+
+/api/health.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+
+/health.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
