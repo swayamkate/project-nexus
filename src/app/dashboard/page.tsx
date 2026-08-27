@@ -4,15 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
-import { GovernmentDashboard } from '@/components/GovernmentDashboard';
 import { TraineeHomeDashboard } from '@/components/TraineeHomeDashboard';
 import { TraineeProfilePage } from '@/components/TraineeProfilePage';
 import { FollowupsPage } from '@/components/FollowupsPage';
 import { SelfEmploymentModule } from '@/components/SelfEmploymentModule';
 import { TraineePortal } from '@/components/TraineePortal';
 import { LongitudinalTracker } from '@/components/LongitudinalTracker';
-import { CommunityHub } from '@/components/CommunityHub';
-import { AutomationHub } from '@/components/AutomationHub';
 import { CertificationsPage } from '@/components/CertificationsPage';
 import { TrainingDetailsPage } from '@/components/TrainingDetailsPage';
 import { DocumentsPage } from '@/components/DocumentsPage';
@@ -26,7 +23,6 @@ import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const [viewMode, setViewMode] = useState<'admin' | 'trainee'>('trainee');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -43,21 +39,11 @@ export default function DashboardPage() {
         router.push('/login');
       } else {
         setCurrentUser(session.user);
-        if (session.user.email === 'admin@nexus.com') {
-          setViewMode('admin');
-        } else {
-          setViewMode('trainee');
-        }
         setLoading(false);
       }
     };
     checkUser();
   }, [router, supabase]);
-
-  const handleModeChange = (mode: 'admin' | 'trainee') => {
-    setViewMode(mode);
-    setActiveSection('dashboard');
-  };
 
   if (loading) {
     return (
@@ -77,7 +63,7 @@ export default function DashboardPage() {
         {/* Desktop & Tablet Sidebar */}
         <div className="hidden lg:block">
           <Sidebar 
-            viewMode={viewMode}
+            viewMode="trainee"
             activeSection={activeSection}
             setActiveSection={setActiveSection}
           />
@@ -89,7 +75,7 @@ export default function DashboardPage() {
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setIsMobileMenuOpen(false)} />
             <div className="relative z-10 w-64 bg-white h-full shadow-2xl">
               <Sidebar 
-                viewMode={viewMode}
+                viewMode="trainee"
                 activeSection={activeSection}
                 setActiveSection={(s) => {
                   setActiveSection(s);
@@ -104,49 +90,27 @@ export default function DashboardPage() {
         <div className="flex-1 flex flex-col min-w-0 justify-between">
           <div>
             <Navbar 
-              viewMode={viewMode}
-              setViewMode={handleModeChange}
+              viewMode="trainee"
+              setViewMode={() => {}}
               activeSection={activeSection}
               onNavigate={setActiveSection}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-              {/* Admin Views */}
-              {viewMode === 'admin' && (
-                <>
-                  {activeSection === 'dashboard' && <GovernmentDashboard />}
-                  {activeSection === 'trainees' && <LongitudinalTracker />}
-                  {activeSection === 'training' && <TrainingDetailsPage />}
-                  {activeSection === 'employment' && <LongitudinalTracker />}
-                  {activeSection === 'follow-ups' && <AutomationHub />}
-                  {activeSection === 'employers' && <CommunityHub />}
-                  {activeSection === 'skill-gap' && <TraineePortal />}
-                  {activeSection === 'district-analytics' && <GovernmentDashboard />}
-                  {activeSection === 'reports' && <AnalyticsPage />}
-                  {activeSection === 'ai-insights' && <GovernmentDashboard />}
-                  {activeSection === 'settings' && <SettingsPage />}
-                </>
-              )}
-
-              {/* Trainee Views */}
-              {viewMode === 'trainee' && (
-                <>
-                  {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
-                  {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
-                  {activeSection === 'analytics' && <AnalyticsPage />}
-                  {activeSection === 'training-details' && <TrainingDetailsPage />}
-                  {activeSection === 'certifications' && <CertificationsPage />}
-                  {activeSection === 'employment-status' && <LongitudinalTracker />}
-                  {activeSection === 'follow-ups' && <FollowupsPage />}
-                  {activeSection === 'self-employment' && <SelfEmploymentModule />}
-                  {activeSection === 'skill-development' && <TraineePortal />}
-                  {activeSection === 'documents' && <DocumentsPage />}
-                  {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
-                  {activeSection === 'settings' && <SettingsPage />}
-                  {activeSection === 'help-support' && <HelpSupportPage />}
-                </>
-              )}
+              {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
+              {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
+              {activeSection === 'analytics' && <AnalyticsPage />}
+              {activeSection === 'training-details' && <TrainingDetailsPage />}
+              {activeSection === 'certifications' && <CertificationsPage />}
+              {activeSection === 'employment-status' && <LongitudinalTracker />}
+              {activeSection === 'follow-ups' && <FollowupsPage />}
+              {activeSection === 'self-employment' && <SelfEmploymentModule />}
+              {activeSection === 'skill-development' && <TraineePortal />}
+              {activeSection === 'documents' && <DocumentsPage />}
+              {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
+              {activeSection === 'settings' && <SettingsPage />}
+              {activeSection === 'help-support' && <HelpSupportPage />}
             </main>
           </div>
 
