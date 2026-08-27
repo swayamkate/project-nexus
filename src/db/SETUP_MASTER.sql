@@ -59,21 +59,21 @@ CREATE TABLE IF NOT EXISTS public.trainees (
     full_name VARCHAR(255) NOT NULL DEFAULT '',
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(30) DEFAULT '',
-    dob DATE DEFAULT '2000-01-01',
-    gender VARCHAR(30) DEFAULT 'Not Specified',
-    aadhaar_masked VARCHAR(20) DEFAULT 'XXXX-XXXX-0000',
+    dob DATE,
+    gender VARCHAR(30),
+    aadhaar_masked VARCHAR(20),
     address TEXT DEFAULT '',
     district VARCHAR(100) DEFAULT '',
-    state VARCHAR(100) DEFAULT 'Maharashtra',
+    state VARCHAR(100),
     pincode VARCHAR(20) DEFAULT '',
     avatar_url TEXT DEFAULT '',
-    profile_completion_pct INT NOT NULL DEFAULT 30 CHECK (profile_completion_pct BETWEEN 0 AND 100),
+    profile_completion_pct INT NOT NULL DEFAULT 0 CHECK (profile_completion_pct BETWEEN 0 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT true,
     
     -- Education Details
     highest_education VARCHAR(150) DEFAULT '',
     board_university VARCHAR(255) DEFAULT '',
-    year_of_passing INT DEFAULT 2022,
+    year_of_passing INT,
     education_percentage NUMERIC(5, 2) DEFAULT 0.00,
     
     -- Skills Array
@@ -109,9 +109,10 @@ CREATE TABLE IF NOT EXISTS public.trainee_enrollments (
     enrolled_date DATE NOT NULL DEFAULT CURRENT_DATE,
     completed_date DATE,
     certified_date DATE,
-    certificate_id VARCHAR(100) DEFAULT 'MS-CERT-' || LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0'),
+    -- Certificate IDs are issued by an administrator after a verified assessment.
+    certificate_id VARCHAR(100),
     status VARCHAR(50) NOT NULL DEFAULT 'enrolled',
-    grade VARCHAR(10) DEFAULT 'A',
+    grade VARCHAR(10),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -121,7 +122,7 @@ CREATE TABLE IF NOT EXISTS public.trainee_enrollments (
 CREATE TABLE IF NOT EXISTS public.trainee_employment (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     trainee_id UUID NOT NULL REFERENCES public.trainees(id) ON DELETE CASCADE,
-    status employment_status_type NOT NULL DEFAULT 'job_seeking',
+    status employment_status_type NOT NULL DEFAULT 'not_employed',
     
     -- Wage Employment Fields
     company_name VARCHAR(255),
@@ -134,7 +135,7 @@ CREATE TABLE IF NOT EXISTS public.trainee_employment (
     business_name VARCHAR(255),
     business_type VARCHAR(150),
     business_category VARCHAR(100),
-    business_status business_status_type DEFAULT 'active',
+    business_status business_status_type,
     establishment_date DATE,
     monthly_revenue NUMERIC(12, 2) DEFAULT 0,
     monthly_profit NUMERIC(12, 2) DEFAULT 0,
@@ -163,7 +164,7 @@ CREATE TABLE IF NOT EXISTS public.trainee_followups (
     -- Survey responses
     current_status employment_status_type,
     current_income_range VARCHAR(50),
-    income_growth_pct NUMERIC(5, 2) DEFAULT 0,
+    income_growth_pct NUMERIC(5, 2),
     job_satisfaction_score INT CHECK (job_satisfaction_score BETWEEN 1 AND 5),
     skill_utilization_score INT CHECK (skill_utilization_score BETWEEN 1 AND 5),
     additional_support_needed TEXT,

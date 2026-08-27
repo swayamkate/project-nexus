@@ -235,7 +235,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
 
       {/* My Journey Stepper */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-7 shadow-sm space-y-6">
-        <h3 className="font-bold text-slate-900 text-base">My Journey</h3>
+        <h3 className="font-bold text-slate-900 text-base">{t('dash.careerTimeline', 'My Journey')}</h3>
 
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0 px-2 sm:px-8">
           {/* Connecting line */}
@@ -277,7 +277,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">Career Goal & Upskilling Accelerator</h3>
+              <h3 className="font-extrabold text-white text-base">{t('dash.careerGoal', 'Career Goal & Upskilling Accelerator')}</h3>
               <p className="text-xs text-slate-300">Target role diagnosis, N-day roadmaps, accredited courses, and interview simulation</p>
             </div>
           </div>
@@ -303,7 +303,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               <Target className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">Skill Gap Matrix</h4>
+              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">{t('dash.skillGapMatrix', 'Skill Gap Matrix')}</h4>
               <p className="text-[11px] text-slate-300 mt-0.5">Benchmark current skills vs target role requirements</p>
             </div>
           </div>
@@ -408,7 +408,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
                     <span>Monthly Revenue / Income</span>
                   </div>
                   <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                    {employment.monthly_revenue ? `₹${employment.monthly_revenue.toLocaleString('en-IN')}` : (employment.monthly_income_range || '₹15,000 – ₹25,000')}
+                    {employment.monthly_revenue ? `₹${employment.monthly_revenue.toLocaleString('en-IN')}` : (employment.monthly_income_range || 'Not reported')}
                   </span>
                 </div>
               </div>
@@ -437,7 +437,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-6">
           <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
             <Calendar className="w-4 h-4 text-blue-600" />
-            <h3 className="font-bold text-slate-900 text-sm">Longitudinal Tracking Status</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t('dash.trackingStatus', 'Longitudinal Tracking Status')}</h3>
           </div>
 
           <div className="text-center py-4 space-y-1.5">
@@ -465,7 +465,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
       {/* Follow-up History */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-base">Longitudinal Follow-up History</h3>
+          <h3 className="font-bold text-slate-900 text-base">{t('dash.followupHistory', 'Longitudinal Follow-up History')}</h3>
           <button 
             onClick={() => onNavigate('follow-ups')}
             className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
@@ -512,7 +512,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Income Range:</span>
-                      <span className="font-semibold">{fol.current_income_range || '₹15,000 – ₹25,000'}</span>
+                      <span className="font-semibold">{fol.current_income_range || 'Not reported'}</span>
                     </div>
                   </div>
                 </div>
@@ -532,7 +532,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
       {/* Recommended Opportunities for You */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-base">Recommended Opportunities for You</h3>
+          <h3 className="font-bold text-slate-900 text-base">{t('dash.schemesAndGrants', 'Recommended Opportunities for You')}</h3>
           <button 
             onClick={() => onNavigate('training-details')}
             className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
@@ -565,7 +565,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                  {opp.description || 'Verified government skilling and micro-enterprise grant opportunity.'}
+                  {opp.description || 'Description not provided by the administrator.'}
                 </p>
                 <button 
                   onClick={() => setShowOpportunityModal({
@@ -589,7 +589,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         {/* Quick Links */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900 text-sm">Quick Links</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t('dash.quickLinks', 'Quick Links')}</h3>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -620,7 +620,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         {/* Recent Notifications */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900 text-sm">Official Notifications</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t('nav.notifications', 'Official Notifications')}</h3>
             <button 
               onClick={() => onNavigate('notifications')}
               className="text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"

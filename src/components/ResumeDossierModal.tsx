@@ -74,15 +74,15 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b-2 border-slate-900 pb-6">
             <div className="space-y-1.5">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{profile?.full_name || 'Priya Sharma'}</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{profile?.full_name || 'Name not recorded'}</h1>
               <p className="text-sm font-bold text-blue-600">
-                {employment?.business_name || employment?.business_type || 'Vocational Technical Professional'} • @{profile?.username || 'candidate'}
+                {employment?.business_name || employment?.business_type || 'Professional profile'} • @{profile?.username || 'username not recorded'}
               </p>
               
               <div className="flex flex-wrap gap-4 text-xs text-slate-600 pt-2 font-medium">
                 <span className="flex items-center"><Mail className="w-3.5 h-3.5 mr-1 text-slate-400" /> {profile?.email}</span>
                 <span className="flex items-center"><Phone className="w-3.5 h-3.5 mr-1 text-slate-400" /> {profile?.phone || '+91 98XXX XXXXX'}</span>
-                <span className="flex items-center"><MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" /> {profile?.district || 'Pune'}, {profile?.state || 'Maharashtra'}</span>
+                <span className="flex items-center"><MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" /> {profile?.district || 'District not recorded'}, {profile?.state || 'State not recorded'}</span>
               </div>
             </div>
 
@@ -120,7 +120,7 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
                 verifiedEnrollments.map((enr, idx) => (
                   <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-xs text-slate-900">{enr.training_programs?.title || 'Vocational Trade Program'}</h4>
+                      <h4 className="font-bold text-xs text-slate-900">{enr.training_programs?.title || 'Program title not recorded'}</h4>
                       <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                         {enr.grade || 'Grade not recorded'}
                       </span>
@@ -148,7 +148,7 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
             <div className="flex justify-between items-center text-xs">
               <div>
                 <p className="font-bold text-slate-900">{profile?.highest_education || '12th Vocational (Science)'}</p>
-                <p className="text-[11px] text-slate-500">{profile?.board_university || 'Maharashtra State Board'} • Year of Passing: {profile?.year_of_passing || 2022}</p>
+                <p className="text-[11px] text-slate-500">{profile?.board_university || 'Board / university not recorded'} • Year of Passing: {profile?.year_of_passing || 'Not recorded'}</p>
               </div>
               <span className="font-bold text-emerald-600">Score: {profile?.education_percentage || '78.50'}%</span>
             </div>

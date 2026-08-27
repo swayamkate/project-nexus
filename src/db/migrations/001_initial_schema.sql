@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS trainee_enrollments (
     program_id UUID NOT NULL REFERENCES training_programs(id) ON DELETE RESTRICT,
     enrolled_date DATE NOT NULL DEFAULT CURRENT_DATE,
     completion_date DATE,
-    grade VARCHAR(50) DEFAULT 'Grade A+ (Distinction)',
+    grade VARCHAR(50),
     certificate_id VARCHAR(100) UNIQUE,
     status VARCHAR(50) NOT NULL DEFAULT 'enrolled' CHECK (status IN ('enrolled', 'in_progress', 'completed', 'dropped')),
     deleted_at TIMESTAMPTZ,

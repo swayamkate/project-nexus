@@ -455,7 +455,7 @@ export default function AdminUsersPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-300">
-                      {trainee.district || 'Maharashtra'}
+                      {trainee.district || 'District not recorded'}
                     </td>
 
                     {/* Skills Tags */}
@@ -572,7 +572,7 @@ export default function AdminUsersPage() {
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">District & State</span>
-                <span className="text-slate-200 font-semibold">{selectedTrainee.district ? `${selectedTrainee.district}, Maharashtra` : 'Maharashtra'}</span>
+                    <span className="text-slate-200 font-semibold">{selectedTrainee.district || 'District not recorded'}</span>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">Date of Birth</span>

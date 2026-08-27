@@ -167,7 +167,7 @@ export const SettingsPage: React.FC = () => {
     const dossierData = {
       export_date: new Date().toISOString(),
       system: 'Nexus Platform',
-      privacy_enclave_hash: profile?.privacy_hash || 'SHA256-ENCLAVE-VERIFIED',
+      privacy_enclave_hash: profile?.privacy_hash || null,
       trainee_profile: {
         trainee_id: profile?.trainee_id,
         username: profile?.username,

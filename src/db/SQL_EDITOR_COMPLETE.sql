@@ -35,6 +35,7 @@ INSERT INTO public.platform_settings (key, category, description, value) VALUES
  ('branding.primary_color','branding','Primary brand color','"#2563eb"'::jsonb),
  ('branding.accent_color','branding','Accent brand color','"#0ea5e9"'::jsonb),
  ('branding.login_headline','branding','Login headline','"Skilling Outcomes & Longitudinal Tracking"'::jsonb),
+ ('branding.theme_mode','branding','Default color theme for both portals','"system"'::jsonb),
  ('branding.banner_enabled','branding','Show broadcast banner','false'::jsonb),
  ('branding.banner_text','branding','Broadcast banner text','""'::jsonb),
  ('localization.enabled_languages','localization','Enabled language codes','["en","hi","mr"]'::jsonb),

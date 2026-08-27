@@ -88,6 +88,7 @@ INSERT INTO public.platform_settings (key, category, description, value) VALUES
   ('branding.primary_color',           'branding',     'Primary brand color (hex), drives portal accent UI',        '"#2563eb"'),
   ('branding.accent_color',            'branding',     'Secondary accent color (hex)',                              '"#0ea5e9"'),
   ('branding.login_headline',          'branding',     'Headline on the login page',                                '"Skilling Outcomes & Longitudinal Tracking"'),
+  ('branding.theme_mode',              'branding',     'Default color theme for both portals',                     '"system"'),
   ('branding.banner_enabled',          'branding',     'Show the broadcast banner on public portals',               'false'),
   ('branding.banner_text',             'branding',     'Broadcast banner message',                                  '""'),
   ('localization.enabled_languages',   'localization', 'Language codes offered in the UI',                           '["en","hi","mr"]'),

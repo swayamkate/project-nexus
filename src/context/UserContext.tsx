@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
 import { Language, getTranslation } from '@/lib/i18n';
+import { fetchPublicSettings } from '@/lib/platformSettings';
 
 export interface TraineeProfile {
   id: string;
@@ -142,12 +143,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('nexus_language') as Language;
+    let active = true;
+    const loadLanguage = async () => {
+      const savedLang = typeof window !== 'undefined'
+        ? localStorage.getItem('nexus_language') as Language | null
+        : null;
       if (savedLang && ['en', 'mr', 'hi'].includes(savedLang)) {
-        setLanguageState(savedLang);
+        if (active) setLanguageState(savedLang);
+        return;
       }
-    }
+      const settings = await fetchPublicSettings();
+      const configured = settings['localization.default_language'] as Language;
+      if (active && ['en', 'mr', 'hi'].includes(configured)) setLanguageState(configured);
+    };
+    loadLanguage();
+    return () => { active = false; };
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -190,8 +200,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!traineeData) {
         const username = session.user.user_metadata?.username || userEmail?.split('@')[0];
         const fullName = session.user.user_metadata?.full_name || username?.replace(/[._]/g, ' ');
-        const randomDigits = Math.floor(100000 + Math.random() * 900000);
-        
         const { data: createdTrainee, error: createErr } = await supabase
           .from('trainees')
           .insert({
@@ -199,14 +207,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: userEmail,
             username: username,
             full_name: fullName,
-            trainee_id: `TRN-${randomDigits}`,
+            // Let the database generate the trainee ID atomically.
             phone: session.user.user_metadata?.phone || '',
             dob: session.user.user_metadata?.dob || null,
-            gender: session.user.user_metadata?.gender || 'Unspecified',
+            gender: session.user.user_metadata?.gender || null,
             aadhaar_masked: '',
             address: '',
-            district: session.user.user_metadata?.district || 'Maharashtra',
-            state: 'Maharashtra',
+            district: session.user.user_metadata?.district || null,
+            state: session.user.user_metadata?.state || null,
             pincode: '',
             skills: [],
             about_me: '',

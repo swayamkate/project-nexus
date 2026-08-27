@@ -16,6 +16,7 @@ export const SETTING_TYPES = {
   'branding.primary_color': z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a hex color like #2563eb'),
   'branding.accent_color': z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a hex color like #0ea5e9'),
   'branding.login_headline': z.string().max(120),
+  'branding.theme_mode': z.enum(['system', 'light', 'dark']),
   'branding.banner_enabled': z.boolean(),
   'branding.banner_text': z.string().max(300),
 
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   'branding.primary_color': '#2563eb',
   'branding.accent_color': '#0ea5e9',
   'branding.login_headline': 'Skilling Outcomes & Longitudinal Tracking',
+  'branding.theme_mode': 'system',
   'branding.banner_enabled': false,
   'branding.banner_text': '',
 
@@ -114,6 +116,7 @@ export const PUBLIC_SETTING_KEYS: SettingKey[] = [
   'branding.primary_color',
   'branding.accent_color',
   'branding.login_headline',
+  'branding.theme_mode',
   'branding.banner_enabled',
   'branding.banner_text',
   'localization.enabled_languages',

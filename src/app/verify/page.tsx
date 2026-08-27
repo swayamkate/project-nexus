@@ -214,8 +214,8 @@ function CertificateVerifyContent() {
                   <User className="w-3.5 h-3.5 text-blue-400" />
                   <span>Candidate Identity</span>
                 </div>
-                <p className="text-sm font-bold text-white">{record.trainees?.full_name || 'Verified Trainee'}</p>
-                <p className="text-[11px] text-slate-400">{record.trainees?.district || 'Maharashtra'}, {record.trainees?.state || 'India'}</p>
+                <p className="text-sm font-bold text-white">{record.trainees?.full_name || 'Name not recorded'}</p>
+                <p className="text-[11px] text-slate-400">{record.trainees?.district || 'District not recorded'}, {record.trainees?.state || 'State not recorded'}</p>
               </div>
 
               <div className="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-1">
@@ -232,8 +232,8 @@ function CertificateVerifyContent() {
                   <Building2 className="w-3.5 h-3.5 text-purple-400" />
                   <span>Accredited Vocational Program</span>
                 </div>
-                <p className="text-sm font-bold text-white">{record.training_programs?.title || 'State Vocational Training'}</p>
-                <p className="text-xs text-slate-400">{record.training_programs?.provider_name || 'State Skill Development Society'}</p>
+                <p className="text-sm font-bold text-white">{record.training_programs?.title || 'Program title not recorded'}</p>
+                <p className="text-xs text-slate-400">{record.training_programs?.provider_name || 'Issuing authority not recorded'}</p>
               </div>
 
               <div className="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-1">

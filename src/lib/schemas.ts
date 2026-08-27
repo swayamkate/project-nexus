@@ -12,14 +12,14 @@ export const TraineeProfileSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
   aadhaar_masked: z.string().regex(/^X{4}-X{4}-\d{4}$/, 'Aadhaar must be cryptographically masked (XXXX-XXXX-1234)').optional().or(z.literal('')),
   address: z.string().max(255).optional().or(z.literal('')),
-  district: z.string().min(2).max(100).default('Pune'),
-  state: z.string().default('Maharashtra'),
+  district: z.string().min(2).max(100).optional(),
+  state: z.string().optional(),
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits').optional().or(z.literal('')),
   highest_education: z.string().max(100).optional().or(z.literal('')),
   board_university: z.string().max(150).optional().or(z.literal('')),
   year_of_passing: z.number().int().min(1970).max(2035).optional().nullable(),
   education_percentage: z.number().min(0).max(100).optional().nullable(),
-  skills: z.array(z.string().min(1).max(50)).default([]),
+  skills: z.array(z.string().min(1).max(50)).optional(),
   about_me: z.string().max(1000).optional().or(z.literal('')),
   avatar_url: z.string().url().optional().or(z.literal(''))
 });
@@ -37,17 +37,17 @@ export const TraineeEmploymentSchema = z.object({
   business_name: z.string().max(150).optional().or(z.literal('')),
   business_type: z.string().max(100).optional().or(z.literal('')),
   business_category: z.enum(['Micro', 'Small', 'Medium', 'Unregistered']).optional(),
-  business_status: z.enum(['active', 'scaling', 'struggling', 'closed', 'transitioning']).default('active'),
+  business_status: z.enum(['active', 'scaling', 'struggling', 'closed', 'transitioning']).optional(),
   establishment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
-  monthly_revenue: z.number().nonnegative().default(0),
-  monthly_profit: z.number().nonnegative().default(0),
-  monthly_income_range: z.string().max(50).default('₹10,000 – ₹20,000'),
-  employee_count: z.number().int().nonnegative().default(0),
+  monthly_revenue: z.number().nonnegative().optional(),
+  monthly_profit: z.number().nonnegative().optional(),
+  monthly_income_range: z.string().max(50).optional(),
+  employee_count: z.number().int().nonnegative().optional(),
   udyam_reg_number: z.string().regex(/^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/, 'Format must be UDYAM-MH-XX-XXXXXXX').optional().or(z.literal('')),
   gst_number: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 'Invalid 15-digit GSTIN').optional().or(z.literal('')),
-  bank_loan_availed: z.boolean().default(false),
+  bank_loan_availed: z.boolean().optional(),
   bank_loan_scheme: z.string().max(100).optional().or(z.literal('')),
-  loan_amount: z.number().nonnegative().default(0)
+  loan_amount: z.number().nonnegative().optional()
 });
 
 export type TraineeEmploymentInput = z.infer<typeof TraineeEmploymentSchema>;
@@ -59,8 +59,8 @@ export const MilestoneSurveySchema = z.object({
   milestone: z.enum(['3M', '6M', '12M', '18M', '24M']),
   current_status: z.string().min(1).max(50),
   current_income_range: z.string().min(1).max(50),
-  job_satisfaction_score: z.number().int().min(1).max(5).default(5),
-  skill_utilization_score: z.number().int().min(1).max(5).default(5),
+  job_satisfaction_score: z.number().int().min(1).max(5).optional(),
+  skill_utilization_score: z.number().int().min(1).max(5).optional(),
   remarks: z.string().max(500).optional().or(z.literal(''))
 });
 

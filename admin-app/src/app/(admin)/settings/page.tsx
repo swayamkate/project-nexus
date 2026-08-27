@@ -109,6 +109,10 @@ export default function AdminSettingsPage() {
         if (!active) return;
         if (res.ok && data.settings) {
           setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
+          const configuredTheme = data.settings['branding.theme_mode'];
+          if (configuredTheme === 'system' || configuredTheme === 'light' || configuredTheme === 'dark') {
+            setTheme(configuredTheme);
+          }
           setMigrationPending(Boolean(data.migrationPending));
         } else {
           showToast('error', data.error || 'Failed to load settings.');
@@ -259,7 +263,7 @@ export default function AdminSettingsPage() {
               <div className="grid grid-cols-3 gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setTheme('system')}
+                  onClick={() => { setTheme('system'); setSetting('branding.theme_mode', 'system'); }}
                   className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition cursor-pointer ${
                     theme === 'system'
                       ? 'bg-blue-600/20 border-blue-500 text-blue-400'
@@ -271,7 +275,7 @@ export default function AdminSettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTheme('light')}
+                  onClick={() => { setTheme('light'); setSetting('branding.theme_mode', 'light'); }}
                   className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition cursor-pointer ${
                     theme === 'light'
                       ? 'bg-blue-600/20 border-blue-500 text-blue-400'
@@ -283,7 +287,7 @@ export default function AdminSettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTheme('dark')}
+                  onClick={() => { setTheme('dark'); setSetting('branding.theme_mode', 'dark'); }}
                   className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition cursor-pointer ${
                     theme === 'dark'
                       ? 'bg-blue-600/20 border-blue-500 text-blue-400'

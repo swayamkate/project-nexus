@@ -15,7 +15,6 @@ import {
   DollarSign, 
   Briefcase,
   ChevronRight,
-  ArrowUpRight,
   AlertCircle,
   ShieldCheck
 } from 'lucide-react';
@@ -88,20 +87,17 @@ export const AnalyticsPage: React.FC = () => {
   const m24Followup = followups.find((f: any) => f.milestone === '24_months');
 
   // Compute wage for a followup if completed
-  const getMilestoneWage = (f: any, baseline: number | null) => {
-    if (!f || f.status !== 'completed' || !baseline) return null;
+  const getMilestoneWage = (f: any) => {
+    if (!f || f.status !== 'completed') return null;
     const reportedWage = f.survey_data_json?.monthly_income || f.survey_data_json?.current_wage;
     if (reportedWage && Number(reportedWage) > 0) return Number(reportedWage);
-    if (f.income_growth_pct && Number(f.income_growth_pct) > 0) {
-      return Math.round(baseline * (1 + Number(f.income_growth_pct) / 100));
-    }
-    return baseline;
+    return null;
   };
 
-  const m3Wage = getMilestoneWage(m3Followup, baselineWage);
-  const m6Wage = getMilestoneWage(m6Followup, baselineWage);
-  const m12Wage = getMilestoneWage(m12Followup, baselineWage);
-  const m24Wage = getMilestoneWage(m24Followup, baselineWage);
+  const m3Wage = getMilestoneWage(m3Followup);
+  const m6Wage = getMilestoneWage(m6Followup);
+  const m12Wage = getMilestoneWage(m12Followup);
+  const m24Wage = getMilestoneWage(m24Followup);
 
   // Latest verified wage
   const latestVerifiedWage = m24Wage || m12Wage || m6Wage || m3Wage || baselineWage;
@@ -151,7 +147,7 @@ export const AnalyticsPage: React.FC = () => {
     }
   ];
 
-  const maxTrackedWage = Math.max(35000, ...(milestonesList.map(m => m.wage || 0)));
+  const maxTrackedWage = Math.max(1, ...(milestonesList.map(m => m.wage || 0)));
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 text-slate-800 dark:text-slate-100 animate-in fade-in-50">
@@ -329,11 +325,8 @@ export const AnalyticsPage: React.FC = () => {
             </div>
           )}
 
-          <div className="p-3 bg-blue-50/60 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/60 text-xs text-blue-800 dark:text-blue-300 flex items-center justify-between">
-            <span className="font-semibold">
-              State Benchmark: Maharashtra certified trainees report average wage lift of 1.45x after 6 months.
-            </span>
-            <ArrowUpRight className="w-4 h-4 flex-shrink-0" />
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            Benchmarks are shown only when the administrator has published verified registry data.
           </div>
         </div>
 
@@ -348,7 +341,7 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {districtStats.map((d, idx) => (
+            {districtStats.length > 0 ? districtStats.map((d, idx) => (
               <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs">
                 <div>
                   <span className="font-bold text-slate-800 dark:text-slate-200 block">{d.district_name}</span>
@@ -359,21 +352,21 @@ export const AnalyticsPage: React.FC = () => {
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">Avg ₹{Number(d.avg_wage || 0).toLocaleString()}/mo</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="p-5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500">
+                No verified district statistics have been published yet.
+              </div>
+            )}
           </div>
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs">High-Demand Skill Shortages:</h4>
             <div className="flex flex-wrap gap-1.5">
-              {(skillGaps.length > 0 ? skillGaps : [
-                { skill_name: 'EV Diagnostics', gap_percentage: 78 },
-                { skill_name: 'Solar Grid Automation', gap_percentage: 67 },
-                { skill_name: 'Boutique Apparel', gap_percentage: 56 }
-              ]).map((g, idx) => (
+              {skillGaps.length > 0 ? skillGaps.map((g, idx) => (
                 <span key={idx} className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold">
                   {g.skill_name} ({g.gap_percentage}% Deficit)
                 </span>
-              ))}
+              )) : <span className="text-xs text-slate-500">No verified skill-gap data published yet.</span>}
             </div>
           </div>
         </div>

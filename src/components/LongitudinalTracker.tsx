@@ -41,35 +41,36 @@ export const LongitudinalTracker: React.FC = () => {
 
   // Dynamically derive wage curve from real candidate data
   const currentIncome = Number(employment?.monthly_revenue || employment?.monthly_salary || 0);
-  const baselineWage = currentIncome > 0 ? Math.round(currentIncome * 0.45) : 8500;
+  const baselineWage = currentIncome > 0 ? currentIncome : null;
+  const wageHistory: Array<{ month: string; wage: number }> = baselineWage
+    ? [{ month: 'Month 0 (Reported baseline)', wage: baselineWage }]
+    : [];
 
-  const wageHistory = [
-    { month: 'Month 0 (Baseline)', wage: baselineWage }
-  ];
+  const reportedFollowupWage = (followup: any) => {
+    if (!followup || followup.status !== 'completed') return null;
+    const value = followup.survey_data_json?.monthly_income || followup.survey_data_json?.current_wage;
+    return Number(value) > 0 ? Number(value) : null;
+  };
 
   const m3 = followups.find(f => f.milestone === '3_months');
-  if (m3 && m3.status === 'completed') {
-    wageHistory.push({ month: 'Month 3 (Follow-up)', wage: Math.round(baselineWage * 1.4) });
-  } else if (currentIncome > 0) {
-    wageHistory.push({ month: 'Month 3 (Follow-up)', wage: Math.round(baselineWage * 1.4) });
-  }
+  const m3Wage = reportedFollowupWage(m3);
+  if (m3Wage) wageHistory.push({ month: 'Month 3 (Follow-up)', wage: m3Wage });
 
   const m6 = followups.find(f => f.milestone === '6_months');
-  if (m6 && m6.status === 'completed') {
-    wageHistory.push({ month: 'Month 6 (Mid-Term)', wage: currentIncome || Math.round(baselineWage * 2.1) });
-  } else if (currentIncome > 0) {
-    wageHistory.push({ month: 'Month 6 (Current)', wage: currentIncome });
-  }
+  const m6Wage = reportedFollowupWage(m6);
+  if (m6Wage) wageHistory.push({ month: 'Month 6 (Follow-up)', wage: m6Wage });
 
   const m12 = followups.find(f => f.milestone === '12_months');
-  if (m12 && m12.status === 'completed') {
-    wageHistory.push({ month: 'Month 12 (Annual)', wage: Math.round((currentIncome || baselineWage) * 1.35) });
-  }
+  const m12Wage = reportedFollowupWage(m12);
+  if (m12Wage) wageHistory.push({ month: 'Month 12 (Follow-up)', wage: m12Wage });
 
   const m24 = followups.find(f => f.milestone === '24_months');
-  if (m24 && m24.status === 'completed') {
-    wageHistory.push({ month: 'Month 24 (Longitudinal)', wage: Math.round((currentIncome || baselineWage) * 1.7) });
-  }
+  const m24Wage = reportedFollowupWage(m24);
+  if (m24Wage) wageHistory.push({ month: 'Month 24 (Follow-up)', wage: m24Wage });
+
+  const wageGrowth = wageHistory.length > 1
+    ? `${Math.round(((wageHistory[wageHistory.length - 1].wage - wageHistory[0].wage) / wageHistory[0].wage) * 100)}% change`
+    : 'Awaiting verified follow-up';
 
   useEffect(() => {
     const fetchDistricts = async () => {
@@ -135,12 +136,16 @@ export const LongitudinalTracker: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-emerald-600" />
             <h3 className="font-bold text-slate-900 text-sm">Longitudinal Wage Progression Curve</h3>
           </div>
-          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-            +206% Growth from Baseline
+          <span className="text-xs font-bold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+            {wageGrowth}
           </span>
         </div>
 
-        <div className="h-64 w-full">
+        {wageHistory.length === 0 ? (
+          <div className="p-8 rounded-xl bg-amber-50/60 border border-amber-200 text-center text-xs text-slate-600">
+            No verified income observations are available yet. Submit a follow-up with a numeric income value to create this chart.
+          </div>
+        ) : <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={wageHistory} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
@@ -159,7 +164,7 @@ export const LongitudinalTracker: React.FC = () => {
               <Area type="monotone" dataKey="wage" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#wageGradient)" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </div>}
       </div>
 
       {/* District Placement Benchmarks */}
@@ -183,23 +188,18 @@ export const LongitudinalTracker: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(districtStats.length > 0 ? districtStats : [
-                  { district: 'Pune', total_trained: 14200, placement_rate: 78.5, avg_monthly_wage: 19500, top_industry: 'Automotive & EV' },
-                  { district: 'Mumbai Suburban', total_trained: 18900, placement_rate: 76.2, avg_monthly_wage: 22000, top_industry: 'IT & ITeS' },
-                  { district: 'Nagpur', total_trained: 9800, placement_rate: 71.4, avg_monthly_wage: 16500, top_industry: 'Logistics' },
-                  { district: 'Nashik', total_trained: 8400, placement_rate: 69.8, avg_monthly_wage: 15800, top_industry: 'Agri-Tech & Solar' }
-                ]).map((row, idx) => (
+                {districtStats.length > 0 ? districtStats.map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50 transition">
                     <td className="py-3 px-4 font-bold text-slate-900 flex items-center space-x-1.5">
                       <MapPin className="w-3.5 h-3.5 text-blue-600" />
                       <span>{row.district}</span>
                     </td>
-                    <td className="py-3 px-4">{Number(row.total_trained || 12000).toLocaleString()}</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600">{row.placement_rate}%</td>
-                    <td className="py-3 px-4 font-semibold">₹{Number(row.avg_monthly_wage || 18000).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-medium text-slate-500">{row.top_industry}</td>
+                    <td className="py-3 px-4">{row.total_trained == null ? 'Not reported' : Number(row.total_trained).toLocaleString()}</td>
+                    <td className="py-3 px-4 font-bold text-emerald-600">{row.placement_rate == null ? 'Not reported' : `${row.placement_rate}%`}</td>
+                    <td className="py-3 px-4 font-semibold">{row.avg_monthly_wage == null ? 'Not reported' : `₹${Number(row.avg_monthly_wage).toLocaleString()}`}</td>
+                    <td className="py-3 px-4 text-right font-medium text-slate-500">{row.top_industry || 'Not reported'}</td>
                   </tr>
-                ))}
+                )) : <tr><td colSpan={5} className="py-8 text-center text-slate-500">No verified district statistics have been published yet.</td></tr>}
               </tbody>
             </table>
           </div>

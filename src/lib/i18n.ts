@@ -22,6 +22,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'Notifications',
     'nav.noNotifications': 'No new notifications.',
     'nav.markAllRead': 'Mark all as read',
+    'nav.careerGoal': 'Career Goal & Skill Gap',
+    'nav.careerRoadmap': 'Action Roadmap (N Days)',
+    'nav.courses': 'Course Search (NPTEL/Coursera)',
+    'nav.assessments': 'Skill Assessments',
+    'nav.interviewPrep': 'Interview Prep & Q&A',
 
     // Dashboard Overview
     'dash.welcome': 'Welcome back,',
@@ -40,6 +45,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dash.schemesAndGrants': 'Recommended Opportunities & Subsidies',
     'dash.applyNow': 'Apply for Scheme',
     'dash.quickCheckin': 'Submit Milestone Survey',
+    'dash.careerGoal': 'Career Goal & Upskilling Accelerator',
+    'dash.skillGapMatrix': 'Skill Gap Matrix',
+    'dash.trackingStatus': 'Longitudinal Tracking Status',
+    'dash.followupHistory': 'Longitudinal Follow-up History',
+    'dash.quickLinks': 'Quick Links',
 
     // Profile
     'profile.title': 'My Profile',
@@ -157,6 +167,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'सूचना (Notifications)',
     'nav.noNotifications': 'नवीन सूचना उपलब्ध नाहीत.',
     'nav.markAllRead': 'सर्व वाचले म्हणून चिन्हांकित करा',
+    'nav.careerGoal': 'करिअर ध्येय आणि कौशल्य अंतर',
+    'nav.careerRoadmap': 'कृती मार्गदर्शक (N दिवस)',
+    'nav.courses': 'कोर्स शोध (NPTEL/Coursera)',
+    'nav.assessments': 'कौशल्य मूल्यांकन',
+    'nav.interviewPrep': 'मुलाखत तयारी आणि प्रश्नोत्तरे',
 
     // Dashboard Overview
     'dash.welcome': 'पुन्हा स्वागत आहे,',
@@ -175,6 +190,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dash.schemesAndGrants': 'शिफारस केलेल्या योजना व भांडवली अनुदान',
     'dash.applyNow': 'योजनेसाठी अर्ज करा',
     'dash.quickCheckin': 'सर्वेक्षण त्वरित सबमिट करा',
+    'dash.careerGoal': 'करिअर ध्येय आणि कौशल्यवृद्धी',
+    'dash.skillGapMatrix': 'कौशल्य अंतर तक्ता',
+    'dash.trackingStatus': 'दीर्घकालीन ट्रॅकिंग स्थिती',
+    'dash.followupHistory': 'दीर्घकालीन पाठपुरावा इतिहास',
+    'dash.quickLinks': 'द्रुत दुवे',
 
     // Profile
     'profile.title': 'माझे प्रोफाईल',
@@ -292,6 +312,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'सूचनाएं (Notifications)',
     'nav.noNotifications': 'कोई नई सूचना नहीं है।',
     'nav.markAllRead': 'सभी को पढ़ा हुआ चिह्नित करें',
+    'nav.careerGoal': 'करियर लक्ष्य और कौशल अंतर',
+    'nav.careerRoadmap': 'कार्य रोडमैप (N दिन)',
+    'nav.courses': 'कोर्स खोज (NPTEL/Coursera)',
+    'nav.assessments': 'कौशल आकलन',
+    'nav.interviewPrep': 'साक्षात्कार तैयारी और प्रश्नोत्तर',
 
     // Dashboard Overview
     'dash.welcome': 'पुनः स्वागत है,',
@@ -310,6 +335,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dash.schemesAndGrants': 'अनुशंसित सरकारी योजनाएं और सब्सिडी',
     'dash.applyNow': 'योजना के लिए आवेदन करें',
     'dash.quickCheckin': 'सर्वेक्षण तुरंत सबमिट करें',
+    'dash.careerGoal': 'करियर लक्ष्य और कौशलवृद्धि',
+    'dash.skillGapMatrix': 'कौशल अंतर मैट्रिक्स',
+    'dash.trackingStatus': 'दीर्घकालिक ट्रैकिंग स्थिति',
+    'dash.followupHistory': 'दीर्घकालिक अनुवर्ती इतिहास',
+    'dash.quickLinks': 'त्वरित लिंक',
 
     // Profile
     'profile.title': 'मेरी प्रोफ़ाइल',

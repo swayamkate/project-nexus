@@ -239,7 +239,7 @@ export default function AdminSchemesPage() {
                     <td className="py-3.5 px-4 font-mono text-blue-400 font-bold">{app.application_no}</td>
                     <td className="py-3.5 px-4">
                       <p className="font-bold text-white">{app.trainees?.full_name || 'Trainee'}</p>
-                      <p className="text-[11px] text-slate-400">{app.business_name || 'Micro-Enterprise'} • {app.trainees?.district || 'Pune'}</p>
+                      <p className="text-[11px] text-slate-400">{app.business_name || 'Business name not recorded'} • {app.trainees?.district || 'District not recorded'}</p>
                     </td>
                     <td className="py-3.5 px-4 text-slate-300">{app.government_schemes?.name || 'Grant Scheme'}</td>
                     <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">₹{Number(app.requested_amount).toLocaleString()}</td>

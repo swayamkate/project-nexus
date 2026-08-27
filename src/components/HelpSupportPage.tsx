@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Headphones, 
   MessageCircle, 
@@ -18,10 +18,12 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
+import { fetchPublicSettings } from '@/lib/platformSettings';
 
 export const HelpSupportPage: React.FC = () => {
   const { user, profile, t } = useUser();
   const supabase = createClient();
+  const [supportEmail, setSupportEmail] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
@@ -34,6 +36,10 @@ export const HelpSupportPage: React.FC = () => {
     { sender: 'bot', text: 'Hello! I am the Nexus AI Assistant. How can I help you with your training, certificate, or business support today?' }
   ]);
   const [userInput, setUserInput] = useState('');
+
+  useEffect(() => {
+    fetchPublicSettings().then(settings => setSupportEmail(settings['general.support_email'] || null));
+  }, []);
 
   const faqs = [
     {
@@ -65,13 +71,13 @@ export const HelpSupportPage: React.FC = () => {
         .from('support_tickets')
         .insert({
           trainee_id: profile?.id || null,
-          trainee_name: profile?.full_name || 'Nexus Trainee',
-          trainee_email: profile?.email || user?.email || 'avishkarkedar@gmail.com',
+          trainee_name: profile?.full_name || '',
+          trainee_email: profile?.email || user?.email || '',
           category: ticketCategory,
           subject: ticketSubject.trim(),
           message: ticketMessage.trim(),
           status: 'open',
-          assigned_to: `District Officer ${profile?.district || 'Pune'}`
+          assigned_to: profile?.district ? `District Officer ${profile.district}` : null
         })
         .select()
         .single();
@@ -151,7 +157,9 @@ export const HelpSupportPage: React.FC = () => {
         </a>
 
         <a 
-          href="mailto:avishkarkedar@gmail.com" 
+          href={supportEmail ? `mailto:${supportEmail}` : undefined}
+          aria-disabled={!supportEmail}
+          onClick={event => { if (!supportEmail) event.preventDefault(); }}
           className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center space-x-3.5 hover:border-purple-500 transition group cursor-pointer"
         >
           <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
@@ -159,8 +167,8 @@ export const HelpSupportPage: React.FC = () => {
           </div>
           <div>
             <span className="text-xs text-slate-400 font-semibold block">{t('help.email', 'Official Support Email')}</span>
-            <p className="text-xs font-bold text-slate-900 mt-0.5 group-hover:text-purple-600 transition">avishkarkedar@gmail.com</p>
-            <span className="text-[11px] text-slate-400">Response within 24 hours</span>
+            <p className="text-xs font-bold text-slate-900 mt-0.5 group-hover:text-purple-600 transition">{supportEmail || 'Support email not configured'}</p>
+            <span className="text-[11px] text-slate-400">{supportEmail ? 'Response within 24 hours' : 'Configure this in the admin console'}</span>
           </div>
         </a>
 
@@ -180,7 +188,7 @@ export const HelpSupportPage: React.FC = () => {
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
               <div>
                 <span className="font-bold block">Support Request Registered Successfully!</span>
-                <span className="text-[11px]">Ticket ID: <strong className="font-mono">{createdTicketId}</strong>. Assigned to {profile?.district || 'Pune'} District Officer.</span>
+                <span className="text-[11px]">Ticket ID: <strong className="font-mono">{createdTicketId}</strong>. {profile?.district ? `Assigned to ${profile.district} District Officer.` : 'Your request is queued for assignment.'}</span>
               </div>
             </div>
           )}

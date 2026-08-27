@@ -37,6 +37,10 @@ The live browser also emitted React minified error #418 on interactive public ro
 
 `CertificationsPage`, `ResumeDossierModal`, and the public verification routes previously filled missing certificate IDs, grades, dates, programs, and demo registry references with realistic-looking values. A newly registered trainee could therefore see a “verified” credential before completing training. The UI now requires both `status = 'certified'` and a non-empty database `certificate_id`; otherwise it shows an empty state or an invalid lookup.
 
+### C7 — Database defaults created synthetic outcomes
+
+The original setup scripts gave `trainee_enrollments.certificate_id`, `grade`, profile DOB/state, employment status, and follow-up income fields plausible defaults. A normal enrollment could therefore appear certified and charts could display a made-up baseline. Migration `src/db/migrations/008_real_data_only.sql` removes those defaults, normalizes non-authoritative certificate fields, and adds a certification consistency constraint. Apply it to the live database.
+
 ## High-priority findings
 
 ### H1 — Signup availability errors must not be presented as “taken”
@@ -72,6 +76,7 @@ The database setting is now standardized to `support@nexus.in`, but all public/a
 - API docs state “Bearer JWT Authenticated,” but public health/verification routes are unauthenticated. Document public vs authenticated endpoints accurately.
 - The service worker caches navigations; bump the cache version on releases and ensure stale HTML cannot preserve obsolete client auth code.
 - The dashboard header exposed language and theme controls that were not consistently reflected across the product. Those non-functional quick toggles were removed from the header; language/theme configuration remains available only in Settings until each translation/theme surface is fully verified.
+- Analytics and longitudinal charts previously synthesized wage multipliers, baselines, district rows, and skill-gap chips when queries were empty. They now render an explicit no-verified-data state and only plot numeric observations from the database.
 
 ## Recommended execution order
 

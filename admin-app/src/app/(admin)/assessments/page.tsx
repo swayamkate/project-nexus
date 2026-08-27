@@ -179,7 +179,7 @@ export default function AdminAssessmentsPage() {
                   <tr key={sub.id} className="hover:bg-slate-800/30 transition">
                     <td className="p-4">
                       <div className="font-bold text-white">{sub.trainees?.full_name || 'Anonymous Candidate'}</div>
-                      <div className="text-[11px] text-slate-500">{sub.trainees?.email || 'N/A'} • {sub.trainees?.district || 'Maharashtra'}</div>
+                      <div className="text-[11px] text-slate-500">{sub.trainees?.email || 'Email not recorded'} • {sub.trainees?.district || 'District not recorded'}</div>
                     </td>
                     <td className="p-4">
                       <div className="font-bold text-slate-200">{sub.skill_assessments?.title || 'Technical Assessment'}</div>

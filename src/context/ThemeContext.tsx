@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { fetchPublicSettings } from '@/lib/platformSettings';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -23,8 +24,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     setMounted(true);
-    const saved = (localStorage.getItem('nexus_ui_theme') as ThemeMode) || 'system';
-    setThemeState(saved);
+    const saved = localStorage.getItem('nexus_ui_theme') as ThemeMode | null;
+    // The admin console is the source of truth for the platform theme. Keep a
+    // local value only as an offline fallback while settings are loading.
+    setThemeState(saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system');
+    fetchPublicSettings().then(settings => {
+      const configured = settings['branding.theme_mode'];
+      if (configured === 'light' || configured === 'dark' || configured === 'system') {
+        setThemeState(configured);
+        try { localStorage.setItem('nexus_ui_theme', configured); } catch { /* incognito */ }
+      }
+    }).catch(() => { /* local fallback remains active */ });
   }, []);
 
   useEffect(() => {

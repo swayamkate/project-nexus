@@ -39,12 +39,13 @@ export const TrainingDetailsPage: React.FC = () => {
     if (!profile?.id) return;
     setEnrollingId(programId);
     try {
-      await supabase.from('trainee_enrollments').insert({
+      const { error } = await supabase.from('trainee_enrollments').insert({
         trainee_id: profile.id,
         program_id: programId,
         enrolled_date: new Date().toISOString().split('T')[0],
         status: 'enrolled'
       });
+      if (error) throw error;
       await refreshData();
       setToastMsg('Enrolled in training program successfully!');
       setTimeout(() => setToastMsg(null), 4000);
@@ -97,14 +98,14 @@ export const TrainingDetailsPage: React.FC = () => {
                     }`}>
                       {enr.status}
                     </span>
-                    <h2 className="text-xl font-bold text-slate-900">{prog?.title || 'State Vocational Training Program'}</h2>
-                    <p className="text-xs text-slate-500">{prog?.provider_name || 'Maharashtra Skill Development Center'} • Sector: {prog?.sector || 'Vocational'}</p>
+                    <h2 className="text-xl font-bold text-slate-900">{prog?.title || 'Program title not recorded'}</h2>
+                    <p className="text-xs text-slate-500">{prog?.provider_name || 'Provider not recorded'} • Sector: {prog?.sector || 'Sector not recorded'}</p>
                   </div>
 
                   <div className="flex items-center space-x-3">
                     <div className="text-right">
                       <span className="text-xs text-slate-400 block">Grade</span>
-                      <span className="text-lg font-black text-emerald-600">{enr.grade || 'Verified'}</span>
+                      <span className="text-lg font-black text-emerald-600">{enr.grade || 'Not recorded'}</span>
                     </div>
                     <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <Award className="w-6 h-6" />
@@ -116,7 +117,7 @@ export const TrainingDetailsPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <span className="text-slate-400 text-xs block">Duration</span>
-                    <p className="text-base font-bold text-slate-800 mt-0.5">{prog?.duration_months || 3} Months</p>
+                    <p className="text-base font-bold text-slate-800 mt-0.5">{prog?.duration_months == null ? 'Not recorded' : `${prog.duration_months} Months`}</p>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <span className="text-slate-400 text-xs block">Enrolled Date</span>

@@ -23,8 +23,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     setMounted(true);
-    const saved = (localStorage.getItem('nexus_admin_theme') as ThemeMode) || 'system';
-    setThemeState(saved);
+    const saved = localStorage.getItem('nexus_admin_theme') as ThemeMode | null;
+    setThemeState(saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system');
+    fetch('/api/settings', { cache: 'no-store' }).then(async response => {
+      if (!response.ok) return;
+      const data = await response.json();
+      const configured = data.settings?.['branding.theme_mode'];
+      if (configured === 'light' || configured === 'dark' || configured === 'system') {
+        setThemeState(configured);
+        try { localStorage.setItem('nexus_admin_theme', configured); } catch { /* ignore */ }
+      }
+    }).catch(() => { /* local fallback remains active */ });
   }, []);
 
   useEffect(() => {

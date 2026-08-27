@@ -17,6 +17,7 @@ export const PUBLIC_SETTING_KEYS = [
   'branding.primary_color',
   'branding.accent_color',
   'branding.login_headline',
+  'branding.theme_mode',
   'branding.banner_enabled',
   'branding.banner_text',
   'localization.enabled_languages',
@@ -37,6 +38,7 @@ export interface PublicPlatformSettings {
   'branding.primary_color': string;
   'branding.accent_color': string;
   'branding.login_headline': string;
+  'branding.theme_mode': 'system' | 'light' | 'dark';
   'branding.banner_enabled': boolean;
   'branding.banner_text': string;
   'localization.enabled_languages': string[];
@@ -55,6 +57,7 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicPlatformSettings = {
   'branding.primary_color': '#2563eb',
   'branding.accent_color': '#0ea5e9',
   'branding.login_headline': 'Skilling Outcomes & Longitudinal Tracking',
+  'branding.theme_mode': 'system',
   'branding.banner_enabled': false,
   'branding.banner_text': '',
   'localization.enabled_languages': ['en', 'hi', 'mr'],

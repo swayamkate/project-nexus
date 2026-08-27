@@ -224,7 +224,7 @@ export default function AdminFollowupsPage() {
                   <tr key={f.id} className="hover:bg-slate-900/40 transition">
                     <td className="py-3.5 px-4">
                       <span className="font-bold text-white block">{f.trainees?.full_name || 'Trainee'}</span>
-                      <span className="text-[11px] text-slate-400">{f.trainees?.district || 'Pune'} • {f.trainees?.phone}</span>
+                      <span className="text-[11px] text-slate-400">{f.trainees?.district || 'District not recorded'} • {f.trainees?.phone || 'Phone not recorded'}</span>
                     </td>
 
                     <td className="py-3.5 px-4 font-semibold text-blue-400 uppercase">
