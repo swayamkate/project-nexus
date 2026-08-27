@@ -26,6 +26,7 @@ export function createClient(): SupabaseClient {
   if (!browserClient) {
     browserClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
+        storageKey: 'nexus_admin_auth_token',
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,

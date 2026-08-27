@@ -77,18 +77,16 @@ export default function LoginPage() {
     try {
       let authEmail = identifier.trim();
 
-      // If user entered a username (no @), look up their email from public.trainees
+      // If user entered a username (no @), look up their email via secure RPC
       if (!authEmail.includes('@')) {
-        const { data: trainee, error: lookupErr } = await supabase
-          .from('trainees')
-          .select('email')
-          .eq('username', authEmail.toLowerCase())
-          .maybeSingle();
+        const { data: lookedUpEmail, error: lookupErr } = await supabase.rpc('get_trainee_email_by_username', {
+          p_username: authEmail.toLowerCase()
+        });
 
-        if (lookupErr || !trainee?.email) {
+        if (lookupErr || !lookedUpEmail) {
           throw new Error(`Username "${authEmail}" not found. Please enter your registered email address.`);
         }
-        authEmail = trainee.email;
+        authEmail = lookedUpEmail;
       }
 
       const { data, error: signInErr } = await supabase.auth.signInWithPassword({
@@ -139,14 +137,12 @@ export default function LoginPage() {
       const cleanUsername = (username || identifier.split('@')[0]).trim().toLowerCase();
       const cleanEmail = identifier.trim().toLowerCase();
 
-      // 1. Check if username is already taken
-      const { data: existingUser } = await supabase
-        .from('trainees')
-        .select('id')
-        .eq('username', cleanUsername)
-        .maybeSingle();
+      // 1. Check if username is already taken via secure RPC
+      const { data: isAvailable, error: checkErr } = await supabase.rpc('is_username_available', {
+        p_username: cleanUsername
+      });
 
-      if (existingUser) {
+      if (checkErr || isAvailable === false) {
         throw new Error(`Username "${cleanUsername}" is already taken. Please choose another username.`);
       }
 

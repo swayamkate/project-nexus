@@ -24,8 +24,17 @@ export function createClient(): SupabaseClient {
   }
 
   if (!browserClient) {
+    // This was the storage key used by the legacy client. Keeping any value
+    // under it lets an older client send a stale bearer token and turn public
+    // anon requests into 401 responses. The current client uses the isolated
+    // key below, so it is always safe to remove the legacy value.
+    try {
+      localStorage.removeItem('sb-api-auth-token');
+    } catch {}
+
     browserClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
+        storageKey: 'nexus_candidate_auth_token',
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
