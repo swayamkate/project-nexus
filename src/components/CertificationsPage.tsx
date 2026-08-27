@@ -118,7 +118,7 @@ export const CertificationsPage: React.FC = () => {
               <p>Issuing Body: <span className="font-bold text-slate-900">{certData.issuingAuthority}</span></p>
             </div>
 
-            {/* Middle: Signature Mock */}
+            {/* Middle: Digital Signature */}
             <div className="text-center space-y-1">
               <div className="font-serif italic text-lg font-bold text-blue-900">
                 P. K. Deshmukh

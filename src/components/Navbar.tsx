@@ -76,47 +76,36 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-bold text-slate-600">
           <button
             onClick={() => setLanguage('en')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
             EN
           </button>
           <button
             onClick={() => setLanguage('mr')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
             मराठी
           </button>
           <button
             onClick={() => setLanguage('hi')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
             हिंदी
           </button>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
-          <button
-            onClick={() => setViewMode('trainee')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-              viewMode === 'trainee' 
-                ? 'bg-white text-blue-600 shadow-xs font-black' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+        {/* Superadmin Console Quick Access (Only if admin email) */}
+        {user?.email === 'admin@nexus.com' && (
+          <a
+            href="https://administrator.avishkark.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
           >
-            {t('nav.trainee', 'Trainee')}
-          </button>
-          <button
-            onClick={() => setViewMode('admin')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-              viewMode === 'admin' 
-                ? 'bg-white text-blue-600 shadow-xs font-black' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            {t('nav.admin', 'State Admin')}
-          </button>
-        </div>
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+            <span>Admin Console</span>
+          </a>
+        )}
 
         {/* Notifications Bell with Real Popup */}
         <div className="relative">

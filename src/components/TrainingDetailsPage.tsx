@@ -35,14 +35,6 @@ export const TrainingDetailsPage: React.FC = () => {
     fetchCourses();
   }, [supabase]);
 
-  const modules = [
-    { name: 'Pattern Making & Garment Drafting', hours: 40, status: 'Completed', score: '95%' },
-    { name: 'Industrial Single Needle Lockstitch Operation', hours: 60, status: 'Completed', score: '92%' },
-    { name: 'Quality Inspection & Fabric Testing', hours: 30, status: 'Completed', score: '88%' },
-    { name: 'Advanced Overlock & Flatlock Seaming', hours: 50, status: 'Completed', score: '90%' },
-    { name: 'Boutique Management & Digital Invoicing', hours: 20, status: 'Completed', score: '96%' }
-  ];
-
   const handleEnroll = async (programId: string) => {
     if (!profile?.id) return;
     setEnrollingId(programId);

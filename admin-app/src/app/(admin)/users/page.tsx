@@ -552,15 +552,15 @@ export default function AdminUsersPage() {
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">Phone Number</span>
-                <span className="text-slate-200 font-semibold">{selectedTrainee.phone || '+91 98765 43210'}</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.phone || 'Not Provided'}</span>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">District & State</span>
-                <span className="text-slate-200 font-semibold">{selectedTrainee.district || 'Pune'}, Maharashtra</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.district ? `${selectedTrainee.district}, Maharashtra` : 'Maharashtra'}</span>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">Date of Birth</span>
-                <span className="text-slate-200 font-semibold">{selectedTrainee.dob || '2002-05-15'}</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.dob || 'Not Specified'}</span>
               </div>
             </div>
 
@@ -571,11 +571,15 @@ export default function AdminUsersPage() {
                 <span>Verified Skills & Competencies</span>
               </h4>
               <div className="flex flex-wrap gap-1.5">
-                {(selectedTrainee.skills || ['Tailoring', 'Pattern Making', 'Quality Inspection']).map((s: string, idx: number) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-600/15 border border-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg">
-                    {s}
-                  </span>
-                ))}
+                {selectedTrainee.skills && selectedTrainee.skills.length > 0 ? (
+                  selectedTrainee.skills.map((s: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 bg-blue-600/15 border border-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg">
+                      {s}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-500 italic">No skills listed yet</span>
+                )}
               </div>
             </div>
 
@@ -586,9 +590,13 @@ export default function AdminUsersPage() {
                 <span>Academic & Vocational Background</span>
               </h4>
               <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs space-y-1">
-                <p className="font-bold text-white">{selectedTrainee.highest_education || '12th Standard (Science)'}</p>
-                <p className="text-slate-400">{selectedTrainee.board_university || 'Maharashtra State Board'} • Year {selectedTrainee.year_of_passing || 2020}</p>
-                <span className="text-emerald-400 font-bold text-[11px]">Score: {selectedTrainee.education_percentage || '78.60'}%</span>
+                <p className="font-bold text-white">{selectedTrainee.highest_education || 'Qualification Not Specified'}</p>
+                <p className="text-slate-400">
+                  {selectedTrainee.board_university ? `${selectedTrainee.board_university} • Year ${selectedTrainee.year_of_passing || 'N/A'}` : 'Board / University: Not Specified'}
+                </p>
+                <span className="text-emerald-400 font-bold text-[11px]">
+                  {selectedTrainee.education_percentage ? `Score: ${selectedTrainee.education_percentage}%` : 'Score: Evaluation Pending'}
+                </span>
               </div>
             </div>
 
