@@ -142,7 +142,15 @@ export default function LoginPage() {
         p_username: cleanUsername
       });
 
-      if (checkErr || isAvailable === false) {
+      // A failed availability check is an infrastructure/configuration error,
+      // not evidence that the requested username exists. Treating every RPC
+      // error as "taken" made all usernames look unavailable when the
+      // migration was missing or the API returned 401/404.
+      if (checkErr) {
+        throw new Error('We could not check username availability right now. Please try again in a moment.');
+      }
+
+      if (isAvailable === false) {
         throw new Error(`Username "${cleanUsername}" is already taken. Please choose another username.`);
       }
 

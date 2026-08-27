@@ -632,11 +632,12 @@ export const SettingsPage: React.FC = () => {
                 onClick={async () => {
                   if (!profile?.id) return;
                   try {
-                    await supabase.from('privacy_requests').insert({
+                    const { error } = await supabase.from('privacy_requests').insert({
                       trainee_id: profile.id,
                       request_type: 'erasure',
                       details: 'Candidate requested account deletion & data erasure under DPDP Act 2023.'
                     });
+                    if (error) throw error;
                     setToastMsg('Data erasure request registered with the State Data Fiduciary.');
                     setTimeout(() => setToastMsg(null), 4000);
                   } catch (e) {
@@ -653,11 +654,12 @@ export const SettingsPage: React.FC = () => {
                 onClick={async () => {
                   if (!profile?.id) return;
                   try {
-                    await supabase.from('privacy_requests').insert({
+                    const { error } = await supabase.from('privacy_requests').insert({
                       trainee_id: profile.id,
                       request_type: 'consent_withdrawal',
                       details: 'Candidate withdrew consent for non-essential notifications.'
                     });
+                    if (error) throw error;
                     setToastMsg('Consent preferences updated in state privacy ledger.');
                     setTimeout(() => setToastMsg(null), 4000);
                   } catch (e) {
