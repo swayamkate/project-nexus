@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -143,12 +144,26 @@ export default function AdminCoursesPage() {
           .update(payload)
           .eq('id', editingCourse.id);
         if (error) throw error;
+        await logAdminAction(
+          'UPDATE_COURSE',
+          'EXTERNAL_COURSES',
+          editingCourse.id,
+          `Updated course ${payload.title} (${payload.platform})`
+        );
         setToastMsg({ type: 'success', text: 'Course catalog record updated successfully.' });
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('external_courses')
-          .insert(payload);
+          .insert(payload)
+          .select()
+          .single();
         if (error) throw error;
+        await logAdminAction(
+          'CREATE_COURSE',
+          'EXTERNAL_COURSES',
+          inserted?.id || null,
+          `Added new accredited course ${payload.title} (${payload.platform})`
+        );
         setToastMsg({ type: 'success', text: 'New accredited course added to registry.' });
       }
 
@@ -170,6 +185,12 @@ export default function AdminCoursesPage() {
         .delete()
         .eq('id', courseToDelete.id);
       if (error) throw error;
+      await logAdminAction(
+        'DELETE_COURSE',
+        'EXTERNAL_COURSES',
+        courseToDelete.id,
+        `Deleted course ${courseToDelete.title}`
+      );
       setToastMsg({ type: 'success', text: 'Course deleted from catalog.' });
       setCourseToDelete(null);
       await fetchCourses();

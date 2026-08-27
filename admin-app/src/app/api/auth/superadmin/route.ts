@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://api.avishkark.in';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzI0NjgwMDAwLCJleHAiOjIwMzk5OTk5OTl9.uqQrYqxJACG1bl52DQ54opgfhDQwm4ZwJ-l3kuUOl7E';
@@ -12,6 +13,18 @@ export async function POST(request: NextRequest) {
 
     if (!inputIdentifier || !inputPassword) {
       return NextResponse.json({ error: 'Username/email and password are required.' }, { status: 400 });
+    }
+
+    // 0. Enforce Rate Limiting per IP & identifier (5 attempts per 15 minutes lockout)
+    const forwarded = request.headers.get('x-forwarded-for') || '';
+    const ip = forwarded.split(',')[0].trim() || '127.0.0.1';
+    const rateLimitKey = `auth_admin_${ip}_${inputIdentifier.toLowerCase()}`;
+    const rateCheck = checkRateLimit(rateLimitKey, { limit: 5, windowMs: 15 * 60 * 1000 });
+    
+    if (!rateCheck.success) {
+      return NextResponse.json({
+        error: 'Too many executive login attempts. Account temporarily locked for 15 minutes to protect administrative security.'
+      }, { status: 429 });
     }
 
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -45,6 +58,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user || !authData.session) {
+      // Log failed attempt
+      try {
+        await dbClient.from('audit_logs').insert({
+          admin_email: loginEmail || 'unknown',
+          action: 'LOGIN_FAILED',
+          target_entity: 'AUTH',
+          details: `Failed admin login attempt for identifier '${inputIdentifier}' from IP ${ip}`,
+          status: 'Failed'
+        });
+      } catch {}
       return NextResponse.json({ error: 'Invalid executive credentials or unconfirmed account.' }, { status: 401 });
     }
 
@@ -60,7 +83,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access Denied: Account lacks administrative privileges.' }, { status: 403 });
     }
 
-    // 4. Issue secure HttpOnly session cookies
+    // 4. Log successful login
+    try {
+      await dbClient.from('audit_logs').insert({
+        admin_email: loginEmail,
+        action: 'LOGIN_SUCCESS',
+        target_entity: 'AUTH',
+        details: `Executive administrator logged in with role '${roleRecord.role}'`,
+        status: 'Success'
+      });
+    } catch {}
+
+    // 5. Issue secure HttpOnly session cookies
     const response = NextResponse.json({ 
       success: true, 
       user: { 

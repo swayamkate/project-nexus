@@ -73,8 +73,8 @@ export default function AdminOverviewPage() {
         totalEnterprises: empCount || 0,
         pendingVerifs: verifCount || 0,
         activeSchemes: schemeCount || 0,
-        totalCourses: courseCount || 8,
-        totalAssessments: assessCount || 3
+        totalCourses: courseCount || 0,
+        totalAssessments: assessCount || 0
       });
 
       if (logsRes.data) setAuditLogs(logsRes.data);
@@ -368,7 +368,7 @@ export default function AdminOverviewPage() {
                       {new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </td>
                     <td className="py-2.5 px-3 font-medium text-slate-200">
-                      {log.admin_username || 'System Engine'}
+                      {log.admin_email || log.admin_username || 'System Engine'}
                     </td>
                     <td className="py-2.5 px-3">
                       <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-mono">
@@ -376,10 +376,14 @@ export default function AdminOverviewPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">
-                      {log.entity_type || 'database'}
+                      {log.target_entity || log.entity_type || 'SYSTEM'}
                     </td>
                     <td className="py-2.5 px-3 text-right">
-                      <span className="text-emerald-400 font-bold">200 OK</span>
+                      <span className={`font-bold text-xs ${
+                        log.status === 'Failed' ? 'text-rose-400' : 'text-emerald-400'
+                      }`}>
+                        {log.status || 'Success'}
+                      </span>
                     </td>
                   </tr>
                 ))}

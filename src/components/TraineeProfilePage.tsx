@@ -129,7 +129,22 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
 
   const age = calculateAge(formData.dob);
   const formattedDob = formatDOB(formData.dob);
-  const completionPct = profile?.profile_completion_pct || 85;
+
+  const calculateDynamicCompletionPct = () => {
+    let score = 0;
+    if (formData.full_name?.trim()) score += 15;
+    if (formData.email?.trim()) score += 15;
+    if (formData.phone?.trim()) score += 15;
+    if (formData.dob) score += 10;
+    if (formData.gender) score += 5;
+    if (formData.education_level) score += 10;
+    if (formData.district) score += 10;
+    if (formData.trade) score += 10;
+    if (formData.skills?.length > 0) score += 10;
+    return Math.min(100, score);
+  };
+
+  const completionPct = calculateDynamicCompletionPct();
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">

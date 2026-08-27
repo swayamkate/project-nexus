@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminInterviewsPage() {
   const [questions, setQuestions] = useState<any[]>([]);
@@ -147,16 +148,30 @@ export default function AdminInterviewsPage() {
           .update(payload)
           .eq('id', editingQ.id);
         if (error) throw error;
+        await logAdminAction(
+          'UPDATE_INTERVIEW_QUESTION',
+          'INTERVIEW_QUESTIONS',
+          editingQ.id,
+          `Updated question for ${payload.trade_sector} (${payload.target_role})`
+        );
         setToastMsg({ type: 'success', text: 'Interview question updated successfully.' });
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('interview_questions')
           .insert({
             ...payload,
             submitted_by_name: 'Executive Admin Verified',
-            upvotes: 5
-          });
+            upvotes: 0
+          })
+          .select()
+          .single();
         if (error) throw error;
+        await logAdminAction(
+          'CREATE_INTERVIEW_QUESTION',
+          'INTERVIEW_QUESTIONS',
+          inserted?.id || null,
+          `Added interview question for ${payload.trade_sector} (${payload.target_role})`
+        );
         setToastMsg({ type: 'success', text: 'New verified question published to community.' });
       }
 
@@ -178,6 +193,12 @@ export default function AdminInterviewsPage() {
         .delete()
         .eq('id', qToDelete.id);
       if (error) throw error;
+      await logAdminAction(
+        'DELETE_INTERVIEW_QUESTION',
+        'INTERVIEW_QUESTIONS',
+        qToDelete.id,
+        `Deleted interview question ${qToDelete.id}`
+      );
       setToastMsg({ type: 'success', text: 'Question removed from question bank.' });
       setQToDelete(null);
       await fetchQuestions();

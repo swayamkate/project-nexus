@@ -168,13 +168,13 @@ export const CareerRoadmapModule: React.FC<CareerRoadmapModuleProps> = ({ onNavi
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold mb-3 border border-white/15 text-indigo-200">
               <Compass className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Step-by-Step Action Pathway</span>
+              <span>Algorithmic NSQF Milestone Engine</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               {targetDays}-Day Career Roadmap: {targetRole}
             </h1>
             <p className="text-sm text-indigo-100/80 mt-1 max-w-2xl">
-              Track your daily milestones from foundation study to technical assessment, AI mock interviews, and final placement.
+              Calibrated step-by-step pathway from foundation study to technical assessment, mock interviews, and verified placement.
             </p>
           </div>
 
@@ -183,10 +183,10 @@ export const CareerRoadmapModule: React.FC<CareerRoadmapModuleProps> = ({ onNavi
               type="button"
               onClick={handleRegenerateWithAI}
               disabled={generating}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 border border-white/20 cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 border border-white/20 cursor-pointer disabled:opacity-50 btn-interactive"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} />
-              <span>{generating ? 'Regenerating AI Path...' : 'Regenerate with AI'}</span>
+              <span>{generating ? 'Re-sequencing Path...' : 'Re-sequence Roadmap'}</span>
             </button>
 
             <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 text-center min-w-[120px]">

@@ -49,8 +49,8 @@ export default function AdminAssessmentsPage() {
 
   const totalSubmissions = submissions.length;
   const passedCount = submissions.filter(s => s.passed).length;
-  const passRate = totalSubmissions > 0 ? Math.round((passedCount / totalSubmissions) * 100) : 100;
-  const avgScore = totalSubmissions > 0 ? Math.round(submissions.reduce((acc, s) => acc + Number(s.score_pct), 0) / totalSubmissions) : 82;
+  const passRate = totalSubmissions > 0 ? Math.round((passedCount / totalSubmissions) * 100) : 0;
+  const avgScore = totalSubmissions > 0 ? Math.round(submissions.reduce((acc, s) => acc + Number(s.score_pct), 0) / totalSubmissions) : 0;
 
   return (
     <div className="space-y-6">
@@ -80,7 +80,7 @@ export default function AdminAssessmentsPage() {
             <span>Certification Pass Rate</span>
           </div>
           <div className="text-2xl font-black text-emerald-400">{passRate}%</div>
-          <div className="text-[11px] text-slate-500">{passedCount} of {totalSubmissions || 1} candidates certified</div>
+          <div className="text-[11px] text-slate-500">{passedCount} of {totalSubmissions} candidates certified</div>
         </div>
 
         <div className="bg-[#0e1628] border border-slate-800 p-5 rounded-2xl space-y-2">

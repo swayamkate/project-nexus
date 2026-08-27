@@ -19,6 +19,7 @@ import {
   Send
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
+import { getAdminActorEmail, logAdminAction } from '@/lib/auditLogger';
 import { formatHumanError } from '@/lib/errorUtils';
 
 export default function AdminVerificationsPage() {
@@ -54,12 +55,14 @@ export default function AdminVerificationsPage() {
   const handleApprove = async (doc: any) => {
     setProcessingId(doc.id);
     try {
+      const actorEmail = await getAdminActorEmail();
+
       // 1. Update verification record
       const { error: verifErr } = await supabase
         .from('verifications')
         .update({
           status: 'approved',
-          reviewed_by: 'admin@nexus.com',
+          reviewed_by: actorEmail,
           reviewed_at: new Date().toISOString()
         })
         .eq('id', doc.id);
@@ -74,15 +77,14 @@ export default function AdminVerificationsPage() {
           .eq('trainee_id', doc.trainee_id);
       }
 
-      // 3. Log to audit_logs
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'APPROVE_DOCUMENT',
-        target_entity: 'VERIFICATIONS',
-        target_id: doc.id,
-        details: `Approved ${doc.document_type} document for trainee ${doc.trainees?.email || doc.trainee_id}`,
-        status: 'Success'
-      });
+      // 3. Log to audit_logs with real actor
+      await logAdminAction(
+        'APPROVE_DOCUMENT',
+        'VERIFICATIONS',
+        doc.id,
+        `Approved ${doc.document_type} document for trainee ${doc.trainees?.email || doc.trainee_id}`,
+        actorEmail
+      );
 
       setToastMsg(`Document "${doc.document_name}" approved successfully!`);
       setTimeout(() => setToastMsg(null), 3500);
@@ -101,27 +103,28 @@ export default function AdminVerificationsPage() {
 
     setProcessingId(rejectItem.id);
     try {
+      const actorEmail = await getAdminActorEmail();
+
       const { error: rejectErr } = await supabase
         .from('verifications')
         .update({
           status: 'rejected',
           admin_notes: rejectReason,
-          reviewed_by: 'admin@nexus.com',
+          reviewed_by: actorEmail,
           reviewed_at: new Date().toISOString()
         })
         .eq('id', rejectItem.id);
 
       if (rejectErr) throw rejectErr;
 
-      // Log in audit_logs
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'REJECT_DOCUMENT',
-        target_entity: 'VERIFICATIONS',
-        target_id: rejectItem.id,
-        details: `Rejected ${rejectItem.document_name}. Reason: ${rejectReason}`,
-        status: 'Success'
-      });
+      // Log in audit_logs with real actor
+      await logAdminAction(
+        'REJECT_DOCUMENT',
+        'VERIFICATIONS',
+        rejectItem.id,
+        `Rejected ${rejectItem.document_name}. Reason: ${rejectReason}`,
+        actorEmail
+      );
 
       setToastMsg(`Document rejected with feedback: "${rejectReason}"`);
       setTimeout(() => setToastMsg(null), 3500);

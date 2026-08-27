@@ -33,6 +33,7 @@ import {
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
 import { formatHumanError } from '@/lib/errorUtils';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -145,14 +146,13 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Log in audit_logs
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'CREATE_ADMIN',
-        target_entity: 'USER_ROLES',
-        details: `Created administrator ${newAdminEmail} with role ${newAdminRole}`,
-        status: 'Success'
-      });
+      // Log in audit_logs with real actor
+      await logAdminAction(
+        'CREATE_ADMIN',
+        'USER_ROLES',
+        null,
+        `Created administrator ${newAdminEmail} with role ${newAdminRole}`
+      );
 
       setFeedbackMsg({ type: 'success', text: `Admin account (${newAdminEmail}) created successfully!` });
       setNewAdminEmail('');
@@ -167,16 +167,14 @@ export default function AdminUsersPage() {
   };
 
   const handleSuspend = async (id: string, currentStatus: boolean, email: string) => {
-    if (!confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this trainee?`)) return;
     await supabase.from('trainees').update({ is_active: !currentStatus }).eq('id', id);
     
-    await supabase.from('audit_logs').insert({
-      admin_email: 'admin@nexus.com',
-      action: currentStatus ? 'SUSPEND_USER' : 'ACTIVATE_USER',
-      target_entity: 'TRAINEES',
-      details: `${currentStatus ? 'Suspended' : 'Activated'} user ${email}`,
-      status: 'Success'
-    });
+    await logAdminAction(
+      currentStatus ? 'SUSPEND_USER' : 'ACTIVATE_USER',
+      'TRAINEES',
+      id,
+      `${currentStatus ? 'Suspended' : 'Activated'} trainee account ${email}`
+    );
 
     fetchUsers();
     if (selectedTrainee?.id === id) {
@@ -193,13 +191,12 @@ export default function AdminUsersPage() {
     try {
       await supabase.from('trainees').delete().eq('id', userToDelete.id);
       
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'DELETE_USER',
-        target_entity: 'TRAINEES',
-        details: `Permanently deleted user ${userToDelete.email || userToDelete.id}`,
-        status: 'Success'
-      });
+      await logAdminAction(
+        'DELETE_USER',
+        'TRAINEES',
+        userToDelete.id,
+        `Permanently deleted user ${userToDelete.email || userToDelete.id}`
+      );
 
       setSelectedTrainee(null);
       await fetchUsers();

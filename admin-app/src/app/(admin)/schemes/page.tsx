@@ -18,28 +18,27 @@ import {
   FileCheck,
   Check,
   Ban,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminSchemesPage() {
   const [schemes, setSchemes] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [disburseModalScheme, setDisburseModalScheme] = useState<any | null>(null);
-  const [disburseAmount, setDisburseAmount] = useState('');
-  const [disburseBeneficiary, setDisburseBeneficiary] = useState('');
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // New Scheme Form State
   const [formData, setFormData] = useState({
     name: '',
-    nodal_agency: 'Ministry of MSME / MSSDS',
-    subsidy_pct: 35,
+    nodal_agency: 'MSSDS / KVIC',
+    subsidy_pct: 25,
     max_grant_amount: 500000,
     allocated_budget: 50000000,
-    target_trades: ['Tailoring & Garments', 'Solar & Electrical']
+    target_trades: ['Apparel', 'Automotive', 'Renewable Energy', 'IT & Digital']
   });
 
   const supabase = createClient();
@@ -76,13 +75,12 @@ export default function AdminSchemesPage() {
       });
       if (error) throw error;
 
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'CREATE_GOVERNMENT_SCHEME',
-        target_entity: 'GOVERNMENT_SCHEMES',
-        details: `Launched ${formData.name} with ₹${(formData.allocated_budget / 10000000).toFixed(2)} Cr budget`,
-        status: 'Success'
-      });
+      await logAdminAction(
+        'CREATE_GOVERNMENT_SCHEME',
+        'GOVERNMENT_SCHEMES',
+        null,
+        `Launched ${formData.name} with ₹${(formData.allocated_budget / 10000000).toFixed(2)} Cr budget`
+      );
 
       setToastMsg('Government Grant Scheme launched!');
       setShowModal(false);
@@ -128,15 +126,13 @@ export default function AdminSchemesPage() {
         type: 'scheme'
       });
 
-      // Audit log
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: `SCHEME_APP_${newStatus.toUpperCase()}`,
-        target_entity: 'SCHEME_APPLICATIONS',
-        target_id: appId,
-        details: `Application ${app.application_no} updated to ${newStatus} (₹${Number(app.requested_amount).toLocaleString()})`,
-        status: 'Success'
-      });
+      // Audit log with real actor
+      await logAdminAction(
+        `SCHEME_APP_${newStatus.toUpperCase()}`,
+        'SCHEME_APPLICATIONS',
+        appId,
+        `Application ${app.application_no} updated to ${newStatus} (₹${Number(app.requested_amount).toLocaleString()})`
+      );
 
       setToastMsg(`Application ${app.application_no} updated to ${newStatus}!`);
       setTimeout(() => setToastMsg(null), 3500);

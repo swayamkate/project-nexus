@@ -315,7 +315,7 @@ export const CourseSearchModule: React.FC = () => {
 
                         <div className="flex items-center space-x-1 text-amber-500 text-xs font-bold">
                           <Star className="w-3.5 h-3.5 fill-amber-400" />
-                          <span>{course.rating || 4.8}</span>
+                          <span>{course.rating ? course.rating : 'Accredited'}</span>
                         </div>
                       </div>
 

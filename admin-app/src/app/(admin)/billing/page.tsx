@@ -14,6 +14,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminBillingPage() {
   const [promos, setPromos] = useState<any[]>([]);
@@ -53,19 +54,18 @@ export default function AdminBillingPage() {
     setSaving(true);
     try {
       const cleanCode = formData.code.trim().toUpperCase();
-      const { error } = await supabase.from('promo_codes').insert({
+      const { data, error } = await supabase.from('promo_codes').insert({
         ...formData,
         code: cleanCode
-      });
+      }).select().single();
       if (error) throw error;
 
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'CREATE_PROMO_CODE',
-        target_entity: 'PROMO_CODES',
-        details: `Created promotional access code ${cleanCode} (${formData.discount_val})`,
-        status: 'Success'
-      });
+      await logAdminAction(
+        'CREATE_PROMO_CODE',
+        'PROMO_CODES',
+        data.id,
+        `Created promotional access code ${cleanCode} (${formData.discount_val})`
+      );
 
       setToastMsg(`Promo Code ${cleanCode} created successfully!`);
       setShowModal(false);
@@ -82,6 +82,12 @@ export default function AdminBillingPage() {
   const handleDeletePromo = async (id: string, code: string) => {
     try {
       await supabase.from('promo_codes').delete().eq('id', id);
+      await logAdminAction(
+        'DELETE_PROMO_CODE',
+        'PROMO_CODES',
+        id,
+        `Deleted promo code ${code}`
+      );
       setToastMsg(`Deleted promo code ${code}`);
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPromos();
@@ -105,8 +111,8 @@ export default function AdminBillingPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Promo Codes & Subscription Grants</h1>
-          <p className="text-xs text-slate-400 mt-1">Manage enterprise access codes and government billing subsidies from PostgreSQL.</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Institutional Grants & State Training Subsidies</h1>
+          <p className="text-xs text-slate-400 mt-1">Manage institutional access grants, fee waivers, and state skill mission budget subsidies.</p>
         </div>
         <button 
           onClick={() => {
@@ -122,81 +128,78 @@ export default function AdminBillingPage() {
           className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>New Promo Code</span>
+          <span>New Grant Code</span>
         </button>
       </div>
 
       {/* Grid: Promo Codes & Subscriptions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Active Promo Codes List from DB */}
+        {/* Active Promos List */}
         <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <div className="flex items-center space-x-2">
               <Tag className="w-5 h-5 text-blue-400" />
-              <h3 className="font-bold text-white text-sm">Active Database Promo Codes ({promos.length})</h3>
+              <h3 className="font-bold text-white text-sm">Active Institutional Grant Codes</h3>
             </div>
-            <span className="text-[11px] text-slate-400">PostgreSQL table</span>
+            <span className="text-xs text-slate-400 font-mono">{promos.length} codes active</span>
           </div>
           
           {loading ? (
-            <div className="py-12 flex items-center justify-center text-slate-400 text-xs">
-              <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading promo codes...
+            <div className="py-8 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
             </div>
           ) : promos.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs">
-              No active promo codes. Click "New Promo Code" above to generate one.
-            </div>
+            <p className="text-xs text-slate-500 py-6 text-center">No grant codes created yet.</p>
           ) : (
-            <div className="space-y-3">
-              {promos.map((promo) => (
-                <div key={promo.id} className="flex items-center justify-between p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-mono font-bold text-emerald-400 text-sm">{promo.code}</span>
-                    <div className="text-[11px] text-slate-400">{promo.discount_val} • Scope: {promo.district || 'Statewide'}</div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <div className="text-[10px] text-slate-500 font-medium uppercase">Redemptions</div>
-                      <div className="text-xs font-bold text-white font-mono">{promo.current_uses} / {promo.max_uses}</div>
+            <div className="divide-y divide-slate-800/60">
+              {promos.map(p => (
+                <div key={p.id} className="py-3 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono font-bold text-sm text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-lg border border-blue-500/20">
+                        {p.code}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-400">{p.discount_val}</span>
                     </div>
-
-                    <button
-                      onClick={() => handleDeletePromo(promo.id, promo.code)}
-                      className="p-1.5 text-slate-500 hover:text-rose-400 transition"
-                      title="Delete code"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <p className="text-[11px] text-slate-400">
+                      Scope: {p.district || 'All Districts'} • Max Uses: {p.max_uses} • Used: {p.current_uses || 0}
+                    </p>
                   </div>
+                  <button
+                    onClick={() => handleDeletePromo(p.id, p.code)}
+                    className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
+                    title="Delete Grant Code"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Subscription Tiers */}
+        {/* State Funding Node Card */}
         <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center space-x-2 border-b border-slate-800/80 pb-3">
             <CreditCard className="w-5 h-5 text-purple-400" />
-            <h3 className="font-bold text-white text-sm">State & District Enterprise Tiers</h3>
+            <h3 className="font-bold text-white text-sm">State Mission Funding Node</h3>
           </div>
           
           <div className="space-y-4">
             <div className="border border-blue-500/30 bg-blue-500/5 rounded-2xl p-5 relative overflow-hidden space-y-3">
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">STATE MISSION LICENSE</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">STATE MISSION STATUTORY ALLOCATION</span>
                 <span className="text-xs text-emerald-400 font-bold">ACTIVE</span>
               </div>
-              <h4 className="font-bold text-white text-base">State Government / District Skill Officer Node</h4>
-              <p className="text-2xl font-black text-white">₹49,999<span className="text-xs text-slate-400 font-normal"> / district / year (Subsidized)</span></p>
+              <h4 className="font-bold text-white text-base">Maharashtra State Skill Development Mission (MSSDS)</h4>
+              <p className="text-xl font-black text-white">100% Publicly Funded<span className="text-xs text-slate-400 font-normal"> / Statutory State Budget</span></p>
               
               <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Unlimited Trainee Longitudinal Tracking (3M–24M)</li>
-                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Zero-Knowledge Cryptographic Hash Enclaves</li>
-                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Automated Resend SMTP & WhatsApp Survey Engine</li>
-                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> PMEGP & Mudra Grant Disbursement API Integrations</li>
+                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Longitudinal Outcome & Wage Tracking (3M–24M post-training)</li>
+                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Cryptographic Data Enclaves & Zero-Trust Row Level Security</li>
+                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> Real-Time In-App & Portal Milestone Check-in Engine</li>
+                <li className="flex items-center"><CheckCircle2 className="w-3.5 h-3.5 text-blue-400 mr-2 flex-shrink-0" /> PMEGP, CMEGP & Mudra Grant Verification Workflows</li>
               </ul>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { logAdminAction } from '@/lib/auditLogger';
 import { 
   Download, 
   Upload, 
@@ -79,13 +80,12 @@ export default function AdminAuditPage() {
         document.body.removeChild(link);
 
         // Audit Log
-        await supabase.from('audit_logs').insert({
-          admin_email: 'admin@nexus.com',
-          action: 'EXPORT_TRAINEES_CSV',
-          target_entity: 'TRAINEES',
-          details: `Exported ${data.length} trainee records to CSV`,
-          status: 'Success'
-        });
+        await logAdminAction(
+          'EXPORT_TRAINEES_CSV',
+          'TRAINEES',
+          null,
+          `Exported ${data.length} trainee records to CSV`
+        );
 
         await fetchAuditLogs();
         setImportStatus({ type: 'success', text: `Successfully exported ${data.length} trainee records to CSV file.` });
@@ -110,22 +110,22 @@ export default function AdminAuditPage() {
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        if (lines.length <= 1) {
-          throw new Error('CSV file contains no data rows.');
-        }
+        if (!text) throw new Error('File is empty.');
 
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
-        const nameIdx = headers.findIndex(h => h.includes('name'));
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) throw new Error('CSV must have a header row and at least 1 data row.');
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
         const emailIdx = headers.findIndex(h => h.includes('email'));
+        const nameIdx = headers.findIndex(h => h.includes('name'));
         const districtIdx = headers.findIndex(h => h.includes('district'));
         const phoneIdx = headers.findIndex(h => h.includes('phone'));
 
         if (emailIdx === -1) {
-          throw new Error('CSV must contain an "email" column header.');
+          throw new Error('CSV must contain an "email" column.');
         }
 
-        const toInsert = [];
+        const toInsert: any[] = [];
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
           const email = cols[emailIdx];
@@ -145,7 +145,7 @@ export default function AdminAuditPage() {
               highest_education: '12th Standard',
               is_active: true,
               profile_completion_pct: 60,
-              skills: ['Tailoring', 'Vocational Training']
+              skills: ['Vocational Training']
             });
           }
         }
@@ -160,14 +160,13 @@ export default function AdminAuditPage() {
 
         if (insertErr) throw insertErr;
 
-        // Audit Log
-        await supabase.from('audit_logs').insert({
-          admin_email: 'admin@nexus.com',
-          action: 'IMPORT_BULK_CSV',
-          target_entity: 'TRAINEES',
-          details: `Imported ${toInsert.length} trainee records from ${file.name}`,
-          status: 'Success'
-        });
+        // Audit Log with real actor
+        await logAdminAction(
+          'IMPORT_BULK_CSV',
+          'TRAINEES',
+          null,
+          `Imported ${toInsert.length} trainee records from ${file.name}`
+        );
 
         setImportStatus({
           type: 'success',

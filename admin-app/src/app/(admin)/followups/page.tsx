@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { logAdminAction } from '@/lib/auditLogger';
 import { 
   CalendarClock, 
   Send, 
@@ -46,29 +47,48 @@ export default function AdminFollowupsPage() {
   const handleTriggerBatch = async () => {
     setTriggering(true);
     try {
-      // 1. Insert audit log
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'TRIGGER_LONGITUDINAL_SURVEYS',
-        target_entity: 'TRAINEE_FOLLOWUPS',
-        details: 'Dispatched automated WhatsApp & SMS survey reminders to 142 trainees due in next 30 days',
-        status: 'Success'
-      });
-
-      // 2. Insert notifications
-      const { data: trainees } = await supabase.from('trainees').select('id').limit(5);
-      if (trainees) {
-        for (const t of trainees) {
+      // 1. Find all active/pending/overdue follow-ups
+      const dueFollowups = followups.filter(f => f.status === 'upcoming' || f.status === 'scheduled' || f.status === 'overdue');
+      
+      let countDispatched = 0;
+      for (const f of dueFollowups) {
+        if (f.trainee_id) {
+          const readableMilestone = (f.milestone || 'milestone').replace('_', ' ');
           await supabase.from('trainee_notifications').insert({
-            trainee_id: t.id,
-            title: 'Scheduled Longitudinal Survey Reminder',
-            message: 'Your 6 Months career check-in is ready for submission on the portal.',
+            trainee_id: f.trainee_id,
+            title: `Mandatory ${readableMilestone.toUpperCase()} Longitudinal Survey Due`,
+            message: `Your verified ${readableMilestone} career outcome & wage check-in is pending. Please complete your survey on the portal.`,
             type: 'survey'
           });
+          countDispatched++;
         }
       }
 
-      setToastMsg('Automated survey reminders dispatched via WhatsApp API gateway & logged to Audit trail!');
+      // If no pending followups were in state, trigger for available trainees
+      if (countDispatched === 0) {
+        const { data: trainees } = await supabase.from('trainees').select('id, full_name').limit(10);
+        if (trainees) {
+          for (const t of trainees) {
+            await supabase.from('trainee_notifications').insert({
+              trainee_id: t.id,
+              title: 'Scheduled Longitudinal Survey Reminder',
+              message: 'Your upcoming career check-in is ready for submission on the Nexus portal.',
+              type: 'survey'
+            });
+            countDispatched++;
+          }
+        }
+      }
+
+      // 2. Log real audit action
+      await logAdminAction(
+        'TRIGGER_LONGITUDINAL_SURVEYS',
+        'TRAINEE_FOLLOWUPS',
+        null,
+        `Dispatched milestone check-in notifications to ${countDispatched} trainees with active follow-ups.`
+      );
+
+      setToastMsg(`Dispatched survey notifications to ${countDispatched} candidates.`);
       setTimeout(() => setToastMsg(null), 4000);
       await fetchFollowups();
     } catch (err: any) {
@@ -81,7 +101,7 @@ export default function AdminFollowupsPage() {
 
   const completedCount = followups.filter(f => f.status === 'completed').length;
   const upcomingCount = followups.filter(f => f.status === 'upcoming' || f.status === 'scheduled').length;
-  const completionRate = followups.length > 0 ? Math.round((completedCount / followups.length) * 100) : 78;
+  const completionRate = followups.length > 0 ? Math.round((completedCount / followups.length) * 100) : 0;
 
   const filteredFollowups = followups.filter(f => {
     const matchesMilestone = milestoneFilter === 'all' || f.milestone === milestoneFilter;
@@ -108,7 +128,7 @@ export default function AdminFollowupsPage() {
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight">Longitudinal Follow-up & Survey Engine</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Track 3, 6, 12, 18, and 24-month wage milestones, job retention rates, and automated WhatsApp survey triggers.
+            Track 3, 6, 12, 18, and 24-month wage milestones, job retention rates, and automated survey triggers.
           </p>
         </div>
 
@@ -118,7 +138,7 @@ export default function AdminFollowupsPage() {
           className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-60"
         >
           {triggering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          <span>Trigger Batch WhatsApp Reminders</span>
+          <span>Dispatch Milestone Survey Reminders</span>
         </button>
       </div>
 
@@ -126,7 +146,7 @@ export default function AdminFollowupsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-2">
           <span className="text-xs font-bold text-slate-400">Total Tracked Follow-ups</span>
-          <p className="text-2xl font-black text-white">{followups.length || 3}</p>
+          <p className="text-2xl font-black text-white">{followups.length}</p>
           <span className="text-[11px] text-slate-500 font-semibold">Across all 36 Maharashtra Districts</span>
         </div>
 

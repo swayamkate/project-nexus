@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { formatHumanError } from '@/lib/errorUtils';
+import { logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminSupportPage() {
   const [activeTab, setActiveTab] = useState<'tickets' | 'feedback'>('tickets');
@@ -86,15 +87,13 @@ export default function AdminSupportPage() {
 
       if (error) throw error;
 
-      // Log in audit_logs
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'UPDATE_SUPPORT_TICKET',
-        target_entity: 'SUPPORT_TICKETS',
-        target_id: ticketId,
-        details: `Updated ticket ${ticketId} status to ${newStatus}`,
-        status: 'Success'
-      });
+      // Log in audit_logs with real actor
+      await logAdminAction(
+        'UPDATE_SUPPORT_TICKET',
+        'SUPPORT_TICKETS',
+        ticketId,
+        `Updated ticket ${ticketId} status to ${newStatus}`
+      );
 
       setTickets(prev => prev.map(t => t.id === ticketId ? { 
         ...t, 
