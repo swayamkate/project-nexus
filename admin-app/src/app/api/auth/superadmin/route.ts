@@ -4,18 +4,23 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const inputUser = (body.email || body.username || '').trim().toLowerCase();
-    const inputPass = body.password || '';
+    const inputPass = (body.password || '').trim();
 
     const validCredentials = [
+      // Primary credentials requested by user
+      { user: 'avishkar0', pass: 'Avishkar@admin6198' },
+      { user: 'avishkar', pass: 'Avishkar@admin6198' },
+      { user: 'admin@nexus.com', pass: 'Avishkar@admin6198' },
+      { user: 'superadmin', pass: 'Avishkar@admin6198' },
+      { user: 'superadmin@nexus.com', pass: 'Avishkar@admin6198' },
+      { user: 'admin', pass: 'Avishkar@admin6198' },
+      
+      // Standard & backup credentials
       { user: 'admin@nexus.com', pass: 'adminpassword2026' },
-      { user: 'admin@nexus.com', pass: 'hackathon2026' },
       { user: 'superadmin', pass: 'adminpassword2026' },
-      { user: 'superadmin', pass: 'hackathon2026' },
-      { user: 'superadmin@nexus.com', pass: 'adminpassword2026' },
-      { user: 'superadmin@nexus.com', pass: 'hackathon2026' },
       { user: 'avishkar', pass: 'Avishkar@443322' },
       { user: 'avishkar', pass: 'Avishkar_443322' },
-      { user: 'admin', pass: 'adminpassword2026' }
+      { user: 'avishkar0', pass: 'Avishkar_443322' }
     ];
 
     const isMatch = validCredentials.some(
@@ -25,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (isMatch) {
       const response = NextResponse.json({ 
         success: true, 
-        user: { email: 'admin@nexus.com', role: 'superadmin' } 
+        user: { email: 'admin@nexus.com', username: 'Avishkar0', role: 'superadmin' } 
       });
 
       // Set cookie in response

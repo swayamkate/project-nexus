@@ -72,8 +72,8 @@ export default function LoginPage() {
       setIdentifier('priya.sharma@mahaskill.in');
       setPassword('priya123456');
     } else {
-      setIdentifier('admin@nexus.com');
-      setPassword('adminpassword2026');
+      setIdentifier('Avishkar0');
+      setPassword('Avishkar@admin6198');
     }
   };
 

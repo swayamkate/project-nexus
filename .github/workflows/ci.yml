@@ -21,7 +21,7 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Root Dependencies
         run: npm ci
 
       - name: Run Unit Tests
@@ -33,8 +33,9 @@ jobs:
       - name: Build Root Portal
         run: npm run build
 
-      - name: Build Admin Console
+      - name: Install & Type Check Admin Console
         working-directory: ./admin-app
         run: |
           npm ci
+          npx tsc --noEmit
           npm run build
