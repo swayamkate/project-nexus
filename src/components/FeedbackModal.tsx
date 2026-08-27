@@ -48,14 +48,14 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     setError(null);
 
     try {
-      const email = userEmail || 'anonymous.trainee@mahaskill.in';
+      const email = userEmail || 'anonymous.trainee@nexus.in';
       const category = feedbackType === 'bug' ? 'Bug Report' : feedbackType === 'feature' ? 'Feature Suggestion' : 'General Feedback';
       
       const { error: dbError } = await supabase
         .from('support_tickets')
         .insert({
           email: email,
-          name: userName || 'MahaSkill Trainee',
+          name: userName || 'Nexus Trainee',
           subject: `[${category}] ${subject.trim()}`,
           message: `Category: ${category}\nExperience Rating: ${rating}/5 Stars\n\n${message.trim()}`,
           category: feedbackType === 'bug' ? 'Technical' : 'General',
@@ -97,7 +97,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 Platform Feedback & Bug Report
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Direct channel to Maharashtra State Skill Development Tech Team
+                Direct channel to the Nexus Product & Engineering Team
               </p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             </div>
             <h4 className="text-base font-bold text-slate-900">Feedback Submitted Successfully!</h4>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Thank you for helping improve MahaSkill Track. Our development team reviews every report.
+              Thank you for helping improve Nexus. Our development team reviews every report.
             </p>
           </div>
         ) : (

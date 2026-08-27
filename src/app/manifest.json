@@ -1,7 +1,7 @@
 {
-  "name": "MahaSkill Track - National Skilling Registry",
-  "short_name": "MahaSkill",
-  "description": "Maharashtra Longitudinal Skilling Outcomes, Trainee Verification & Placement Tracking Platform",
+  "name": "Nexus - Skilling Outcomes Platform",
+  "short_name": "Nexus",
+  "description": "Longitudinal Skilling Outcomes, Trainee Verification & Placement Tracking Platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

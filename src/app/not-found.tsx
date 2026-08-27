@@ -3,8 +3,8 @@ import { FileQuestion, ArrowLeft, Home, HelpCircle, ShieldCheck } from 'lucide-r
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '404 - Page Not Found | MahaSkill Track',
-  description: 'The requested resource could not be found in the Maharashtra Skilling Registry.',
+  title: '404 - Page Not Found | Nexus',
+  description: 'The requested resource could not be found on Nexus.',
 };
 
 export default function NotFound() {
@@ -17,11 +17,11 @@ export default function NotFound() {
       <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10">
         <Link href="/" className="flex items-center space-x-2.5">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-            <ShieldCheck className="w-5 h-5" />
+            <span className="font-black text-lg">N</span>
           </div>
           <div>
-            <span className="font-black text-lg tracking-tight text-white block leading-none">MahaSkill Track</span>
-            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">Govt of Maharashtra</span>
+            <span className="font-black text-lg tracking-tight text-white block leading-none">Nexus</span>
+            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">Platform</span>
           </div>
         </Link>
       </header>
@@ -65,7 +65,7 @@ export default function NotFound() {
 
       {/* Footer */}
       <footer className="w-full text-center py-6 text-[11px] text-slate-500 z-10 border-t border-slate-900">
-        Maharashtra State Skill Development Society (MSSDS) • Zero-PII Protected
+        &copy; {new Date().getFullYear()} Nexus. All rights reserved.
       </footer>
     </div>
   );

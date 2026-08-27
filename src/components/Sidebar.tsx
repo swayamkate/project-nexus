@@ -90,17 +90,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Header */}
         <div className="p-5 border-b border-slate-100 flex items-center space-x-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="4" r="2" fill="currentColor"/>
-              <path d="M12 7v14M7 11l5-4 5 4M5 18l7-4 7 4"/>
-            </svg>
+            <span className="text-white font-black text-xl tracking-tighter">N</span>
           </div>
           <div>
             <h1 className="font-extrabold text-slate-900 text-base tracking-tight leading-tight">
-              MahaSkill Track
+              Nexus
             </h1>
             <p className="text-[10px] text-slate-400 font-semibold tracking-normal mt-0.5">
-              Your Skill. Your Future
+              Skilling & Outcomes Registry
             </p>
           </div>
         </div>

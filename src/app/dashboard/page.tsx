@@ -64,7 +64,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-slate-700">
         <div className="flex items-center space-x-3 bg-white p-6 rounded-3xl border border-slate-200 shadow-xl">
           <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="font-bold text-sm text-slate-800">Loading MahaSkill Track...</span>
+          <span className="font-bold text-sm text-slate-800">Loading Nexus...</span>
         </div>
       </div>
     );
@@ -155,9 +155,9 @@ export default function DashboardPage() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span className="font-semibold text-slate-700">MahaSkill Track</span>
+                <span className="font-semibold text-slate-700">Nexus</span>
                 <span>•</span>
-                <span>Govt of Maharashtra MSSDS</span>
+                <span>Longitudinal Skilling & Career Registry</span>
               </div>
 
               <div className="flex items-center space-x-4 text-[11px]">

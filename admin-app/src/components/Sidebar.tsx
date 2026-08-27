@@ -82,10 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div>
             <h1 className="font-extrabold text-white text-base tracking-tight leading-none">
-              MahaSkill Track
+              Nexus
             </h1>
             <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase mt-1">
-              Skill Development & Impact
+              Executive Administration
             </p>
           </div>
         </div>

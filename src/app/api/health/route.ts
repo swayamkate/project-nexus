@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
 export async function GET() {
   return NextResponse.json({
     status: 'healthy',
-    app: 'MahaSkill Track (Public Edge)',
+    app: 'Nexus',
     version: '2.0.0',
     timestamp: new Date().toISOString(),
     services: {

@@ -343,10 +343,10 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 space-y-2">
             <div className="flex items-center space-x-2 text-blue-700">
               <ShieldCheck className="w-5 h-5 text-blue-600" />
-              <h4 className="font-bold text-xs">MahaSkill Verified Record</h4>
+              <h4 className="font-bold text-xs">Nexus Verified Record</h4>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
-              Your profile is verified on the State Skilling Registry with Privacy-Preserving Zero-PII Enclaves.
+              Your profile is verified on the Nexus Skilling Registry with authenticated credentials.
             </p>
           </div>
         </div>

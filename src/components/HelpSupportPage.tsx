@@ -25,7 +25,7 @@ export const HelpSupportPage: React.FC = () => {
   const [ticketSuccess, setTicketSuccess] = useState(false);
   const [showChatBot, setShowChatBot] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
-    { sender: 'bot', text: 'Namaste! I am the MahaSkill AI Assistant. How can I help you with your training, certificate, or MSME business support today?' }
+    { sender: 'bot', text: 'Hello! I am the Nexus AI Assistant. How can I help you with your training, certificate, or business support today?' }
   ]);
   const [userInput, setUserInput] = useState('');
 
@@ -120,7 +120,7 @@ export const HelpSupportPage: React.FC = () => {
           </div>
           <div>
             <span className="text-xs text-slate-400 font-semibold block">Official Support Email</span>
-            <p className="text-xs font-bold text-slate-900 mt-0.5">support@mahaskill.gov.in</p>
+            <p className="text-xs font-bold text-slate-900 mt-0.5">support@nexus.in</p>
             <span className="text-[11px] text-slate-400">Response within 24 hours</span>
           </div>
         </div>
@@ -232,8 +232,8 @@ export const HelpSupportPage: React.FC = () => {
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm leading-none">MahaSkill AI Assistant</h4>
-                  <span className="text-[10px] text-blue-100">Online • Marathi, Hindi & English</span>
+                  <h4 className="font-bold text-sm leading-none">Nexus AI Assistant</h4>
+                  <span className="text-[10px] text-blue-100">Online • AI Support Assistant</span>
                 </div>
               </div>
               <button onClick={() => setShowChatBot(false)} className="text-white/80 hover:text-white">
