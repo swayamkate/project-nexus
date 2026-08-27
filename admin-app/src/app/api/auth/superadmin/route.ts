@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       const { data: userRole } = await dbClient
         .from('user_roles')
         .select('email')
-        .eq('username', inputIdentifier.toLowerCase())
+        .ilike('username', inputIdentifier.trim())
         .in('role', ['admin', 'superadmin', 'evaluator'])
         .maybeSingle();
 
