@@ -10,8 +10,8 @@ const outPath = path.join(__dirname, 'out');
 const standalonePath = path.join(__dirname, '.next', 'standalone', 'server.js');
 
 if (fs.existsSync(outPath)) {
-  console.log(`[Start] Serving static export from: ${outPath} on port ${port}`);
-  const child = spawn('npx', ['serve', '-s', 'out', '-l', port], {
+  console.log(`[Start] Serving static export from: ${outPath} with cleanUrls on port ${port}`);
+  const child = spawn('npx', ['serve', '-s', 'out', '--clean-urls', '-c', 'serve.json', '-l', port], {
     stdio: 'inherit',
     shell: true,
     env: process.env
