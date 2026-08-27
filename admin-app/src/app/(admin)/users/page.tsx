@@ -26,6 +26,9 @@ import {
   Building2,
   FileText
 } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
+import { formatHumanError } from '@/lib/errorUtils';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -36,6 +39,7 @@ export default function AdminUsersPage() {
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState<any | null>(null);
   const [traineeEmployment, setTraineeEmployment] = useState<any | null>(null);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   // Create Admin Form State
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -150,20 +154,30 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (id: string, email: string) => {
-    if (!confirm('CRITICAL ACTION: Are you sure you want to permanently remove this user record?')) return;
-    await supabase.from('trainees').delete().eq('id', id);
-    
-    await supabase.from('audit_logs').insert({
-      admin_email: 'admin@nexus.com',
-      action: 'DELETE_USER',
-      target_entity: 'TRAINEES',
-      details: `Permanently deleted user ${email}`,
-      status: 'Success'
-    });
+  const handleDelete = (trainee: any) => {
+    setUserToDelete(trainee);
+  };
 
-    setSelectedTrainee(null);
-    fetchUsers();
+  const handleExecuteDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await supabase.from('trainees').delete().eq('id', userToDelete.id);
+      
+      await supabase.from('audit_logs').insert({
+        admin_email: 'admin@nexus.com',
+        action: 'DELETE_USER',
+        target_entity: 'TRAINEES',
+        details: `Permanently deleted user ${userToDelete.email || userToDelete.id}`,
+        status: 'Success'
+      });
+
+      setSelectedTrainee(null);
+      await fetchUsers();
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+    } finally {
+      setUserToDelete(null);
+    }
   };
 
   const filteredUsers = users.filter(u => {
@@ -314,8 +328,15 @@ export default function AdminUsersPage() {
             <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading records...
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-xs">
-            No trainees found matching the query.
+          <div className="p-6">
+            <EmptyState
+              icon={Search}
+              title="No Candidates Located in Registry"
+              description={`No candidate profiles match the current filter "${search || filterDistrict}". Try adjusting your search keyword or selecting "All Maharashtra Districts".`}
+              actionLabel="Reset Search Filters"
+              onAction={() => { setSearch(''); setFilterDistrict('all'); }}
+              badge="0 Results"
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -415,8 +436,8 @@ export default function AdminUsersPage() {
                         </button>
 
                         <button
-                          onClick={() => handleDelete(trainee.id, trainee.email)}
-                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition"
+                          onClick={() => handleDelete(trainee)}
+                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
                           title="Delete record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -550,16 +571,27 @@ export default function AdminUsersPage() {
                 {selectedTrainee.is_active ? 'Suspend Trainee' : 'Reactivate Trainee'}
               </button>
               <button
-                onClick={() => handleDelete(selectedTrainee.id, selectedTrainee.email)}
-                className="py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition"
+                onClick={() => handleDelete(selectedTrainee)}
+                className="py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition cursor-pointer"
               >
-                Delete
+                Delete Record
               </button>
             </div>
 
           </div>
         </div>
       )}
+
+      {/* Admin Destructive Confirmation Friction Modal */}
+      <DestructiveConfirmModal
+        isOpen={Boolean(userToDelete)}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleExecuteDelete}
+        title="Permanently Expunge Trainee Record"
+        itemName={userToDelete?.full_name || userToDelete?.email || 'Selected Trainee'}
+        warningMessage="Warning: Deleting this candidate permanently removes their vocational enrollments, survey records, and linked credentials. This operation is cryptographically audited."
+        requiredWord="DELETE"
+      />
 
     </div>
   );

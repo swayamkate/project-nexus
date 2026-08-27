@@ -14,8 +14,12 @@ import {
   X,
   Search,
   Building,
-  Users
+  Users,
+  AlertCircle
 } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
+import { formatHumanError } from '@/lib/errorUtils';
 
 export default function AdminProgramsPage() {
   const [programs, setPrograms] = useState<any[]>([]);
@@ -23,8 +27,9 @@ export default function AdminProgramsPage() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProgram, setEditingProgram] = useState<any | null>(null);
+  const [programToDelete, setProgramToDelete] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -76,47 +81,67 @@ export default function AdminProgramsPage() {
     setShowModal(true);
   };
 
-  const handleSaveProgram = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
+    if (!formData.title) return;
 
+    setSaving(true);
     try {
       if (editingProgram) {
+        // Update
         const { error } = await supabase
           .from('training_programs')
-          .update(formData)
+          .update({
+            title: formData.title,
+            sector: formData.sector,
+            duration_months: formData.duration_months,
+            provider_name: formData.provider_name,
+            description: formData.description
+          })
           .eq('id', editingProgram.id);
+
         if (error) throw error;
-        setToastMsg('Program updated successfully!');
+        setToastMsg({ type: 'success', text: `Course "${formData.title}" updated successfully.` });
       } else {
+        // Insert
         const { error } = await supabase
           .from('training_programs')
-          .insert(formData);
+          .insert({
+            title: formData.title,
+            sector: formData.sector,
+            duration_months: formData.duration_months,
+            provider_name: formData.provider_name,
+            description: formData.description
+          });
+
         if (error) throw error;
-        setToastMsg('New NSQF Training Program launched!');
+        setToastMsg({ type: 'success', text: `New course "${formData.title}" created.` });
       }
 
       setShowModal(false);
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPrograms();
     } catch (err: any) {
-      setToastMsg('Save error: ' + err.message);
-      setTimeout(() => setToastMsg(null), 4000);
+      setToastMsg({ type: 'error', text: formatHumanError(err) });
+      setTimeout(() => setToastMsg(null), 5000);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string, title: string) => {
+  const handleExecuteDelete = async () => {
+    if (!programToDelete) return;
     try {
-      const { error } = await supabase.from('training_programs').delete().eq('id', id);
+      const { error } = await supabase.from('training_programs').delete().eq('id', programToDelete.id);
       if (error) throw error;
-      setToastMsg(`Course "${title}" removed.`);
+      setToastMsg({ type: 'success', text: `Course "${programToDelete.title}" removed.` });
       setTimeout(() => setToastMsg(null), 3500);
       await fetchPrograms();
     } catch (err: any) {
-      setToastMsg('Delete error: ' + err.message);
-      setTimeout(() => setToastMsg(null), 4000);
+      setToastMsg({ type: 'error', text: formatHumanError(err) });
+      setTimeout(() => setToastMsg(null), 5000);
+    } finally {
+      setProgramToDelete(null);
     }
   };
 
@@ -129,34 +154,40 @@ export default function AdminProgramsPage() {
   return (
     <div className="space-y-6">
       
-      {/* Toast */}
+      {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-          <span className="text-xs font-bold">{toastMsg}</span>
+        <div className={`fixed top-20 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top ${
+          toastMsg.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toastMsg.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 shrink-0" />
+          )}
+          <span className="text-xs font-bold">{toastMsg.text}</span>
         </div>
       )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Training & Course Catalog</h1>
-          <p className="text-xs text-slate-400 mt-1">Configure vocational qualifications, duration benchmarks, and accredited providers.</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Training Programs Catalog</h1>
+          <p className="text-xs text-slate-400 mt-1">Manage accredited vocational courses, duration, and associated curriculum across sectors.</p>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-blue-600/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Launch New Course</span>
+          <span>Add New Course</span>
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search Bar */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-        <input
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+        <input 
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -171,9 +202,14 @@ export default function AdminProgramsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" /> Loading training programs...
         </div>
       ) : filteredPrograms.length === 0 ? (
-        <div className="py-20 text-center text-slate-400 text-xs">
-          No training programs found.
-        </div>
+        <EmptyState
+          icon={GraduationCap}
+          title="No Vocational Programs Found"
+          description={search ? `No accredited courses match the query "${search}". Try searching for another sector or title.` : "No training programs currently registered in the State catalog."}
+          actionLabel="Create First Training Program"
+          onAction={handleOpenCreate}
+          badge="0 Courses"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredPrograms.map((program) => {
@@ -213,14 +249,14 @@ export default function AdminProgramsPage() {
                     <div className="flex items-center space-x-1.5">
                       <button
                         onClick={() => handleOpenEdit(program)}
-                        className="p-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 rounded-lg transition"
+                        className="p-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 rounded-lg transition cursor-pointer"
                         title="Edit course"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(program.id, program.title)}
-                        className="p-1.5 bg-slate-900 hover:bg-slate-800 text-rose-400 rounded-lg transition"
+                        onClick={() => setProgramToDelete(program)}
+                        className="p-1.5 bg-slate-900 hover:bg-slate-800 text-rose-400 rounded-lg transition cursor-pointer"
                         title="Delete course"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -234,101 +270,120 @@ export default function AdminProgramsPage() {
         </div>
       )}
 
-      {/* Program Modal (Create / Edit) */}
+      {/* Create / Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-bold text-white text-base">
-                {editingProgram ? 'Edit Training Course' : 'Create New NSQF Course'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="font-black text-white text-base">
+                {editingProgram ? 'Edit Training Course' : 'Create New Training Program'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
+              <button 
+                onClick={() => setShowModal(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProgram} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Course Title</label>
-                <input
+                <label className="block text-slate-300 font-semibold mb-1">Course Title *</label>
+                <input 
                   type="text"
                   required
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Solar PV Micro-Inverter Grid Technician"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500"
+                  placeholder="e.g. Electric Vehicle (EV) Diagnostic & Service Technician"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-bold block mb-1">Sector</label>
-                  <input
-                    type="text"
-                    required
+                  <label className="block text-slate-300 font-semibold mb-1">Vocational Sector</label>
+                  <select
                     value={formData.sector}
                     onChange={e => setFormData({ ...formData, sector: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500"
-                  />
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="Apparel & Fashion">Apparel & Fashion</option>
+                    <option value="Automotive & EV">Automotive & EV</option>
+                    <option value="Green Energy & Solar">Green Energy & Solar</option>
+                    <option value="IT & Electronics">IT & Electronics</option>
+                    <option value="Food Processing">Food Processing</option>
+                    <option value="Healthcare">Healthcare & Paramedical</option>
+                    <option value="Construction & Plumbing">Construction & Plumbing</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="text-slate-300 font-bold block mb-1">Duration (Months)</label>
-                  <input
+                  <label className="block text-slate-300 font-semibold mb-1">Duration (Months)</label>
+                  <input 
                     type="number"
                     min="1"
-                    max="24"
-                    required
+                    max="36"
                     value={formData.duration_months}
-                    onChange={e => setFormData({ ...formData, duration_months: Number(e.target.value) })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500"
+                    onChange={e => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Accredited Provider Name</label>
-                <input
+                <label className="block text-slate-300 font-semibold mb-1">Accredited Training Provider</label>
+                <input 
                   type="text"
-                  required
                   value={formData.provider_name}
                   onChange={e => setFormData({ ...formData, provider_name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500"
+                  placeholder="e.g. Tata Community Training Center, Pune"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Curriculum Summary / Description</label>
-                <textarea
+                <label className="block text-slate-300 font-semibold mb-1">Description & Practical Competency Scope</label>
+                <textarea 
                   rows={3}
-                  required
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Outline practical hours, tools covered, and NSQF standards..."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Key practical skills learned, NSQF level mapping..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-blue-500 resize-none"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition flex items-center space-x-2"
                 >
-                  {saving ? 'Saving...' : editingProgram ? 'Save Changes' : 'Launch Course'}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  <span>{editingProgram ? 'Save Changes' : 'Create Course'}</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Destructive Deletion Friction Safeguard */}
+      <DestructiveConfirmModal
+        isOpen={Boolean(programToDelete)}
+        onClose={() => setProgramToDelete(null)}
+        onConfirm={handleExecuteDelete}
+        title="Expunge Training Program"
+        itemName={programToDelete?.title || 'Selected Course'}
+        warningMessage="Deleting this course will detach it from the active course catalog and state enrollment metrics. This operation is permanently recorded in the administrative audit logs."
+        requiredWord="DELETE"
+      />
 
     </div>
   );

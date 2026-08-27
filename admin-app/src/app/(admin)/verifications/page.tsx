@@ -18,6 +18,8 @@ import {
   Building2,
   Send
 } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { formatHumanError } from '@/lib/errorUtils';
 
 export default function AdminVerificationsPage() {
   const [verifications, setVerifications] = useState<any[]>([]);
@@ -207,8 +209,15 @@ export default function AdminVerificationsPage() {
             <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading verifications...
           </div>
         ) : filteredDocs.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-xs">
-            No verification records found matching filter.
+          <div className="p-6">
+            <EmptyState
+              icon={FileText}
+              title="Verification Queue All Clear"
+              description={`No document verification requests currently match the status "${filterStatus}". All trainee salary slips, trade licenses, and Udyam certificates are fully up to date.`}
+              actionLabel="View All Submissions"
+              onAction={() => { setFilterStatus('all'); setSearch(''); }}
+              badge="Queue Clear"
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
