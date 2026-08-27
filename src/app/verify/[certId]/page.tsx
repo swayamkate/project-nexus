@@ -1,9 +1,9 @@
 import { CertificateValidationClient } from './CertificateValidationClient';
 
 export function generateStaticParams() {
-  // Certificate pages must be reached with an ID issued by the registry.
-  // Do not prebuild demo credentials that look genuine.
-  return [];
+  // Static export requires one generated path. This neutral path is always
+  // rejected by the client lookup and cannot represent a credential.
+  return [{ certId: 'invalid' }];
 }
 
 export default async function CertificateValidationPage({
