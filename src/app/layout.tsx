@@ -59,6 +59,7 @@ export const metadata: Metadata = {
 };
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 export default function RootLayout({
   children,
@@ -76,6 +77,7 @@ export default function RootLayout({
             {children}
           </ErrorBoundary>
         </UserProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

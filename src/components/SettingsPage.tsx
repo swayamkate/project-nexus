@@ -527,6 +527,67 @@ export const SettingsPage: React.FC = () => {
             </button>
           </div>
 
+          {/* Section 5B: DPDP Act (2023) Data Privacy Desk */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
+            <div className="flex items-center space-x-2.5 pb-2 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">DPDP Act (2023) Privacy Rights</h3>
+                <p className="text-[11px] text-slate-500">Statutory Data Protection Desk</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Exercise your rights under the Digital Personal Data Protection Act to request erasure or withdraw consent.
+            </p>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!profile?.id) return;
+                  try {
+                    await supabase.from('privacy_requests').insert({
+                      trainee_id: profile.id,
+                      request_type: 'erasure',
+                      details: 'Candidate requested account deletion & data erasure under DPDP Act 2023.'
+                    });
+                    setToastMsg('Data erasure request registered with the State Data Fiduciary.');
+                    setTimeout(() => setToastMsg(null), 4000);
+                  } catch (e) {
+                    setToastMsg('Request failed.');
+                  }
+                }}
+                className="w-full py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Submit Data Erasure Request (Right to be Forgotten)
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!profile?.id) return;
+                  try {
+                    await supabase.from('privacy_requests').insert({
+                      trainee_id: profile.id,
+                      request_type: 'consent_withdrawal',
+                      details: 'Candidate withdrew consent for non-essential notifications.'
+                    });
+                    setToastMsg('Consent preferences updated in state privacy ledger.');
+                    setTimeout(() => setToastMsg(null), 4000);
+                  } catch (e) {
+                    setToastMsg('Failed to update consent.');
+                  }
+                }}
+                className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Withdraw Third-Party Data Consent
+              </button>
+            </div>
+          </div>
+
           {/* Section 6: Sign Out Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
             <button

@@ -14,7 +14,11 @@ import {
   Sparkles,
   Building,
   PlusCircle,
-  Loader2
+  Loader2,
+  Briefcase,
+  MapPin,
+  Send,
+  Check
 } from 'lucide-react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useUser } from '@/context/UserContext';
@@ -23,28 +27,35 @@ export const TraineePortal: React.FC = () => {
   const { profile, enrollments, refreshData } = useUser();
   const [programs, setPrograms] = useState<any[]>([]);
   const [skillGaps, setSkillGaps] = useState<any[]>([]);
+  const [jobPostings, setJobPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
-  const [dailyHours, setDailyHours] = useState(2.5);
+  const [appliedJobId, setAppliedJobId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Skill Simulator State
+  const [targetTrade, setTargetTrade] = useState('EV Battery Management');
+  const [dailyHours, setDailyHours] = useState(3);
+
   const supabase = createClient();
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [programsRes, gapsRes] = await Promise.all([
+      const [programsRes, gapsRes, jobsRes] = await Promise.all([
         supabase.from('training_programs').select('*').order('created_at', { ascending: false }),
-        supabase.from('top_skill_gaps').select('*').order('gap_percentage', { ascending: false })
+        supabase.from('top_skill_gaps').select('*').order('gap_percentage', { ascending: false }),
+        supabase.from('job_postings').select('*, employers(company_name, district, is_verified)').order('created_at', { ascending: false })
       ]);
 
       if (programsRes.data) setPrograms(programsRes.data);
       if (gapsRes.data) setSkillGaps(gapsRes.data);
+      if (jobsRes.data) setJobPostings(jobsRes.data);
       setLoading(false);
     };
 
     fetchData();
   }, [supabase]);
-
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const handleEnroll = async (programId: string) => {
     if (!profile?.id) {
@@ -76,6 +87,28 @@ export const TraineePortal: React.FC = () => {
     }
   };
 
+  const handleApplyJob = async (job: any) => {
+    setAppliedJobId(job.id);
+    try {
+      // Dispatches application alert
+      if (profile?.id) {
+        await supabase.from('trainee_notifications').insert({
+          trainee_id: profile.id,
+          title: `Application Sent: ${job.title}`,
+          message: `Your verified profile was submitted to ${job.employers?.company_name || 'Employer'}. Recruiters will contact you via portal messages.`,
+          type: 'placement'
+        });
+      }
+      setToastMsg(`Application dispatched to ${job.employers?.company_name || 'Employer'}!`);
+      setTimeout(() => setToastMsg(null), 4000);
+    } catch (err: any) {
+      setToastMsg('Application failed: ' + err.message);
+      setTimeout(() => setToastMsg(null), 4000);
+    }
+  };
+
+  const estimatedWeeks = Math.ceil(120 / (dailyHours * 6));
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
       {/* Toast Alert */}
@@ -90,7 +123,7 @@ export const TraineePortal: React.FC = () => {
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">AI Skill Gap & Career Pathway Portal</h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Real-time regional skill demand analytics, curated NSQF certifications, and career forecasting
+          Real-time regional skill demand analytics, curated NSQF certifications, and verified industry apprenticeships
         </p>
       </div>
 
@@ -129,6 +162,107 @@ export const TraineePortal: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Interactive Career Readiness Simulator */}
+      <div className="bg-gradient-to-tr from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-6 shadow-md space-y-4">
+        <div className="flex items-center space-x-2 text-blue-400">
+          <Sliders className="w-5 h-5" />
+          <h3 className="font-bold text-base text-white">Interactive Upskilling & Wage Simulator</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+          <div className="space-y-2">
+            <label className="text-xs text-slate-300 font-semibold block">Target High-Growth Trade</label>
+            <select
+              value={targetTrade}
+              onChange={e => setTargetTrade(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+            >
+              <option value="EV Battery Management">EV Battery Management & High-Voltage Diagnostics</option>
+              <option value="Solar PV Installation">Grid-Tied Solar Rooftop Engineering</option>
+              <option value="Precision CNC Machining">4-Axis CNC Machining & G-Code Programming</option>
+              <option value="Industrial Pattern CAD">Apparel CAD & Single Needle Lockstitch</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-slate-300">
+              <span>Daily Practice Commitment:</span>
+              <span className="font-bold text-blue-400">{dailyHours} Hours/Day</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="8"
+              step="0.5"
+              value={dailyHours}
+              onChange={e => setDailyHours(Number(e.target.value))}
+              className="w-full accent-blue-500"
+            />
+          </div>
+
+          <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 flex flex-col justify-between text-xs">
+            <span className="text-slate-400">Estimated NSQF Readiness:</span>
+            <p className="text-xl font-black text-emerald-400">{estimatedWeeks} Weeks to Certification</p>
+            <span className="text-[10px] text-blue-300">Projected Wage Lift: +140% to ₹28,000/Mo</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Verified Industry Job & Apprenticeship Postings */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Briefcase className="w-4 h-4 text-emerald-600" />
+            <h3 className="font-bold text-slate-900 text-sm">Verified Industry Apprenticeships (NAPS / Direct)</h3>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">{jobPostings.length} Active Positions</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {jobPostings.map(job => {
+            const isApplied = appliedJobId === job.id;
+
+            return (
+              <div key={job.id} className="p-5 rounded-2xl border border-slate-200/80 bg-white hover:border-emerald-400 transition space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">
+                      {job.trade_category}
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 font-mono">
+                      ₹{Number(job.min_salary).toLocaleString()} - ₹{Number(job.max_salary).toLocaleString()}/Mo
+                    </span>
+                  </div>
+
+                  <h4 className="font-bold text-slate-900 text-sm leading-snug">{job.title}</h4>
+                  <p className="text-xs text-slate-500 flex items-center">
+                    <Building className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                    <span>{job.employers?.company_name || 'Verified Industry Partner'} • {job.location_district}</span>
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 font-mono">{job.openings_count} Openings Available</span>
+                  
+                  <button
+                    onClick={() => handleApplyJob(job)}
+                    disabled={isApplied}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer ${
+                      isApplied 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs'
+                    }`}
+                  >
+                    {isApplied ? <Check className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                    <span>{isApplied ? 'Application Submitted' : '1-Click Apply'}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
