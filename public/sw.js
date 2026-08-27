@@ -1,7 +1,7 @@
 // Nexus Enterprise Progressive Web App (PWA) Service Worker
 // Offline Resilience & Low-Bandwidth Network Caching Engine
 
-const CACHE_NAME = 'nexus-cache-v2.0.0';
+const CACHE_NAME = 'nexus-cache-v2.1.0';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',

@@ -9,6 +9,7 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_P
 
 const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || '';
 const SUPABASE_ANON_KEY = rawKey.length > 0 ? rawKey : DEFAULT_ANON_KEY;
+const BROWSER_STORAGE_KEY = 'nexus_candidate_auth_token_v2';
 
 let browserClient: SupabaseClient | null = null;
 
@@ -30,11 +31,14 @@ export function createClient(): SupabaseClient {
     // key below, so it is always safe to remove the legacy value.
     try {
       localStorage.removeItem('sb-api-auth-token');
+      // Rotate the candidate key after the legacy client migration so a
+      // browser cannot reuse a session created by an older bundle.
+      localStorage.removeItem('nexus_candidate_auth_token');
     } catch {}
 
     browserClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
-        storageKey: 'nexus_candidate_auth_token',
+        storageKey: BROWSER_STORAGE_KEY,
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
