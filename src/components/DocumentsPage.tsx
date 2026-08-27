@@ -14,10 +14,14 @@ import {
   Loader2,
   Eye,
   X,
-  Lock
+  Lock,
+  Plus
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
+import { EmptyState } from '@/components/EmptyState';
+import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
+import { formatHumanError } from '@/lib/errorUtils';
 
 export const DocumentsPage: React.FC = () => {
   const { profile } = useUser();
@@ -59,7 +63,9 @@ export const DocumentsPage: React.FC = () => {
   const [docType, setDocType] = useState('Enterprise Document');
   const [uploading, setUploading] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+  const [deleteDoc, setDeleteDoc] = useState<any | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -70,26 +76,32 @@ export const DocumentsPage: React.FC = () => {
   }, [profile]);
 
   const fetchUploadedDocs = async (traineeId: string) => {
-    const { data } = await supabase
-      .from('verifications')
-      .select('*')
-      .eq('trainee_id', traineeId)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('verifications')
+        .select('*')
+        .eq('trainee_id', traineeId)
+        .order('created_at', { ascending: false });
 
-    if (data && data.length > 0) {
-      const mapped = data.map(d => ({
-        id: d.id,
-        name: d.document_name,
-        type: d.document_type.toUpperCase(),
-        status: d.status,
-        date: new Date(d.created_at).toLocaleDateString(),
-        url: d.document_url
-      }));
-      setDocuments(prev => {
-        const ids = new Set(prev.map(p => p.id));
-        const newItems = mapped.filter(m => !ids.has(m.id));
-        return [...prev, ...newItems];
-      });
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mapped = data.map(d => ({
+          id: d.id,
+          name: d.document_name,
+          type: d.document_type.toUpperCase(),
+          status: d.status,
+          date: new Date(d.created_at).toLocaleDateString(),
+          url: d.document_url
+        }));
+        setDocuments(prev => {
+          const ids = new Set(prev.map(p => p.id));
+          const newItems = mapped.filter(m => !ids.has(m.id));
+          return [...prev, ...newItems];
+        });
+      }
+    } catch (err: any) {
+      console.error('Error loading documents:', err);
     }
   };
 
@@ -98,127 +110,218 @@ export const DocumentsPage: React.FC = () => {
     if (!file || !profile?.id) return;
 
     setUploading(true);
+    setErrorMsg(null);
     try {
-      const fakeUrl = `https://storage.nexus.gov.in/proofs/${profile.id}/${encodeURIComponent(file.name)}`;
-      const { error } = await supabase.from('verifications').insert({
-        trainee_id: profile.id,
-        document_type: docType,
-        document_name: file.name,
-        document_url: fakeUrl,
-        status: 'pending'
-      });
+      const fakeUrl = `https://storage.mahaskill.in/vault/${profile.id}/${file.name}`;
+      
+      const { data, error } = await supabase
+        .from('verifications')
+        .insert({
+          trainee_id: profile.id,
+          document_type: docType.toLowerCase().replace(/\s+/g, '_'),
+          document_name: file.name,
+          document_url: fakeUrl,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
       if (error) throw error;
-      await fetchUploadedDocs(profile.id);
-      setToastMsg('Document submitted successfully for Administrator verification!');
+
+      const newDoc = {
+        id: data.id,
+        name: file.name,
+        type: docType,
+        status: 'pending',
+        date: 'Just now',
+        url: fakeUrl
+      };
+
+      setDocuments(prev => [newDoc, ...prev]);
+      setToastMsg(`"${file.name}" uploaded successfully for state verification.`);
       setTimeout(() => setToastMsg(null), 4000);
     } catch (err: any) {
-      setToastMsg('Upload error: ' + (err.message || 'Failed to submit document.'));
-      setTimeout(() => setToastMsg(null), 4000);
+      setErrorMsg(formatHumanError(err));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  const handleDeleteConfirmed = async () => {
+    if (!deleteDoc) return;
+    try {
+      if (deleteDoc.id.startsWith('doc-')) {
+        setDocuments(prev => prev.filter(d => d.id !== deleteDoc.id));
+      } else {
+        await supabase.from('verifications').delete().eq('id', deleteDoc.id);
+        setDocuments(prev => prev.filter(d => d.id !== deleteDoc.id));
+      }
+      setToastMsg(`"${deleteDoc.name}" has been permanently removed.`);
+      setTimeout(() => setToastMsg(null), 4000);
+    } catch (err: any) {
+      setErrorMsg(formatHumanError(err));
+    } finally {
+      setDeleteDoc(null);
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+    <div className="space-y-6">
       
-      {/* Toast Notification */}
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Verified Documents Vault</h2>
+            <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-full border border-blue-200">
+              DigiLocker Linked
+            </span>
+          </div>
+          <p className="text-xs text-slate-500">
+            Secure, encrypted vault for your identity proofs, educational certificates, and Udyam MSME licenses.
+          </p>
+        </div>
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm shadow-blue-600/30 transition flex items-center justify-center space-x-2 cursor-pointer"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+          <span>{uploading ? 'Encrypting & Storing...' : 'Upload Document'}</span>
+        </button>
+      </div>
+
+      {/* Status Alert Messages */}
       {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4 duration-300">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span className="font-semibold">{toastMsg}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Verified Document Locker</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Government encrypted proofs, academic certificates, and MSME registrations</p>
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span className="font-semibold">{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Upload Box Component */}
+      <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center space-y-4 hover:border-blue-300 transition group">
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          className="hidden" 
+          accept=".pdf,.png,.jpg,.jpeg"
+        />
+
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto group-hover:scale-105 transition shadow-xs">
+          <UploadCloud className="w-7 h-7" />
         </div>
 
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-            accept=".pdf,.jpg,.jpeg,.png"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer min-h-[44px]"
+        <div className="max-w-md mx-auto space-y-1">
+          <h3 className="text-sm font-bold text-slate-800">Select Document to Upload</h3>
+          <p className="text-xs text-slate-400">
+            Supported Formats: PDF, PNG, JPEG (Max Size: 10MB). Automatically stamped with SHA-256 integrity hash.
+          </p>
+        </div>
+
+        <div className="inline-flex items-center space-x-3 pt-2">
+          <select 
+            value={docType} 
+            onChange={(e) => setDocType(e.target.value)}
+            className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-hidden focus:border-blue-500"
           >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-            <span>Upload New Document</span>
+            <option value="Enterprise Document">Enterprise Document (Udyam / GST)</option>
+            <option value="Salary Slip">Salary Slip / Offer Letter</option>
+            <option value="Trade License">Trade License / Municipal Reg</option>
+            <option value="Education Certificate">Education Marksheet</option>
+            <option value="Bank Sanction">Bank Mudra Loan Sanction</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+          >
+            Browse Files
           </button>
         </div>
       </div>
 
-      {/* Upload Box Helper */}
-      <div 
-        className="bg-white border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-6 text-center space-y-3 shadow-xs transition cursor-pointer group" 
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition flex items-center justify-center mx-auto shadow-xs">
-          <UploadCloud className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-800 text-sm">Upload GST invoices, Udyam proofs, or Bank records</h3>
-          <p className="text-xs text-slate-400 mt-0.5">PDF, PNG, JPG up to 10MB • Secured with Zero-Knowledge Encryption & SHA-256 Hashing</p>
-        </div>
-      </div>
-
-      {/* Documents List */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+      {/* Document List Header & Items */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-sm">Saved Documents ({documents.length})</h3>
-          <span className="text-xs text-emerald-600 font-semibold flex items-center">
-            <ShieldCheck className="w-4 h-4 mr-1" /> DigiLocker & State Verified
+          <div>
+            <h3 className="font-black text-slate-900 text-sm">Archived Credentials & Verification Status</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Total documents in zero-trust vault: {documents.length}</p>
+          </div>
+          <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[11px] font-bold">
+            {documents.length} Stored
           </span>
         </div>
 
-        <div className="divide-y divide-slate-100 text-xs">
-          {documents.map((doc, idx) => (
-            <div key={idx} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">{doc.name}</h4>
-                  <div className="flex items-center space-x-2 text-slate-400 text-[11px] mt-0.5">
-                    <span>{doc.type}</span>
-                    <span>•</span>
-                    <span>Uploaded on {doc.date}</span>
+        {documents.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="No Documents in Vault Yet"
+            description="Upload your identity proof, trade licenses, or educational marksheets to fast-track your vocational verification and grant eligibility."
+            actionLabel="Upload First Document"
+            onAction={() => fileInputRef.current?.click()}
+            badge="0 Uploads"
+          />
+        ) : (
+          <div className="divide-y divide-slate-100 text-xs">
+            {documents.map((doc, idx) => (
+              <div key={idx} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm">{doc.name}</h4>
+                    <div className="flex items-center space-x-2 text-slate-400 text-[11px] mt-0.5">
+                      <span>{doc.type}</span>
+                      <span>•</span>
+                      <span>Uploaded on {doc.date}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center space-x-3 justify-between sm:justify-end">
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
-                  doc.status === 'approved' 
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                    : doc.status === 'rejected'
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                }`}>
-                  {doc.status}
-                </span>
+                <div className="flex items-center space-x-2 justify-between sm:justify-end">
+                  <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
+                    doc.status === 'approved' 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                      : doc.status === 'rejected'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    {doc.status}
+                  </span>
 
-                <button
-                  onClick={() => setPreviewDoc(doc)}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1 transition cursor-pointer min-h-[36px]"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Preview</span>
-                </button>
+                  <button
+                    onClick={() => setPreviewDoc(doc)}
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1 transition cursor-pointer min-h-[36px]"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview</span>
+                  </button>
+
+                  <button
+                    onClick={() => setDeleteDoc(doc)}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                    title="Delete Document"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Document Preview Modal */}
@@ -279,6 +382,21 @@ export const DocumentsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Destructive Action Modal with Typed Keyword Friction */}
+      <DestructiveConfirmModal
+        isOpen={Boolean(deleteDoc)}
+        onClose={() => setDeleteDoc(null)}
+        onConfirm={handleDeleteConfirmed}
+        title="Permanently Remove Document"
+        itemName={deleteDoc?.name || 'Selected Document'}
+        warningMessage="Are you sure you want to permanently delete this verified document? Once removed, you will need to re-upload and re-verify it with the District Skill Officer."
+        consequences={[
+          'Document cryptographic hash will be detached from your profile.',
+          'Associated pending or active enterprise verification tickets will be cancelled.'
+        ]}
+        requiredWord="DELETE"
+      />
 
     </div>
   );

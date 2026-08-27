@@ -242,24 +242,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#05080f] py-10 border-t border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-white" />
+      {/* Enterprise Legal & Compliance Footer */}
+      <footer className="bg-[#05080f] py-12 border-t border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-bold text-white text-base">MahaSkill Track</span>
+                <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-md font-bold">PS-135</span>
+              </div>
+              <p className="text-xs text-slate-400 max-w-sm">
+                Maharashtra Skilling Outcomes & Longitudinal Tracking Registry. Official portal of MSSDS.
+              </p>
             </div>
-            <span className="font-bold text-white">MahaSkill Track</span>
+
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400">
+              <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition">Terms of Service</Link>
+              <Link href="/privacy-policy#data-deletion" className="text-blue-400 hover:text-blue-300 font-semibold transition">Data Deletion & Rights</Link>
+              <Link href="/contact" className="hover:text-white transition">Help & Support</Link>
+              <span className="text-emerald-400 font-mono">Helpline: 1800-120-8040</span>
+            </div>
           </div>
 
-          <div className="flex space-x-6">
-            <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition">Terms of Service</Link>
-            <Link href="/contact" className="hover:text-white transition">Contact Support</Link>
-          </div>
-
-          <div className="text-slate-500">
-            &copy; {new Date().getFullYear()} Government of Maharashtra. All rights reserved.
+          <div className="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500">
+            <div>
+              &copy; {new Date().getFullYear()} Government of Maharashtra • Directorate of Vocational Education & Training (DVET).
+            </div>
+            <div className="flex items-center space-x-4">
+              <span>Zero-PII SHA-256 Enclave</span>
+              <span>•</span>
+              <span>TLS 1.3 Cryptographic Transport</span>
+              <span>•</span>
+              <span>DPDPA 2023 Compliant</span>
+            </div>
           </div>
         </div>
       </footer>
