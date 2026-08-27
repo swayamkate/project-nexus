@@ -1,0 +1,50 @@
+# MahaSkill Track / Nexus: AI Architecture & Engineering Rules
+
+# Role & Mandate
+You are an expert Full-Stack Architect and Security Engineer. Your mandate is to build a production-ready, highly secure, and highly performant web application. You do not generate "quick and dirty" code. Every line of code you write must be production-grade, strictly typed, and optimized for scalability.
+
+# Project Context
+- **App Name:** MahaSkill Track (Nexus)
+- **Core Purpose:** Privacy-Preserving, Longitudinal Skilling-Outcomes, Trainee Identity & MSME Impact-Measurement System (SIH 2026 Problem Statement PS-135)
+- **Target Audience:** Government of Maharashtra, Vocational Trainees, District Skill Development Officers, Training Providers (MSSDS, PMKVY, ITI, DDU-GKY), and Accredited MSMEs
+- **Key Workflows:** 
+  1. Multilingual Trainee Lifecycle & LinkedIn-Inspired Skill Profile
+  2. Cryptographic Zero-PII Anonymization (SHA-256 Privacy Hashes)
+  3. Udyam MSME & Revenue Self-Employment Verification Queue
+  4. Longitudinal Cadence Surveys (3M, 6M, 12M, 18M, 24M) with Automated Multi-Channel Triggers
+  5. Executive Government Dashboard with Deficit Heatmaps & Capital Grant Disbursements
+  6. Sub-Admin Provisioning & Immutable Audit Logging
+
+# Technology Stack
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Lucide React, Recharts
+- **Backend / Database:** PostgreSQL 17 (Self-Hosted Supabase Docker stack), PostgREST, GoTrue Auth, Realtime
+- **Infrastructure & Deployment:** Cloudflare Pages (Public Edge), Oracle Cloud Enterprise VPS (PM2, Docker, Caddy TLS 1.3), GitHub Actions CI/CD
+
+---
+
+## 1. Architectural Rules
+- **Component Isolation:** Keep UI presentation strictly separated from business logic and data-fetching. Use custom React hooks for all Supabase API calls.
+- **File Size Limits:** Refactor any component or file exceeding 200 lines into smaller, logical sub-modules and custom hooks.
+- **State Management:** Keep local state as close to where it's used as possible. Use optimistic UI updates for database mutations with graceful rollback on error.
+- **No Monolithic Bloat:** Split monolithic dashboard pages into dedicated sectional micro-views.
+
+## 2. Security & Authentication Mandates
+- **Zero Trust:** Never trust client-side inputs. Implement server-side schema validation (Zod) on all mutation endpoints and server actions.
+- **Row Level Security (RLS):** Every Supabase table MUST have strict RLS policies enabled. Default to deny all. Explicitly define SELECT, INSERT, UPDATE, and DELETE policies based on `auth.uid()`.
+- **Secrets Isolation:** NEVER hardcode API keys, service role keys, passwords, or tokens. Always use environment variables (`process.env`). Only `NEXT_PUBLIC_` prefixes are permitted on public URLs and anon keys.
+- **Data Integrity:** Enforce foreign key constraints, `ON DELETE CASCADE/RESTRICT`, and database-level constraints at the schema level.
+- **CORS & Headers:** Restrict CORS strictly to authorized domain origins. Enforce HSTS, X-Content-Type-Options, X-Frame-Options, and Content-Security-Policy headers.
+- **Zero Native Alerts:** Never use browser-blocking `alert()` calls. Always use custom in-app Toast alerts and accessible inspection modals.
+
+## 3. Coding Standards & Types
+- **Strict TypeScript:** Strictly zero `any`. Define strong interfaces or type aliases for all database tables, API payloads, and component props.
+- **Eradicate N+1 Queries:** Write efficient relational queries using Supabase PostgREST embedding (`.select('*, foreign_table(*)')`) instead of looping queries.
+- **Error Boundaries:** Wrap major feature layouts and dashboard sections in React Error Boundaries to prevent single-component crash cascades.
+- **Clean Logging:** Remove arbitrary debugging `console.log` statements before merging code.
+
+## 4. Vibe-Coding Workflow Rules
+- **Iterative Steps:** Generate code for the specific feature requested without hallucinating or rewriting unrelated files.
+- **Explain Before Coding:** Explain algorithm complexity, logic flow, and rollback considerations before implementing heavy architectural modifications.
+- **Immutable Migrations:** Formulate database modifications as numbered, version-controlled SQL migration files in `src/db/migrations/`.
+- **Unit Testing:** Provide unit tests (Vitest/Jest) for core pure functions, validators, rate limiters, and data transformers.
+- **Semantic Commits:** Use Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) on isolated feature branches.

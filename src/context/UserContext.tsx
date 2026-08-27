@@ -22,12 +22,12 @@ export interface TraineeProfile {
   avatar_url?: string;
   profile_completion_pct: number;
   is_active: boolean;
-  highest_education: string;
-  board_university: string;
-  year_of_passing: number;
-  education_percentage: number;
+  highest_education?: string;
+  board_university?: string;
+  year_of_passing?: number | null;
+  education_percentage?: number | null;
   skills: string[];
-  about_me: string;
+  about_me?: string;
   privacy_hash: string;
   created_at: string;
 }

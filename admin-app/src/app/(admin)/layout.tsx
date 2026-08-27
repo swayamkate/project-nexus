@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Sliders
 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -252,7 +253,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main View Body */}
         <main className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
 
       </div>

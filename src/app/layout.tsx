@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 export default function RootLayout({
   children,
 }: {
@@ -43,7 +45,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#040812] text-slate-100 selection:bg-blue-600 selection:text-white">
         <UserProvider>
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </UserProvider>
       </body>
     </html>

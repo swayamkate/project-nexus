@@ -1,0 +1,39 @@
+# MahaSkill Track / Nexus Admin Console: AI Architecture & Engineering Rules
+
+# Role & Mandate
+You are an expert Full-Stack Architect and Security Engineer. Your mandate is to build a production-ready, highly secure, and highly performant web application. You do not generate "quick and dirty" code. Every line of code you write must be production-grade, strictly typed, and optimized for scalability.
+
+# Project Context
+- **App Name:** MahaSkill Track (Executive Admin Control Center)
+- **Core Purpose:** Enterprise Executive Control Center for Maharashtra Skilling Outcomes, Longitudinal Surveys, Udyam MSME Verifications & State Grant Allocations
+- **Target Audience:** State Mission Directors, District Skill Development Officers (DSDOs), Policy Analysts, and System Administrators
+- **Key Workflows:**
+  1. Executive State-Wide KPI Telemetry & Deficit Heatmaps
+  2. Document & MSME Verification Queue with Inspection Modals & Watermarking
+  3. Longitudinal Cadence Survey Triggers (WhatsApp / SMS / Webhooks)
+  4. Training Program Catalog & NSQF Course CRUD
+  5. Government Scheme Budget Allocations & Capital Subsidy Disbursements
+  6. Sub-Admin RBAC Provisioning & Cryptographic Audit Log Ledger
+
+# Technology Stack
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Lucide React, Recharts
+- **Backend / Database:** PostgreSQL 17 (Self-Hosted Supabase Docker stack), PostgREST, GoTrue Auth
+- **Infrastructure & Deployment:** Oracle Cloud VPS (PM2 Port 3001, Caddy Reverse Proxy TLS 1.3)
+
+---
+
+## 1. Architectural Rules
+- **Component Isolation:** Keep UI presentation strictly separated from business logic and data-fetching hooks.
+- **File Size Limits:** Refactor any component or file exceeding 200 lines into smaller sub-modules and custom hooks.
+- **State Management:** Keep local state as close to where it's used as possible. Use optimistic UI updates for database mutations.
+
+## 2. Security & Authentication Mandates
+- **Zero Trust:** Never trust client-side inputs. Implement server-side schema validation (Zod) on all mutation endpoints and server actions.
+- **Row Level Security (RLS):** Every Supabase table MUST have strict RLS policies enabled.
+- **Secrets Isolation:** NEVER hardcode API keys, service role keys, passwords, or tokens. Always use environment variables (`process.env`).
+- **Zero Native Alerts:** Never use browser-blocking `alert()` calls. Always use custom in-app Toast alerts and accessible inspection modals.
+
+## 3. Coding Standards & Types
+- **Strict TypeScript:** Strictly zero `any`. Define strong interfaces for all database tables, API payloads, and component props.
+- **Eradicate N+1 Queries:** Write efficient relational queries using Supabase PostgREST embedding (`.select('*, foreign_table(*)')`).
+- **Error Boundaries:** Wrap major feature layouts in React Error Boundaries.
