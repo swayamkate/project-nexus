@@ -36,10 +36,6 @@ export default function AdminVerificationsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchVerifications();
-  }, []);
-
   const fetchVerifications = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -50,6 +46,10 @@ export default function AdminVerificationsPage() {
     if (data) setVerifications(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchVerifications();
+  }, []);
 
   const handleApprove = async (doc: any) => {
     setProcessingId(doc.id);

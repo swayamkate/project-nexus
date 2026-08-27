@@ -16,6 +16,11 @@ import { DocumentsPage } from '@/components/DocumentsPage';
 import { HelpSupportPage } from '@/components/HelpSupportPage';
 import { AnalyticsPage } from '@/components/AnalyticsPage';
 import { SettingsPage } from '@/components/SettingsPage';
+import { CareerGoalModule } from '@/components/CareerGoalModule';
+import { CareerRoadmapModule } from '@/components/CareerRoadmapModule';
+import { CourseSearchModule } from '@/components/CourseSearchModule';
+import { SkillAssessmentModule } from '@/components/SkillAssessmentModule';
+import { InterviewPrepModule } from '@/components/InterviewPrepModule';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { MessageSquarePlus, Sparkles, ShieldCheck } from 'lucide-react';
@@ -100,6 +105,11 @@ export default function DashboardPage() {
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
               {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
               {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
+              {activeSection === 'career-goal' && <CareerGoalModule onNavigate={setActiveSection} />}
+              {activeSection === 'career-roadmap' && <CareerRoadmapModule onNavigate={setActiveSection} />}
+              {activeSection === 'courses' && <CourseSearchModule />}
+              {activeSection === 'skill-assessments' && <SkillAssessmentModule />}
+              {activeSection === 'interview-prep' && <InterviewPrepModule />}
               {activeSection === 'analytics' && <AnalyticsPage />}
               {activeSection === 'training-details' && <TrainingDetailsPage />}
               {activeSection === 'certifications' && <CertificationsPage />}

@@ -42,10 +42,6 @@ export default function AdminProgramsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchPrograms();
-  }, []);
-
   const fetchPrograms = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -56,6 +52,10 @@ export default function AdminProgramsPage() {
     if (data) setPrograms(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
 
   const handleOpenCreate = () => {
     setEditingProgram(null);

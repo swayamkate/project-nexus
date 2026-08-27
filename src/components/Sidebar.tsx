@@ -23,6 +23,8 @@ import {
   Compass,
   TreeDeciduous,
   ShieldAlert,
+  ShieldCheck,
+  BookOpen,
   Sliders
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
@@ -53,9 +55,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const currentMenuItems: MenuItem[] = [
     { id: 'dashboard', label: t('nav.dashboard', 'Overview'), icon: LayoutDashboard },
     { id: 'my-profile', label: t('nav.profile', 'My Profile'), icon: User },
+    { id: 'career-goal', label: 'Career Goal & Skill Gap', icon: Target, isNew: true },
+    { id: 'career-roadmap', label: 'Action Roadmap (N Days)', icon: Compass, isNew: true },
+    { id: 'courses', label: 'Course Search (NPTEL/Coursera)', icon: BookOpen, isNew: true },
+    { id: 'skill-assessments', label: 'Skill Assessments', icon: Award, isNew: true },
+    { id: 'interview-prep', label: 'Interview Prep & Q&A', icon: Briefcase, isNew: true },
     { id: 'analytics', label: t('nav.analytics', 'Career Analytics'), icon: BarChart3 },
     { id: 'training-details', label: t('nav.training', 'Training Details'), icon: GraduationCap },
-    { id: 'certifications', label: t('nav.certifications', 'Certifications'), icon: Award },
+    { id: 'certifications', label: t('nav.certifications', 'Certifications'), icon: ShieldCheck },
     { id: 'follow-ups', label: t('nav.followups', 'Follow-ups'), icon: CalendarClock },
     { id: 'self-employment', label: t('nav.selfEmployment', 'Self-Employment'), icon: Building2 },
     { id: 'documents', label: t('nav.documents', 'Documents Vault'), icon: FileText },

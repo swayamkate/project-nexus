@@ -40,10 +40,6 @@ export default function AdminSupportPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -65,12 +61,16 @@ export default function AdminSupportPage() {
       if (fErr) console.error('Feedback error:', fErr);
       if (fbData) setFeedbackList(fbData);
 
-    } catch (err) {
-      console.error('Error fetching support data:', err);
+    } catch (e) {
+      console.error('Support fetch error:', e);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleUpdateTicketStatus = async (ticketId: string, newStatus: string) => {
     setUpdatingStatus(true);

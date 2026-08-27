@@ -26,10 +26,6 @@ export default function AdminAuditPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchAuditLogs();
-  }, []);
-
   const fetchAuditLogs = async () => {
     setLoadingLogs(true);
     const { data } = await supabase
@@ -40,6 +36,10 @@ export default function AdminAuditPage() {
     if (data) setAuditLogs(data);
     setLoadingLogs(false);
   };
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
 
   const handleExportCSV = async () => {
     setLoadingExport(true);

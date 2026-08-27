@@ -44,10 +44,6 @@ export default function AdminSchemesPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -64,6 +60,10 @@ export default function AdminSchemesPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleCreateScheme = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -26,7 +26,9 @@ import {
   Building2,
   FileText,
   Bell,
-  Send
+  Send,
+  Target,
+  BookOpen
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
@@ -41,6 +43,9 @@ export default function AdminUsersPage() {
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState<any | null>(null);
   const [traineeEmployment, setTraineeEmployment] = useState<any | null>(null);
+  const [traineeGoal, setTraineeGoal] = useState<any | null>(null);
+  const [traineeSubmissions, setTraineeSubmissions] = useState<any[]>([]);
+  const [traineeEnrollments, setTraineeEnrollments] = useState<any[]>([]);
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   // Create Admin Form State
@@ -62,21 +67,6 @@ export default function AdminUsersPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    checkRoleAndFetch();
-  }, []);
-
-  const checkRoleAndFetch = async () => {
-    setLoading(true);
-    try {
-      const saRes = await fetch('/api/auth/me');
-      if (saRes.ok) {
-        setIsSuperadmin(true);
-      }
-    } catch (e) {}
-    await fetchUsers();
-  };
-
   const fetchUsers = async () => {
     // 1. Fetch real trainees from database
     const { data: traineeData } = await supabase
@@ -97,14 +87,43 @@ export default function AdminUsersPage() {
     setLoading(false);
   };
 
+  const checkRoleAndFetch = async () => {
+    setLoading(true);
+    try {
+      const saRes = await fetch('/api/auth/me');
+      if (saRes.ok) {
+        setIsSuperadmin(true);
+      }
+    } catch (e) {}
+    await fetchUsers();
+  };
+
+  useEffect(() => {
+    checkRoleAndFetch();
+  }, []);
+
   const openTraineeDrawer = async (trainee: any) => {
     setSelectedTrainee(trainee);
-    const { data: emp } = await supabase
-      .from('trainee_employment')
-      .select('*')
-      .eq('trainee_id', trainee.id)
-      .maybeSingle();
-    setTraineeEmployment(emp);
+    setTraineeEmployment(null);
+    setTraineeGoal(null);
+    setTraineeSubmissions([]);
+    setTraineeEnrollments([]);
+
+    try {
+      const [empRes, goalRes, subRes, enrollRes] = await Promise.all([
+        supabase.from('trainee_employment').select('*').eq('trainee_id', trainee.id).maybeSingle(),
+        supabase.from('trainee_career_goals').select('*').eq('trainee_id', trainee.id).maybeSingle(),
+        supabase.from('assessment_submissions').select('*, skill_assessments(title, badge_name)').eq('trainee_id', trainee.id),
+        supabase.from('trainee_course_enrollments').select('*, external_courses(title, platform, provider)').eq('trainee_id', trainee.id)
+      ]);
+
+      if (empRes.data) setTraineeEmployment(empRes.data);
+      if (goalRes.data) setTraineeGoal(goalRes.data);
+      if (subRes.data) setTraineeSubmissions(subRes.data);
+      if (enrollRes.data) setTraineeEnrollments(enrollRes.data);
+    } catch (e) {
+      console.error('Error loading trainee drawer details:', e);
+    }
   };
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
@@ -620,6 +639,82 @@ export default function AdminUsersPage() {
                     <span className="text-slate-400">Udyam Registration:</span>
                     <span className="font-mono text-blue-400">{traineeEmployment.udyam_number || 'Pending'}</span>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Target Career Goal & Skill Gap */}
+            {traineeGoal && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                  <Target className="w-3.5 h-3.5 text-indigo-400 mr-1.5" />
+                  <span>Target Career Goal & Skill Gap</span>
+                </h4>
+                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Aimed Role:</span>
+                    <span className="font-bold text-white text-right max-w-[240px] truncate">{traineeGoal.target_role}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Target Timeline:</span>
+                    <span className="font-mono text-indigo-400 font-bold">{traineeGoal.target_days} Days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Target Salary:</span>
+                    <span className="font-bold text-emerald-400">₹{Number(traineeGoal.target_salary || 0).toLocaleString()}/mo</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">AI Readiness Score:</span>
+                    <span className="font-bold text-cyan-400">{traineeGoal.readiness_pct}% (Wage Lift: {traineeGoal.wage_multiplier}x)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Verified Skill Assessment Badges */}
+            {traineeSubmissions && traineeSubmissions.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                  <Award className="w-3.5 h-3.5 text-amber-400 mr-1.5" />
+                  <span>Skill Assessments & Earned Badges</span>
+                </h4>
+                <div className="space-y-1.5">
+                  {traineeSubmissions.map((sub: any) => (
+                    <div key={sub.id} className="p-2.5 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-white block">{sub.badge_earned || sub.skill_assessments?.badge_name || 'Trade Badge'}</span>
+                        <span className="text-[10px] text-slate-400">{sub.skill_assessments?.title}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        sub.passed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400'
+                      }`}>
+                        {sub.score_pct}% {sub.passed ? 'PASSED' : 'FAILED'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Enrolled Courses */}
+            {traineeEnrollments && traineeEnrollments.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                  <BookOpen className="w-3.5 h-3.5 text-blue-400 mr-1.5" />
+                  <span>Active Course Roadmaps</span>
+                </h4>
+                <div className="space-y-1.5">
+                  {traineeEnrollments.map((enr: any) => (
+                    <div key={enr.id} className="p-2.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1 text-xs">
+                      <div className="flex justify-between font-bold text-white">
+                        <span className="truncate max-w-[240px]">{enr.external_courses?.title || 'Accredited Course'}</span>
+                        <span className="text-blue-400 font-mono text-[10px]">{enr.progress_pct}%</span>
+                      </div>
+                      <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${enr.progress_pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

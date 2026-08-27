@@ -24,6 +24,8 @@ import {
   Users,
   Megaphone,
   X,
+  Target,
+  Zap,
   Loader2
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
@@ -264,6 +266,86 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* AI Career Engine & Upskilling Accelerator */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-white text-base">Career Goal & Upskilling Accelerator</h3>
+              <p className="text-xs text-slate-300">Target role diagnosis, N-day roadmaps, accredited courses, and interview simulation</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('career-goal')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 shadow-md cursor-pointer"
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>Configure Goal & Skill Gap</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* 4 Feature Accelerator Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+          <div 
+            onClick={() => onNavigate('career-goal')}
+            className="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition cursor-pointer group space-y-2.5"
+          >
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center">
+              <Target className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">Skill Gap Matrix</h4>
+              <p className="text-[11px] text-slate-300 mt-0.5">Benchmark current skills vs target role requirements</p>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('career-roadmap')}
+            className="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition cursor-pointer group space-y-2.5"
+          >
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">N-Day Action Roadmap</h4>
+              <p className="text-[11px] text-slate-300 mt-0.5">Step-by-step milestone checklist to reach target role</p>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('courses')}
+            className="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition cursor-pointer group space-y-2.5"
+          >
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">NPTEL & Coursera</h4>
+              <p className="text-[11px] text-slate-300 mt-0.5">Search and enroll in accredited courses with progress tracking</p>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('skill-assessments')}
+            className="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition cursor-pointer group space-y-2.5"
+          >
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+              <Award className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition">Skill Level Quizzes</h4>
+              <p className="text-[11px] text-slate-300 mt-0.5">Timed assessments to earn verified skill badges</p>
+            </div>
+          </div>
         </div>
       </div>
 

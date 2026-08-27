@@ -24,7 +24,10 @@ import {
   Sparkles,
   ExternalLink,
   Sliders,
-  Headphones
+  Headphones,
+  BookOpen,
+  Briefcase,
+  Award
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -122,13 +125,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: 'Dashboard Overview', href: '/', icon: Activity },
     { name: 'Trainees & Enterprises', href: '/users', icon: Users },
-    { name: 'Support & Feedback', href: '/support', icon: Headphones },
+    { name: 'Accredited Courses (NPTEL)', href: '/courses', icon: BookOpen },
+    { name: 'Skill Assessments & Badges', href: '/assessments', icon: Award },
+    { name: 'Interview Questions Desk', href: '/interviews', icon: Briefcase },
     { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
     { name: 'Training Programs', href: '/programs', icon: GraduationCap },
-    { name: 'Follow-ups & Surveys', href: '/followups', icon: CalendarClock },
+    { name: 'Follow-ups & Milestones', href: '/followups', icon: CalendarClock },
     { name: 'Government Schemes', href: '/schemes', icon: Landmark },
-    { name: 'Promo Codes & Billing', href: '/billing', icon: Tag },
-    { name: 'Audit Stream & Data Pipeline', href: '/audit', icon: Database },
+    { name: 'Support & Feedback', href: '/support', icon: Headphones },
+    { name: 'Billing & Subsidies', href: '/billing', icon: Tag },
+    { name: 'Audit Logs & Pipeline', href: '/audit', icon: Database },
     { name: 'System Settings & Brand', href: '/settings', icon: Sliders },
   ];
 

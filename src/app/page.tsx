@@ -10,7 +10,8 @@ import {
   Award, 
   Sparkles, 
   Building2, 
-  ShieldCheck
+  ShieldCheck,
+  Target
 } from 'lucide-react';
 import { CookieBanner } from '@/components/CookieBanner';
 
@@ -159,35 +160,45 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-7 space-y-3">
+            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-6 space-y-3">
               <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
                 <TrendingUp className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-white">Wage Progression Tracking</h3>
+              <h3 className="text-base font-bold text-white">Wage Progression Tracking</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Track dynamic wage growth from baseline through 3, 6, 12, 18, and 24-month milestones with automated survey reminders.
               </p>
             </div>
 
-            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-7 space-y-3">
+            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="w-11 h-11 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+                <Target className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">AI Skill Gaps & Roadmaps</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Aim for target roles, analyze competency deficiencies, and execute N-day action pathways with NPTEL & Coursera courses.
+              </p>
+            </div>
+
+            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-6 space-y-3">
               <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
                 <Award className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-white">Verified Digital Credentials</h3>
+              <h3 className="text-base font-bold text-white">Verified Digital Credentials</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Cryptographically validated certificates and skills credentials ready to share with employers.
               </p>
             </div>
 
-            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-7 space-y-3">
+            <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-6 space-y-3">
               <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
                 <Building2 className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-white">Enterprise & Growth Analytics</h3>
+              <h3 className="text-base font-bold text-white">Enterprise & Growth Analytics</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Validate micro-enterprise registration, monthly revenue run-rates, and subsidy programs.
+                Validate micro-enterprise registration, monthly revenue run-rates, and state subsidy programs.
               </p>
             </div>
 

@@ -28,10 +28,6 @@ export default function AdminFollowupsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchFollowups();
-  }, []);
-
   const fetchFollowups = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -42,6 +38,10 @@ export default function AdminFollowupsPage() {
     if (data) setFollowups(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchFollowups();
+  }, []);
 
   const handleTriggerBatch = async () => {
     setTriggering(true);

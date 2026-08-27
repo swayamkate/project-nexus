@@ -33,10 +33,6 @@ export default function AdminBillingPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchPromos();
-  }, []);
-
   const fetchPromos = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -47,6 +43,10 @@ export default function AdminBillingPage() {
     if (data) setPromos(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchPromos();
+  }, []);
 
   const handleCreatePromo = async (e: React.FormEvent) => {
     e.preventDefault();
