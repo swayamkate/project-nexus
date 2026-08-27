@@ -25,20 +25,35 @@ build/
 # misc
 .DS_Store
 *.pem
+*.key
+*.cert
 
-# debug
+# debug & logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+cookies.txt
+debug-*.js
+debug-*.ts
+fix_studio.sh
+test-*.js
+!tests/
 
-# env files (can opt-in for committing if needed)
+# credentials & deployment docs with secrets
+MASTER_CREDENTIALS_AND_DEPLOYMENT.md
+*SECRET*
+*CREDENTIALS*
+supabase-docker.env
+
+# env files
 .env*
 !.env.example
 
-# vercel
+# vercel & build caches
 .vercel
-
-# typescript
 *.tsbuildinfo
 next-env.d.ts
+admin-app/next-env.d.ts
+admin-app/tsconfig.tsbuildinfo

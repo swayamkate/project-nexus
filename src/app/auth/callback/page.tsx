@@ -12,11 +12,14 @@ export default function AuthCallbackPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    let fallbackTimeout: NodeJS.Timeout | null = null;
+
     const handleAuth = async () => {
       const supabase = createClient();
       
       try {
-        // 1. Check if PKCE code is in the query params
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const errorParam = urlParams.get('error_description') || urlParams.get('error');
@@ -30,49 +33,64 @@ export default function AuthCallbackPage() {
           if (exchangeError) throw exchangeError;
         }
 
-        // 2. Verify active session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
-        if (session) {
+        if (session && active) {
           setStatus('success');
           setTimeout(() => {
-            router.push('/dashboard');
-            router.refresh();
+            if (active) {
+              router.push('/dashboard');
+              router.refresh();
+            }
           }, 1200);
-        } else {
-          // Listen for onAuthStateChange if token parsing from hash is in-flight
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-            if (event === 'SIGNED_IN' || newSession) {
-              setStatus('success');
-              setTimeout(() => {
+          return;
+        }
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+          if ((event === 'SIGNED_IN' || newSession) && active) {
+            setStatus('success');
+            setTimeout(() => {
+              if (active) {
                 router.push('/dashboard');
                 router.refresh();
-              }, 1200);
-            }
-          });
+              }
+            }, 1200);
+          }
+        });
+        authSubscription = subscription;
 
-          // Timeout fallback
-          setTimeout(async () => {
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-            if (retrySession) {
-              setStatus('success');
-              router.push('/dashboard');
-            } else {
-              setStatus('error');
-              setErrorMessage('Session verification timed out. Please try logging in directly.');
-            }
-          }, 4000);
+        fallbackTimeout = setTimeout(async () => {
+          if (!active) return;
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            setStatus('success');
+            router.push('/dashboard');
+          } else {
+            setStatus('error');
+            setErrorMessage('Session verification timed out. Please try logging in directly.');
+          }
+        }, 4000);
 
-          return () => subscription.unsubscribe();
-        }
       } catch (err: any) {
-        setStatus('error');
-        setErrorMessage(err.message || 'Authentication verification failed.');
+        if (active) {
+          setStatus('error');
+          setErrorMessage(err.message || 'Authentication verification failed.');
+        }
       }
     };
     
     handleAuth();
+
+    return () => {
+      active = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+      }
+    };
   }, [router]);
 
   return (

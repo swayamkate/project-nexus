@@ -34,7 +34,7 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
   if (!isOpen) return null;
 
   const certId = enrollments?.[0]?.certificate_id || `CERT-2026-${profile?.trainee_id?.replace('TRN-', '') || '849201'}`;
-  const verifyUrl = `https://sih2026.avishkark.in/verify/${certId}`;
+  const verifyUrl = `https://sih2026.avishkark.in/verify?id=${encodeURIComponent(certId)}`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">

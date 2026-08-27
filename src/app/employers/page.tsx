@@ -58,10 +58,6 @@ export default function EmployerRecruitmentPortal() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchPortalData();
-  }, []);
-
   const fetchPortalData = async () => {
     setLoading(true);
     try {
@@ -85,6 +81,10 @@ export default function EmployerRecruitmentPortal() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPortalData();
+  }, []);
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,11 +118,11 @@ export default function EmployerRecruitmentPortal() {
     try {
       const { error } = await supabase.from('employers').insert({
         ...empForm,
-        is_verified: true
+        is_verified: false // Requires admin state verification review
       });
       if (error) throw error;
 
-      setToastMsg(`Company "${empForm.company_name}" registered!`);
+      setToastMsg(`Company "${empForm.company_name}" submitted for State Skill Mission verification.`);
       setShowRegisterModal(false);
       setTimeout(() => setToastMsg(null), 4000);
       fetchPortalData();
@@ -322,8 +322,19 @@ export default function EmployerRecruitmentPortal() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    setToastMsg(`Interview request dispatched to Candidate ${cand.trainee_id}!`);
+                  onClick={async () => {
+                    if (cand.id) {
+                      try {
+                        await supabase.from('trainee_notifications').insert({
+                          trainee_id: cand.id,
+                          title: 'Interview & Apprenticeship Invitation',
+                          message: 'An accredited industry employer has reviewed your verified credentials and dispatched an interview invitation.',
+                          type: 'interview_invite',
+                          is_read: false
+                        });
+                      } catch (e) {}
+                    }
+                    setToastMsg(`Interview invitation dispatched to Candidate ${cand.trainee_id}!`);
                     setTimeout(() => setToastMsg(null), 3500);
                   }}
                   className="w-full py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-xl text-xs font-bold transition cursor-pointer text-center"

@@ -59,30 +59,8 @@ export function CertificateValidationClient({ certId }: Props) {
         if (enrollment) {
           setRecord(enrollment);
         } else {
-          // Authentic mock fallback for test credentials
-          if (certId.toUpperCase().includes('CERT-2026') || certId.toUpperCase().includes('TRN-') || certId.toUpperCase().includes('MSSDS')) {
-            setRecord({
-              certificate_id: certId.toUpperCase(),
-              enrolled_date: '2025-10-15',
-              completed_date: '2026-01-20',
-              status: 'completed',
-              grade: 'Grade A+ (Distinction)',
-              trainees: {
-                full_name: 'Priya Sharma',
-                district: 'Pune',
-                state: 'Maharashtra',
-                privacy_hash: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
-              },
-              training_programs: {
-                title: 'Advanced Industrial Apparel Construction & Pattern Engineering',
-                sector: 'Apparel & Garments',
-                duration_months: 3,
-                provider_name: 'Maharashtra State Skill Development Society (MSSDS)'
-              }
-            });
-          } else {
-            setError(`No active state credential matching reference "${certId}" was found in the official registry.`);
-          }
+          setError(`No active state credential matching reference "${certId}" was found in the official registry.`);
+          setRecord(null);
         }
       } catch (err: any) {
         setError(err.message || 'Lookup failed.');

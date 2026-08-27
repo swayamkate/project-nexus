@@ -36,14 +36,6 @@ export const DocumentsPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    if (profile?.id) {
-      fetchUploadedDocs(profile.id);
-    } else {
-      setLoading(false);
-    }
-  }, [profile]);
-
   const fetchUploadedDocs = async (traineeId: string) => {
     setLoading(true);
     try {
@@ -72,6 +64,14 @@ export const DocumentsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchUploadedDocs(profile.id);
+    } else {
+      setLoading(false);
+    }
+  }, [profile]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

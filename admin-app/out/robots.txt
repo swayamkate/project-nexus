@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://sih2026.avishkark.in/sitemap.xml

@@ -72,6 +72,27 @@ export const SelfEmploymentModule: React.FC = () => {
 
   const supabase = createClient();
 
+  const loadUserData = async (traineeId: string) => {
+    setLoadingData(true);
+    try {
+      const [docRes, schemeRes, appRes, ledgerRes] = await Promise.all([
+        supabase.from('verifications').select('*').eq('trainee_id', traineeId).order('created_at', { ascending: false }),
+        supabase.from('government_schemes').select('*').order('created_at', { ascending: false }),
+        supabase.from('scheme_applications').select('*, government_schemes(name, subsidy_pct)').eq('trainee_id', traineeId).order('applied_at', { ascending: false }),
+        supabase.from('enterprise_ledger').select('*').eq('trainee_id', traineeId).order('entry_month', { ascending: false })
+      ]);
+
+      if (docRes.data) setDocuments(docRes.data);
+      if (schemeRes.data) setSchemes(schemeRes.data);
+      if (appRes.data) setApplications(appRes.data);
+      if (ledgerRes.data) setLedgerEntries(ledgerRes.data);
+    } catch (e) {
+      console.error('Error loading self-employment data:', e);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   useEffect(() => {
     if (employment) {
       setFormData({
@@ -111,27 +132,6 @@ export const SelfEmploymentModule: React.FC = () => {
       loadUserData(profile.id);
     }
   }, [employment, profile]);
-
-  const loadUserData = async (traineeId: string) => {
-    setLoadingData(true);
-    try {
-      const [docRes, schemeRes, appRes, ledgerRes] = await Promise.all([
-        supabase.from('verifications').select('*').eq('trainee_id', traineeId).order('created_at', { ascending: false }),
-        supabase.from('government_schemes').select('*').order('created_at', { ascending: false }),
-        supabase.from('scheme_applications').select('*, government_schemes(name, subsidy_pct)').eq('trainee_id', traineeId).order('applied_at', { ascending: false }),
-        supabase.from('enterprise_ledger').select('*').eq('trainee_id', traineeId).order('entry_month', { ascending: false })
-      ]);
-
-      if (docRes.data) setDocuments(docRes.data);
-      if (schemeRes.data) setSchemes(schemeRes.data);
-      if (appRes.data) setApplications(appRes.data);
-      if (ledgerRes.data) setLedgerEntries(ledgerRes.data);
-    } catch (e) {
-      console.error('Error loading self-employment data:', e);
-    } finally {
-      setLoadingData(false);
-    }
-  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();

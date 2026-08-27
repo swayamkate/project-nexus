@@ -1,38 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+import { verifyAdminSession } from '@/lib/serverAuth';
+
+const CreateAdminSchema = z.object({
+  email: z.string().email('Valid email address is required.'),
+  password: z.string().min(8, 'Password must be at least 8 characters long.'),
+  username: z.string().min(2).max(50).optional(),
+  role: z.enum(['admin', 'evaluator', 'superadmin']).default('admin')
+});
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://api.avishkark.in';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJyb2xlIjogInNlcnZpY2Vfcm9sZSIsICJpc3MiOiAic3VwYWJhc2UiLCAiaWF0IjogMTc4NzY3Njg2MiwgImV4cCI6IDIxMDMwMzY4NjJ9.wx6h8pi1tmHCVfz5nX_kf45sF05_Ea-RF8KlVjbWJ44';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, username, role = 'admin' } = await request.json();
-
-    const cookieStore = await cookies();
-    const isSuperadmin = 
-      cookieStore.get('nexus_superadmin')?.value === 'true' || 
-      cookieStore.get('superadmin_token')?.value === 'true' ||
-      request.cookies.get('nexus_superadmin')?.value === 'true' ||
-      request.cookies.get('superadmin_token')?.value === 'true';
-
-    if (!isSuperadmin) {
-      return NextResponse.json({ error: 'Forbidden: Only Superadmins can provision new Admin accounts.' }, { status: 403 });
+    // 1. Verify caller has superadmin role
+    const caller = await verifyAdminSession(request);
+    if (!caller || caller.role !== 'superadmin') {
+      return NextResponse.json({ 
+        error: 'Forbidden: Only verified Superadmins can provision new administrative accounts.' 
+      }, { status: 403 });
     }
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    // 2. Validate input body
+    const body = await request.json();
+    const parseResult = CreateAdminSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: parseResult.error.issues[0]?.message || 'Invalid input payload.' 
+      }, { status: 400 });
     }
 
-    const supabaseAdmin = createSupabaseClient(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const { email, password, username, role } = parseResult.data;
 
-    const cleanUsername = username || email.split('@')[0];
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    if (!serviceKey) {
+      return NextResponse.json({ 
+        error: 'Server configuration error: SUPABASE_SERVICE_ROLE_KEY is required on server.' 
+      }, { status: 500 });
+    }
 
-    // 1. Create User in Supabase Auth
+    const supabaseAdmin = createSupabaseClient(SUPABASE_URL, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+
+    const cleanUsername = (username || email.split('@')[0]).toLowerCase().trim().replace(/[^a-z0-9_.]/g, '');
+
+    // 3. Create User in Supabase Auth
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -46,32 +60,33 @@ export async function POST(request: NextRequest) {
 
     if (createError) throw createError;
 
-    // 2. Assign Role in public.user_roles
+    // 4. Assign Role in public.user_roles
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .upsert({
         user_id: newUser.user.id,
         email: email,
         username: cleanUsername,
-        role: role as any
+        role: role
       }, { onConflict: 'email' });
 
     if (roleError) throw roleError;
 
-    // 3. Log Action in Audit Logs
+    // 5. Log Action in Audit Logs
     await supabaseAdmin
       .from('audit_logs')
       .insert({
-        admin_email: 'admin@nexus.com',
-        action: `Created new ${role}: ${email}`,
+        admin_email: caller.email,
+        action: `PROVISION_ADMIN_${role.toUpperCase()}`,
         target_entity: 'user_roles',
         target_id: newUser.user.id,
+        details: `Superadmin ${caller.email} created new ${role} account for ${email}`,
         status: 'Success'
       });
 
     return NextResponse.json({ 
       success: true, 
-      message: `Admin account (${email}) created and confirmed successfully.` 
+      message: `Admin account (${email}) created successfully with role '${role}'.` 
     });
 
   } catch (error: any) {

@@ -303,6 +303,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!identifier || !identifier.includes('@')) {
+      setError('Please enter your registered email address in the field above to receive password reset instructions.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    
+    try {
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(identifier.trim(), {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+      if (resetErr) throw resetErr;
+      setSuccessMsg(`Password reset instructions dispatched to ${identifier}. Please check your email inbox.`);
+    } catch (err: any) {
+      setError(formatHumanError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between selection:bg-blue-600 selection:text-white relative">
       
@@ -420,7 +442,7 @@ export default function LoginPage() {
                   <label className="text-xs font-bold text-slate-700">Password</label>
                   <button 
                     type="button"
-                    onClick={handleMagicLink}
+                    onClick={handleForgotPassword}
                     className="text-[11px] text-blue-600 hover:text-blue-700 font-bold transition cursor-pointer"
                   >
                     Forgot password?

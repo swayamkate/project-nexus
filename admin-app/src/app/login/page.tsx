@@ -23,111 +23,82 @@ export default function AdminLoginPage() {
 
     try {
       const emailOrUser = identifier.trim();
-
-      // 1. Try Superadmin Environment Variable Authentication
-      const saRes = await fetch('/api/auth/superadmin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailOrUser, password })
-      });
-      
-      if (saRes.ok) {
-        document.cookie = "nexus_superadmin=true; path=/; max-age=604800; SameSite=Lax";
-        document.cookie = "superadmin_token=true; path=/; max-age=604800; SameSite=Lax";
-        window.location.assign('/');
-        return;
+      if (!emailOrUser || !password) {
+        throw new Error('Please enter both your identifier and password.');
       }
 
-      // 2. If username, lookup email
-      let loginEmail = emailOrUser;
-      if (!loginEmail.includes('@')) {
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('email')
-          .eq('username', loginEmail.toLowerCase())
-          .in('role', ['admin', 'superadmin'])
-          .maybeSingle();
+      // 1. Authenticate via secure server endpoint
+      const res = await fetch('/api/auth/superadmin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: emailOrUser, password })
+      });
+      
+      const data = await res.json();
 
-        if (userRole?.email) {
-          loginEmail = userRole.email;
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Authentication failed. Invalid credentials.');
+      }
+
+      // 2. Also set local Supabase session if token returned
+      if (data.session?.access_token) {
+        try {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.access_token,
+          });
+        } catch (e) {
+          // Non-blocking if setSession fails on edge
         }
       }
 
-      // 3. Try standard Supabase Auth for assigned sub-admins
-      const { data: authData, error: sbError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      });
-      
-      if (sbError) throw new Error('Invalid administrative credentials or account unconfirmed.');
-
-      // 4. Verify admin role exists
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authData.user.id)
-        .in('role', ['admin', 'superadmin', 'evaluator'])
-        .maybeSingle();
-
-      if (!roleData) {
-        await supabase.auth.signOut();
-        throw new Error('Access Denied: This account lacks administrative privileges.');
-      }
-      
-      window.location.href = '/';
+      window.location.assign('/');
     } catch (err: any) {
-      setError(err.message || 'Authentication failed.');
+      setError(err.message || 'Authentication error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#060a12] text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white relative overflow-hidden">
-      
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[160px] pointer-events-none" />
+    <div className="min-h-screen bg-[#070b14] flex flex-col justify-center items-center px-4 selection:bg-blue-600 selection:text-white relative overflow-hidden">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      {/* Top Header */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-            <ShieldAlert className="w-5 h-5 text-white" />
+      <div className="max-w-md w-full relative z-10">
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 shadow-xl shadow-blue-500/20 mb-4 border border-blue-400/30">
+            <ShieldCheck className="w-8 h-8 text-white" />
           </div>
-          <div>
-            <span className="font-black text-lg tracking-tight text-white block leading-none">NEXUS ADMIN</span>
-            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">Control Center</span>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Nexus Executive Control</h1>
+          <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
+            State Skilling & Outcome Administration Portal
+          </p>
         </div>
-        <div className="flex items-center space-x-2 text-xs text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Restricted Access</span>
-        </div>
-      </header>
 
-      {/* Admin Login Card */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8 z-10">
-        <div className="w-full max-w-md bg-[#0a1020]/95 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/80">
-          
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-black text-white tracking-tight">Administrative Sign In</h1>
-            <p className="text-xs text-slate-400 mt-1.5">
-              Superadmin & System Operator Access Portal
-            </p>
+        {/* Auth Card */}
+        <div className="bg-[#0a1020]/90 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl shadow-2xl space-y-6">
+          <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Executive Authorization</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">
+              TLS 1.3 SECURE
+            </span>
           </div>
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3.5 rounded-xl mb-4 text-center leading-relaxed">
-              {error}
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400 animate-shake">
+              <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form 
-            onSubmit={handleAuth} 
-            className="space-y-4"
-          >
+          <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Admin Email or Username</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                Username or Official Email
+              </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
@@ -135,29 +106,30 @@ export default function AdminLoginPage() {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
-                  placeholder="admin@nexus.com"
+                  placeholder="admin@nexus.com or username"
+                  className="w-full bg-[#050811] border border-slate-800 text-white rounded-xl px-10 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition font-medium"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Master Password</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                Security Password
+              </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 text-white text-sm pl-10 pr-11 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
                   placeholder="••••••••••••"
+                  className="w-full bg-[#050811] border border-slate-800 text-white rounded-xl px-10 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition font-medium pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition"
-                  title={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 transition"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -167,19 +139,30 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20 transition cursor-pointer disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              <span>Authenticate & Enter Console</span>
-              {!loading && <ArrowRight className="w-4 h-4" />}
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <span>Authenticate Session</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
-        </div>
-      </main>
 
-      <footer className="text-center py-5 text-[11px] text-slate-500 z-10 border-t border-slate-900">
-        &copy; {new Date().getFullYear()} Nexus. All rights reserved.
-      </footer>
+          {/* Compliance notice */}
+          <div className="text-center pt-2 text-[11px] text-slate-500">
+            <span>Restricted State Portal. All authorization attempts are immutably logged under Section 43A of IT Act.</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-600 mt-6">
+          © 2026 Maharashtra State Skill Development Mission • Nexus
+        </p>
+      </div>
     </div>
   );
 }

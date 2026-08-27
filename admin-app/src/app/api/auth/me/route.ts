@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { verifyAdminSession } from '@/lib/serverAuth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const isSuperadmin = 
-      cookieStore.get('nexus_superadmin')?.value === 'true' || 
-      cookieStore.get('superadmin_token')?.value === 'true' ||
-      request.cookies.get('nexus_superadmin')?.value === 'true' ||
-      request.cookies.get('superadmin_token')?.value === 'true';
+    const verifiedUser = await verifyAdminSession(request);
 
-    if (isSuperadmin) {
-      return NextResponse.json({ 
-        isSuperadmin: true, 
-        user: { email: 'admin@nexus.com', role: 'superadmin' } 
+    if (verifiedUser) {
+      return NextResponse.json({
+        isSuperadmin: verifiedUser.role === 'superadmin',
+        isAdmin: true,
+        role: verifiedUser.role,
+        user: {
+          id: verifiedUser.userId,
+          email: verifiedUser.email,
+          username: verifiedUser.username,
+          role: verifiedUser.role
+        }
       });
     }
 
-    return NextResponse.json({ isSuperadmin: false, user: null }, { status: 200 });
+    return NextResponse.json({ isSuperadmin: false, isAdmin: false, user: null }, { status: 200 });
   } catch (err: any) {
-    return NextResponse.json({ isSuperadmin: false, error: err.message, user: null }, { status: 200 });
+    return NextResponse.json({ isSuperadmin: false, isAdmin: false, error: err.message, user: null }, { status: 200 });
   }
 }

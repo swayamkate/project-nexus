@@ -200,18 +200,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             username: username,
             full_name: fullName,
             trainee_id: `TRN-${randomDigits}`,
-            phone: '',
-            dob: '2000-01-01',
-            gender: 'Prefer not to say',
+            phone: session.user.user_metadata?.phone || '',
+            dob: session.user.user_metadata?.dob || null,
+            gender: session.user.user_metadata?.gender || 'Unspecified',
             aadhaar_masked: '',
             address: '',
-            district: 'Maharashtra',
+            district: session.user.user_metadata?.district || 'Maharashtra',
             state: 'Maharashtra',
             pincode: '',
             skills: [],
             about_me: '',
             is_active: true,
-            profile_completion_pct: 30
+            profile_completion_pct: 35
           })
           .select()
           .single();
@@ -276,12 +276,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [supabase]);
 
   useEffect(() => {
-    loadUserData();
+    let lastUserId: string | null = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    loadUserData().then(() => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        lastUserId = session?.user?.id || null;
+      });
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        loadUserData();
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || session.user.id !== lastUserId) {
+          lastUserId = session.user.id;
+          loadUserData();
+        }
       } else {
+        lastUserId = null;
         setUser(null);
         setProfile(null);
         setEmployment(null);

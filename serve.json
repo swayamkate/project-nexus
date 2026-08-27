@@ -2,8 +2,9 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/api/health", "destination": "/api/health.html" },
+    { "source": "/api/health", "destination": "/api/health.json" },
     { "source": "/api/docs", "destination": "/api/docs.html" },
-    { "source": "/api/cron/milestones", "destination": "/api/cron/milestones.html" }
+    { "source": "/api/cron/milestones", "destination": "/api/cron/milestones" },
+    { "source": "/verify/:certId", "destination": "/verify/index.html" }
   ]
 }

@@ -39,39 +39,61 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const checkAdmin = async () => {
-      // 1. Check Superadmin Cookie
       try {
+        // 1. Verify session through secure server endpoint
         const saRes = await fetch('/api/auth/me');
         if (saRes.ok) {
           const saData = await saRes.json();
-          if (saData.isSuperadmin) {
+          if (saData.isAdmin || saData.isSuperadmin) {
             setIsAdmin(true);
-            setAdminUser(saData.user || { email: 'admin@nexus.com', role: 'superadmin' });
+            setAdminUser(saData.user || { email: 'admin@nexus.com', role: saData.role || 'admin' });
             fetchPendingCount();
             return;
           }
         }
-      } catch (e) {}
 
-      // 2. Check regular Supabase Session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+        // 2. If server auth didn't pass, verify Supabase client session against user_roles
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role, username, email')
+          .eq('user_id', session.user.id)
+          .in('role', ['admin', 'superadmin', 'evaluator'])
+          .maybeSingle();
+
+        if (roleError || !roleData) {
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+
+        setIsAdmin(true);
+        setAdminUser({ 
+          email: session.user.email || roleData.email, 
+          role: roleData.role,
+          username: roleData.username 
+        });
+        fetchPendingCount();
+      } catch (err) {
+        console.error('Admin layout auth check failed:', err);
         router.push('/login');
-        return;
       }
-
-      setIsAdmin(true);
-      setAdminUser({ email: session.user.email, role: 'admin' });
-      fetchPendingCount();
     };
 
     const fetchPendingCount = async () => {
-      const { count } = await supabase
-        .from('verifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (count !== null) setPendingVerifsCount(count);
+      try {
+        const { count } = await supabase
+          .from('verifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (count !== null) setPendingVerifsCount(count);
+      } catch (e) {}
     };
 
     checkAdmin();
@@ -79,6 +101,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    document.cookie = 'nexus_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'sb_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'superadmin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     router.push('/login');
     router.refresh();
