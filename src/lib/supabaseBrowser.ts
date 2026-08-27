@@ -81,7 +81,6 @@ export async function callPublicRpc<T>(functionName: string, args: Record<string
     method: 'POST',
     headers: {
       apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(args),
