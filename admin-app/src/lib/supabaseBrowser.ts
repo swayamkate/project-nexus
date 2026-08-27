@@ -8,7 +8,7 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_P
   : DEFAULT_URL;
 
 const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || '';
-const SUPABASE_ANON_KEY = rawKey.length > 0 ? rawKey : DEFAULT_ANON_KEY;
+const SUPABASE_ANON_KEY = rawKey === DEFAULT_ANON_KEY ? rawKey : DEFAULT_ANON_KEY;
 const BROWSER_STORAGE_KEY = 'nexus_admin_auth_token_v2';
 
 let browserClient: SupabaseClient | null = null;

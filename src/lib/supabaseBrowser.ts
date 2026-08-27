@@ -8,7 +8,12 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_P
   : DEFAULT_URL;
 
 const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || '';
-const SUPABASE_ANON_KEY = rawKey.length > 0 ? rawKey : DEFAULT_ANON_KEY;
+// This project has one canonical self-hosted Supabase instance. A stale
+// Cloudflare build variable previously injected a different JWT and caused
+// every browser request to receive 401. Only accept the configured key when
+// it is the known key for api.avishkark.in; otherwise fail safe to the public
+// canonical key (never a service-role key).
+const SUPABASE_ANON_KEY = rawKey === DEFAULT_ANON_KEY ? rawKey : DEFAULT_ANON_KEY;
 const BROWSER_STORAGE_KEY = 'nexus_candidate_auth_token_v2';
 
 let browserClient: SupabaseClient | null = null;
