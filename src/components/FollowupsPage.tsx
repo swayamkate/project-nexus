@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   CheckCircle2, 
@@ -14,25 +14,67 @@ import {
   X,
   FileCheck,
   Building2,
-  DollarSign
+  DollarSign,
+  Mic,
+  MicOff,
+  Volume2,
+  Sparkles
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { calculateWGM } from '@/lib/validators';
 
 export const FollowupsPage: React.FC = () => {
-  const { followups, submitFollowup, t } = useUser();
+  const { profile, employment, followups, submitFollowup, t, language } = useUser();
   const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
   const [viewDetailsItem, setViewDetailsItem] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   // Form State
   const [surveyState, setSurveyState] = useState({
     current_status: 'Active',
-    current_income_range: '₹10,000 – ₹20,000',
+    current_income_range: '₹15,000 – ₹25,000',
     job_satisfaction_score: 5,
     skill_utilization_score: 5,
-    remarks: 'Business is running smoothly with steady customer flow.'
+    remarks: 'Enterprise is operating profitably with growing local client base.'
   });
+
+  const startVoiceInput = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setToastMsg('Speech-to-Text not supported in this browser.');
+      setTimeout(() => setToastMsg(null), 3000);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    // Set speech language based on app language
+    if (language === 'mr') recognition.lang = 'mr-IN';
+    else if (language === 'hi') recognition.lang = 'hi-IN';
+    else recognition.lang = 'en-IN';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSurveyState(prev => ({
+        ...prev,
+        remarks: prev.remarks ? `${prev.remarks} ${transcript}` : transcript
+      }));
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+  };
+
+  const baselineWage = 10000;
+  const currentIncome = Number(employment?.monthly_revenue || 22000);
+  const wgm = calculateWGM(baselineWage, currentIncome);
 
   const standardMilestones: Array<{ milestone: '3_months' | '6_months' | '12_months' | '18_months' | '24_months'; title: string; defaultMonths: number }> = [
     { milestone: '3_months', title: '3 Months Follow-up', defaultMonths: 3 },
@@ -339,13 +381,27 @@ export const FollowupsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-slate-500 block mb-1">Remarks & Details</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-500 font-semibold block">Remarks & Progress Details</label>
+                  <button
+                    type="button"
+                    onClick={startVoiceInput}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center space-x-1 cursor-pointer ${
+                      isListening 
+                        ? 'bg-rose-500 text-white animate-pulse' 
+                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                    }`}
+                  >
+                    {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                    <span>{isListening ? 'Listening (Speak Now)...' : 'Speak Voice Input (मराठी / हिंदी / EN)'}</span>
+                  </button>
+                </div>
                 <textarea
                   rows={3}
                   value={surveyState.remarks}
                   onChange={e => setSurveyState({ ...surveyState, remarks: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                  placeholder="Share details about your work progress..."
+                  placeholder="Share details about your work progress or click microphone to speak..."
                 />
               </div>
 

@@ -19,17 +19,19 @@ import { useUser } from '@/context/UserContext';
 import { ProfileHeroHeader } from './profile/ProfileHeroHeader';
 import { ProfileEditModal } from './profile/ProfileEditModal';
 import { ProfileSkillsModal } from './profile/ProfileSkillsModal';
+import { ResumeDossierModal } from './ResumeDossierModal';
 
 interface TraineeProfilePageProps {
   onNavigate: (section: string) => void;
 }
 
 export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNavigate }) => {
-  const { user, profile, updateProfile, loading: userLoading } = useUser();
+  const { user, profile, employment, enrollments, updateProfile, loading: userLoading } = useUser();
   
   // Modals state
   const [activeModal, setActiveModal] = useState<'all' | 'personal' | 'education' | 'skills' | 'about' | 'avatar' | null>(null);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -141,18 +143,28 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
       )}
 
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">My Profile</h1>
           <p className="text-xs text-slate-500 mt-0.5">View and manage your personal information</p>
         </div>
-        <button
-          onClick={() => setActiveModal('all')}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          <span>Edit Profile</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowResumeModal(true)}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <span>Generate Verified CV</span>
+          </button>
+
+          <button
+            onClick={() => setActiveModal('all')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Edit Profile</span>
+          </button>
+        </div>
       </div>
 
       {/* Top Profile Hero Card */}
@@ -371,6 +383,15 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
         skills={formData.skills || []}
         onAddSkill={handleAddSkill}
         onRemoveSkill={handleRemoveSkill}
+      />
+
+      {/* Resume Dossier Generator Modal */}
+      <ResumeDossierModal
+        isOpen={showResumeModal}
+        onClose={() => setShowResumeModal(false)}
+        profile={profile}
+        employment={employment}
+        enrollments={enrollments}
       />
 
     </div>
