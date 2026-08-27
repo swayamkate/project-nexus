@@ -19,13 +19,19 @@ import {
   MessageSquare,
   Smartphone,
   Info,
-  LogOut
+  LogOut,
+  Sun,
+  Moon,
+  Monitor,
+  Palette
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
 import { createClient } from '@/lib/supabaseBrowser';
 
 export const SettingsPage: React.FC = () => {
   const { user, profile, employment, enrollments, followups, language, setLanguage, t, signOut } = useUser();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const supabase = createClient();
 
   // Notification Permission State
@@ -438,9 +444,86 @@ export const SettingsPage: React.FC = () => {
 
         </div>
 
-        {/* Right 1 Column: Language & Dossier */}
+        {/* Right 1 Column: Theme, Language & Dossier */}
         <div className="space-y-6">
           
+          {/* Section: UI Theme & Aesthetic (Default: System) */}
+          <div className="bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4 hover-lift">
+            <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Palette className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">UI Theme & Aesthetic</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Minimal high-contrast appearance</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme('system');
+                  setToastMsg(`Theme set to System Default (${resolvedTheme} active)`);
+                  setTimeout(() => setToastMsg(null), 2500);
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer ${
+                  theme === 'system'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'
+                }`}
+              >
+                <Monitor className="w-4 h-4" />
+                <span className="text-[10px] font-bold">System</span>
+                <span className="text-[8px] opacity-75 font-normal">Auto OS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme('light');
+                  setToastMsg('Theme set to Light Minimalist');
+                  setTimeout(() => setToastMsg(null), 2500);
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'
+                }`}
+              >
+                <Sun className="w-4 h-4" />
+                <span className="text-[10px] font-bold">Light</span>
+                <span className="text-[8px] opacity-75 font-normal">Ice Clean</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme('dark');
+                  setToastMsg('Theme set to Obsidian Navy');
+                  setTimeout(() => setToastMsg(null), 2500);
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'
+                }`}
+              >
+                <Moon className="w-4 h-4" />
+                <span className="text-[10px] font-bold">Dark</span>
+                <span className="text-[8px] opacity-75 font-normal">Obsidian</span>
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 rounded-xl flex items-center justify-between text-[11px]">
+              <span className="text-slate-500 dark:text-slate-400">Current Active:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 capitalize flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                {theme === 'system' ? `System (${resolvedTheme})` : theme}
+              </span>
+            </div>
+          </div>
+
           {/* Section 4: Language Selection */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">

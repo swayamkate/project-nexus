@@ -50,6 +50,9 @@ export const metadata: Metadata = {
   },
 };
 
+import { PlatformSettingsSync } from "@/components/PlatformSettingsSync";
+import { ThemeProvider } from "@/context/ThemeContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -60,7 +63,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 dark:bg-[#060911] dark:text-slate-100 light:bg-slate-50 light:text-slate-900 selection:bg-blue-600 selection:text-white">
+        <ThemeProvider>
+          <PlatformSettingsSync />
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -14,9 +14,13 @@ import {
   X,
   Settings,
   BarChart3,
-  Award
+  Award,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
 
 interface NavbarProps {
   viewMode: 'admin' | 'trainee';
@@ -34,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onMobileMenuToggle 
 }) => {
   const { user, profile, notifications, signOut, language, setLanguage, t, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -47,23 +52,29 @@ export const Navbar: React.FC<NavbarProps> = ({
     setShowUserMenu(false);
   };
 
+  const handleCycleTheme = () => {
+    if (theme === 'system') setTheme('light');
+    else if (theme === 'light') setTheme('dark');
+    else setTheme('system');
+  };
+
   return (
-    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs transition-colors duration-200">
       
       {/* Left: Mobile Toggle & Page Title */}
       <div className="flex items-center space-x-3">
         <button 
           onClick={onMobileMenuToggle}
-          className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+          className="lg:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           title="Toggle Navigation Menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         <div className="hidden sm:flex items-center space-x-2 text-xs">
-          <span className="font-extrabold text-slate-900 tracking-tight">Nexus</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-slate-500 font-medium capitalize">
+          <span className="font-extrabold text-slate-900 dark:text-white tracking-tight">Nexus</span>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="text-slate-500 dark:text-slate-400 font-medium capitalize">
             {t(`nav.${activeSection.replace('-', '')}`, activeSection.replace('-', ' '))}
           </span>
         </div>
@@ -73,26 +84,42 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center space-x-2 sm:space-x-3.5">
         
         {/* Language Switcher */}
-        <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-bold text-slate-600">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 border border-transparent dark:border-slate-800">
           <button
             onClick={() => setLanguage('en')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             EN
           </button>
           <button
             onClick={() => setLanguage('mr')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             मराठी
           </button>
           <button
             onClick={() => setLanguage('hi')}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs font-black' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             हिंदी
           </button>
         </div>
+
+        {/* Quick Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={handleCycleTheme}
+          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer btn-interactive"
+          title={`Theme: ${theme.toUpperCase()} (Click to cycle)`}
+        >
+          {theme === 'system' ? (
+            <Monitor className="w-4 h-4 text-blue-500" />
+          ) : theme === 'dark' ? (
+            <Moon className="w-4 h-4 text-indigo-400" />
+          ) : (
+            <Sun className="w-4 h-4 text-amber-500" />
+          )}
+        </button>
 
         {/* Superadmin Console Quick Access (Only if admin email) */}
         {user?.email === 'admin@nexus.com' && (

@@ -60,6 +60,8 @@ export const metadata: Metadata = {
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PlatformSettingsSync } from "@/components/PlatformSettingsSync";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -71,13 +73,16 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#040812] text-slate-100 selection:bg-blue-600 selection:text-white">
-        <UserProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </UserProvider>
-        <ServiceWorkerRegister />
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 dark:bg-[#060911] dark:text-slate-100 light:bg-slate-50 light:text-slate-900 selection:bg-blue-600 selection:text-white">
+        <ThemeProvider>
+          <PlatformSettingsSync />
+          <UserProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </UserProvider>
+          <ServiceWorkerRegister />
+        </ThemeProvider>
       </body>
     </html>
   );

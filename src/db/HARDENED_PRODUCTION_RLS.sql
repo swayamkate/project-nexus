@@ -354,4 +354,64 @@ CREATE POLICY "Admins view ai policy insights" ON public.ai_policy_insights
 CREATE POLICY "Admins write ai policy insights" ON public.ai_policy_insights
   FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
+-- -----------------------------------------------------------------------------
+-- 18. PLATFORM SETTINGS (Read: Public/Anon, Write: Admin)
+-- -----------------------------------------------------------------------------
+ALTER TABLE IF EXISTS public.platform_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read platform settings" ON public.platform_settings
+  FOR SELECT TO authenticated, anon USING (true);
+CREATE POLICY "Admin write platform settings" ON public.platform_settings
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- -----------------------------------------------------------------------------
+-- 19. CAREER INTELLIGENCE & UPSKILLING EXPANSION (Zero-Trust RLS)
+-- -----------------------------------------------------------------------------
+ALTER TABLE IF EXISTS public.external_courses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read external courses" ON public.external_courses
+  FOR SELECT TO authenticated, anon USING (true);
+CREATE POLICY "Admins manage external courses" ON public.external_courses
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.skill_assessments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read active skill assessments" ON public.skill_assessments
+  FOR SELECT TO authenticated, anon USING (is_active = true OR public.is_admin());
+CREATE POLICY "Admins manage skill assessments" ON public.skill_assessments
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.interview_questions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read interview questions" ON public.interview_questions
+  FOR SELECT TO authenticated, anon USING (is_approved = true OR public.is_admin());
+CREATE POLICY "Authenticated users contribute interview questions" ON public.interview_questions
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Users upvote or admins manage interview questions" ON public.interview_questions
+  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admins delete interview questions" ON public.interview_questions
+  FOR DELETE TO authenticated USING (public.is_admin());
+
+ALTER TABLE IF EXISTS public.trainee_career_goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Trainees read own career goals" ON public.trainee_career_goals
+  FOR SELECT TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin());
+CREATE POLICY "Trainees mutate own career goals" ON public.trainee_career_goals
+  FOR ALL TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin()) WITH CHECK (trainee_id = public.get_trainee_id() OR public.is_admin());
+
+ALTER TABLE IF EXISTS public.career_roadmaps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Trainees read own career roadmaps" ON public.career_roadmaps
+  FOR SELECT TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin());
+CREATE POLICY "Trainees mutate own career roadmaps" ON public.career_roadmaps
+  FOR ALL TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin()) WITH CHECK (trainee_id = public.get_trainee_id() OR public.is_admin());
+
+ALTER TABLE IF EXISTS public.trainee_course_enrollments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Trainees read own course enrollments" ON public.trainee_course_enrollments
+  FOR SELECT TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin());
+CREATE POLICY "Trainees mutate own course enrollments" ON public.trainee_course_enrollments
+  FOR ALL TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin()) WITH CHECK (trainee_id = public.get_trainee_id() OR public.is_admin());
+
+ALTER TABLE IF EXISTS public.assessment_submissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Trainees read own assessment submissions" ON public.assessment_submissions
+  FOR SELECT TO authenticated USING (trainee_id = public.get_trainee_id() OR public.is_admin());
+CREATE POLICY "Trainees insert own assessment submissions" ON public.assessment_submissions
+  FOR INSERT TO authenticated WITH CHECK (trainee_id = public.get_trainee_id() OR public.is_admin());
+CREATE POLICY "Admins manage assessment submissions" ON public.assessment_submissions
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 COMMIT;

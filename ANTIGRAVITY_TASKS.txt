@@ -1,0 +1,162 @@
+=====================================================================
+ NEXUS (SIH2026) - TASK INSTRUCTIONS FOR ANTIGRAVITY
+ Created: 2026-08-27
+ Context: ZCode implemented the platform settings engine (Settings
+ persistence). Code is DONE and verified. What remains is deploying
+ the DB migration, restarting services on the VPS, and verifying.
+ All changed files are currently UNCOMMITTED in the working tree.
+=====================================================================
+
+---------------------------------------------------------------------
+TASK 1 - COMMIT THE PENDING SETTINGS-ENGINE CHANGES
+---------------------------------------------------------------------
+Working tree has these changes (all verified: both apps build, 0 lint
+errors, 28/28 tests pass). Commit them first so nothing is lost:
+
+  Modified:
+    admin-app/src/app/(admin)/layout.tsx
+    admin-app/src/app/(admin)/settings/page.tsx
+    src/app/layout.tsx
+  New files:
+    admin-app/src/app/api/settings/route.ts
+    admin-app/src/components/PlatformSettingsSync.tsx
+    admin-app/src/lib/platformSettings.ts
+    src/components/PlatformSettingsSync.tsx
+    src/db/migrations/006_platform_settings.sql
+    src/lib/platformSettings.ts
+
+Suggested commit message:
+  feat(settings): real platform_settings engine - admin settings page
+  persistence, Zod-validated settings API, live branding/banner/theme
+  consumption on both portals, and migration 006
+
+---------------------------------------------------------------------
+TASK 2 - APPLY THE DATABASE MIGRATION ON THE VPS (SSH)
+---------------------------------------------------------------------
+File to apply:  src/db/migrations/006_platform_settings.sql
+Server:         Oracle VPS (self-hosted Supabase in Docker)
+
+Steps:
+  1. Copy the migration file to the VPS (scp or paste its contents
+     into Supabase Studio SQL editor at studio.avishkark.in).
+  2. Apply it:
+       psql "postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5432/postgres" \
+         -f 006_platform_settings.sql
+     (or run the whole file in the Studio SQL editor - it is
+     idempotent, safe to re-run.)
+  3. Confirm it worked:
+       psql "postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5432/postgres" \
+         -c "SELECT key, category FROM public.platform_settings ORDER BY key;"
+     Expected: 24 rows (general.*, branding.*, localization.*,
+     surveys.*, security.*, features.*).
+
+ACCEPTANCE: the SELECT above returns 24 rows.
+
+---------------------------------------------------------------------
+TASK 3 - REBUILD + RESTART THE ADMIN APP ON THE VPS
+---------------------------------------------------------------------
+The admin app runs on the VPS as a PM2 Node process (port 3001,
+served at administrator.avishkark.in).
+
+  1. Pull the latest commit from TASK 1 on the VPS checkout.
+  2. Rebuild:
+       cd admin-app
+       npm ci && npm run build
+  3. Restart:
+       pm2 restart <admin-app-process-name>
+       pm2 logs <admin-app-process-name> --lines 30   # confirm clean boot
+
+ACCEPTANCE: pm2 status shows the process "online" with no restart
+loop, and https://administrator.avishkark.in loads.
+
+---------------------------------------------------------------------
+TASK 4 - VERIFY END TO END (DO NOT SKIP)
+---------------------------------------------------------------------
+  A. API auth guard (must NOT leak settings to anonymous callers):
+       curl -s -o /dev/null -w "%{http_code}" \
+         https://administrator.avishkark.in/api/settings
+     EXPECT: 401
+
+  B. Anonymous WRITE must be rejected:
+       curl -s -X PUT https://administrator.avishkark.in/api/settings \
+         -H "Content-Type: application/json" \
+         -d '{"settings":{"general.app_name":"HACK"}}'
+     EXPECT: {"error":"Unauthorized: admin session required."}
+
+  C. Log in at https://administrator.avishkark.in/login as a
+     superadmin, open the "System Settings & Brand" page:
+       - Page loads with values (no "Migration pending" banner).
+       - Change the Primary Color and the Broadcast Banner text,
+         press Save.
+       - EXPECT: green toast "Saved 2 settings to the database".
+
+  D. Confirm the change went live on the PUBLIC portal:
+       open https://sih2026.avishkark.in in a browser, press F12,
+       and in the console run:
+         getComputedStyle(document.documentElement)
+           .getPropertyValue('--brand-primary')
+       EXPECT: the hex color you saved in step C.
+       If you enabled the banner, it must also appear at the top.
+
+  E. Confirm audit logging:
+       SELECT admin_email, action, details FROM public.audit_logs
+       WHERE action = 'UPDATE_SYSTEM_SETTINGS'
+       ORDER BY created_at DESC LIMIT 1;
+     EXPECT: one row listing the keys changed in step C.
+
+---------------------------------------------------------------------
+TASK 5 - IF ANYTHING FAILS (TROUBLESHOOTING)
+---------------------------------------------------------------------
+  - "Migration pending" banner on the Settings page:
+      the platform_settings table does not exist on the live DB yet,
+      or RLS blocks the service-role read. Re-check TASK 2 step 2.
+  - PUT returns 503 "platform_settings table is missing":
+      same cause as above. The API detects the missing table and
+      fails safely instead of crashing.
+  - Settings page shows a red toast on save:
+      read the message; validation errors name the exact key/value
+      that was rejected (e.g. malformed hex color).
+  - Public portal colors/banner not updating:
+      the static portal reads settings client-side with the anon
+      key; check the browser console for Supabase errors and make
+      sure the RLS policy "Public read platform settings" exists
+      (it is part of migration 006).
+
+  Rollback is safe: git revert the TASK 1 commit; the portals fall
+  back to hardcoded defaults when the API/table is unavailable.
+
+---------------------------------------------------------------------
+TASK 6 - STILL-OUTSTANDING SECURITY WORK (SEPARATE, HIGH PRIORITY)
+---------------------------------------------------------------------
+These were identified in the 2026-08-27 audit and are NOT yet fixed
+on the live database. Do them after TASK 1-4:
+
+  1. Apply src/db/HARDENED_PRODUCTION_RLS.sql to the live database
+     (same psql/Studio flow as TASK 2). Right now every table is
+     readable AND writable by anyone with the public anon key.
+     After applying, verify with:
+       curl -s "https://api.avishkark.in/rest/v1/trainees?select=id&limit=1" \
+         -H "apikey: <NEXT_PUBLIC_SUPABASE_ANON_KEY>"
+     EXPECT: 401/403 or empty array for unauthenticated reads of
+     sensitive tables (trainees, trainee_employment, user_roles,
+     audit_logs, support_tickets).
+     NOTE: platform_settings must KEEP its public-read policy so the
+     static portal can still read branding (migration 006 already
+     handles this correctly).
+
+  2. Rotate every secret that was committed to git history before
+     it was purged at HEAD: Supabase anon + service-role JWT keys,
+     JWT_SECRET, Postgres password, Resend SMTP key. Update them in
+     .env.local files on the VPS and in supabase docker .env, then
+     restart the Supabase stack and the admin app.
+
+  3. Purge the old credentials file from git history (it is removed
+     at HEAD but still present in ~5 older commits):
+       git filter-repo --path MASTER_CREDENTIALS_AND_DEPLOYMENT.md \
+         --invert-paths
+     then force-push all branches. Do this AFTER rotating (step 2).
+
+  4. Delete the local leftover files that still contain secrets:
+       MASTER_CREDENTIALS_AND_DEPLOYMENT.md, cookies.txt
+     (they are untracked now, but should not sit on disk).
+=====================================================================

@@ -30,6 +30,7 @@ import {
   Award
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { PlatformSettingsSync } from '@/components/PlatformSettingsSync';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -140,7 +141,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col md:flex-row selection:bg-blue-600 selection:text-white">
-      
+      <PlatformSettingsSync />
+
       {/* Desktop Sidebar */}
       <aside className="w-68 bg-[#0a1020] border-r border-slate-800/80 hidden md:flex flex-col justify-between shrink-0 min-h-screen">
         <div>
