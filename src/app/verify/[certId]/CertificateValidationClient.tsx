@@ -12,8 +12,8 @@ import {
   User, 
   ArrowLeft, 
   Printer, 
-  Loader2,
-  Lock
+  Loader2, 
+  Lock 
 } from 'lucide-react';
 
 interface Props {
@@ -36,21 +36,30 @@ export function CertificateValidationClient({ certId }: Props) {
 
       setLoading(true);
       try {
-        const { data: enrollment, error: dbErr } = await supabase
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(certId);
+
+        let query = supabase
           .from('trainee_enrollments')
           .select(`
             *,
             trainees (id, full_name, email, district, state, privacy_hash),
             training_programs (title, sector, duration_months, provider_name)
-          `)
-          .or(`certificate_id.eq.${certId},id.eq.${certId}`)
-          .maybeSingle();
+          `);
+
+        if (isUuid) {
+          query = query.or(`certificate_id.eq.${certId},id.eq.${certId}`);
+        } else {
+          query = query.eq('certificate_id', certId);
+        }
+
+        const { data: enrollment, error: dbErr } = await query.maybeSingle();
 
         if (dbErr) throw dbErr;
 
         if (enrollment) {
           setRecord(enrollment);
         } else {
+          // Authentic mock fallback for test credentials
           if (certId.toUpperCase().includes('CERT-2026') || certId.toUpperCase().includes('TRN-') || certId.toUpperCase().includes('MSSDS')) {
             setRecord({
               certificate_id: certId.toUpperCase(),
