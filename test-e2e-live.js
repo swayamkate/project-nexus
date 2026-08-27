@@ -60,10 +60,11 @@ async function runFullE2ESuite() {
 
   console.log('2.1 Navigating to Admin Login...');
   await page.goto('https://administrator.avishkark.in/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await new Promise(r => setTimeout(r, 1000));
 
-  console.log('2.2 Clicking Auto-fill Quick Demo Access...');
+  console.log('2.2 Clicking Auto-fill Quick Demo Access (Avishkar0)...');
   await page.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Executive Superadmin'));
+    const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && (b.textContent.includes('Avishkar0') || b.textContent.includes('Executive Superadmin')));
     if (btn) btn.click();
   });
 

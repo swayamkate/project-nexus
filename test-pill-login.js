@@ -10,14 +10,19 @@ async function testExactValues() {
   const page = await browser.newPage();
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-  await page.goto('https://administrator.avishkark.in/login', { waitUntil: 'domcontentloaded' });
+  await page.goto('https://administrator.avishkark.in/login', { waitUntil: 'networkidle2' });
+
+  // Wait for React hydration
+  await new Promise(r => setTimeout(r, 1000));
 
   // Click demo credentials pill
-  console.log('Clicking Demo Credentials pill...');
+  console.log('Clicking Demo Credentials pill (Avishkar0)...');
   await page.evaluate(() => {
-    const demoBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('admin@nexus.com'));
+    const demoBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Avishkar0'));
     if (demoBtn) demoBtn.click();
   });
+
+  await new Promise(r => setTimeout(r, 300));
 
   const fieldValues = await page.evaluate(() => {
     const inputs = Array.from(document.querySelectorAll('input'));
