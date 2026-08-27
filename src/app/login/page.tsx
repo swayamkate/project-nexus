@@ -451,8 +451,7 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="button"
-                onClick={(e) => handleLogin(e)}
+                type="submit"
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer text-xs"
               >
@@ -561,8 +560,7 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="button"
-                onClick={(e) => handleSignUp(e)}
+                type="submit"
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-3 cursor-pointer text-xs"
               >
