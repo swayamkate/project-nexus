@@ -60,9 +60,19 @@ export const ProfileHeroHeader: React.FC<ProfileHeroHeaderProps> = ({
               </span>
             </div>
             
-            <p className="text-xs text-blue-600 font-semibold font-mono">
-              Trainee ID: {profile?.trainee_id || 'TRN123456'}
-            </p>
+            <div className="flex items-center space-x-2 text-xs font-mono">
+              <span className="text-blue-600 font-semibold">
+                ID: {profile?.trainee_id || 'TRN-PENDING'}
+              </span>
+              {formData.username && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md font-bold">
+                    @{formData.username}
+                  </span>
+                </>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 pt-1">
               <div className="flex items-center justify-center sm:justify-start space-x-1.5">

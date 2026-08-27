@@ -29,18 +29,18 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ 
   viewMode, 
   setViewMode, 
-  activeSection,
-  onNavigate,
-  onMobileMenuToggle
+  activeSection, 
+  onNavigate, 
+  onMobileMenuToggle 
 }) => {
-  const { user, profile, notifications, signOut, language, setLanguage } = useUser();
+  const { user, profile, notifications, signOut, language, setLanguage, t, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const displayName = profile?.full_name || 'Priya Sharma';
+  const displayName = profile?.full_name || 'Nexus Trainee';
   const firstName = displayName.split(' ')[0];
-  const displayId = profile?.trainee_id || 'TRN-847291';
-  const unreadNotifs = notifications?.filter(n => !n.is_read)?.length || 3;
+  const displayId = profile?.trainee_id || 'TRN-PENDING';
+  const unreadNotifs = notifications?.filter(n => !n.is_read)?.length || 0;
 
   const handleDropdownNavigate = (sec: string) => {
     if (onNavigate) onNavigate(sec);
@@ -48,65 +48,47 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="h-18 bg-white border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       
-      {/* Left: Hamburger & Greeting */}
-      <div className="flex items-center space-x-3.5">
+      {/* Left: Mobile Toggle & Page Title */}
+      <div className="flex items-center space-x-3">
         <button 
-          onClick={onMobileMenuToggle} 
-          className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition cursor-pointer"
+          onClick={onMobileMenuToggle}
+          className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+          title="Toggle Navigation Menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div>
-          {viewMode === 'admin' ? (
-            <div>
-              <h2 className="text-lg font-black text-slate-900 leading-tight">Government Dashboard</h2>
-              <p className="text-xs text-slate-500 font-medium">Welcome back, State Executive Officer!</p>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-1.5 leading-tight">
-                <span>Welcome, {firstName}</span>
-                <span>👋</span>
-              </h2>
-              <p className="text-xs text-slate-500 font-medium">Track your training, progress and opportunities</p>
-            </div>
-          )}
+        <div className="hidden sm:flex items-center space-x-2 text-xs">
+          <span className="font-extrabold text-slate-900 tracking-tight">Nexus</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-slate-500 font-medium capitalize">
+            {t(`nav.${activeSection.replace('-', '')}`, activeSection.replace('-', ' '))}
+          </span>
         </div>
       </div>
 
-      {/* Middle: Search Bar */}
-      <div className="hidden md:flex items-center relative w-72 lg:w-96">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5" />
-        <input 
-          type="text" 
-          placeholder={viewMode === 'admin' ? "Search trainees, courses, employers..." : "Search programs, skills, records..."}
-          className="w-full bg-slate-50 text-slate-800 text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-400 font-medium"
-        />
-      </div>
-
       {/* Right Controls */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 sm:space-x-3.5">
         
         {/* Language Switcher */}
-        <div className="hidden sm:flex items-center space-x-1 bg-slate-50 border border-slate-200/80 p-1 rounded-xl text-xs font-semibold text-slate-600">
+        <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-bold text-slate-600">
           <button
             onClick={() => setLanguage('en')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'hover:text-slate-900'}`}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'en' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
-            ENG
+            EN
           </button>
           <button
             onClick={() => setLanguage('mr')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'hover:text-slate-900'}`}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'mr' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
             मराठी
           </button>
           <button
             onClick={() => setLanguage('hi')}
-            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'hover:text-slate-900'}`}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'hi' ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:text-slate-900'}`}
           >
             हिंदी
           </button>
@@ -122,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Trainee
+            {t('nav.trainee', 'Trainee')}
           </button>
           <button
             onClick={() => setViewMode('admin')}
@@ -132,11 +114,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            State Admin
+            {t('nav.admin', 'State Admin')}
           </button>
         </div>
 
-        {/* Notifications Bell with Popup */}
+        {/* Notifications Bell with Real Popup */}
         <div className="relative">
           <button 
             onClick={() => setShowNotifMenu(!showNotifMenu)}
@@ -152,26 +134,56 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {showNotifMenu && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 space-y-3 z-50 text-xs animate-in fade-in-50">
+            <div className="absolute right-0 mt-2 w-84 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 space-y-3 z-50 text-xs animate-in fade-in-50">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="font-bold text-slate-900">Notifications ({unreadNotifs})</span>
-                <button onClick={() => setShowNotifMenu(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                  <X className="w-4 h-4" />
-                </button>
+                <span className="font-bold text-slate-900">{t('nav.notifications', 'Notifications')} ({unreadNotifs})</span>
+                <div className="flex items-center space-x-2">
+                  {unreadNotifs > 0 && (
+                    <button 
+                      onClick={() => markAllNotificationsAsRead()} 
+                      className="text-[10px] text-blue-600 hover:underline font-bold cursor-pointer"
+                    >
+                      {t('nav.markAllRead', 'Mark all read')}
+                    </button>
+                  )}
+                  <button onClick={() => setShowNotifMenu(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                <div className="p-2.5 bg-blue-50/60 rounded-xl space-y-0.5">
-                  <p className="font-bold text-slate-800">Your 3 Months follow-up recorded</p>
-                  <p className="text-[11px] text-slate-500">20 Nov 2024</p>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
-                  <p className="font-bold text-slate-800">New course 'Solar PV Technician' available</p>
-                  <p className="text-[11px] text-slate-500">05 Dec 2024</p>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
-                  <p className="font-bold text-slate-800">Next longitudinal follow-up due in 85 days</p>
-                  <p className="text-[11px] text-slate-500">20 May 2025</p>
-                </div>
+
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {notifications && notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div 
+                      key={notif.id} 
+                      onClick={() => !notif.is_read && markNotificationAsRead(notif.id)}
+                      className={`p-3 rounded-xl space-y-1 transition cursor-pointer ${
+                        notif.is_read 
+                          ? 'bg-slate-50 text-slate-600 hover:bg-slate-100/80' 
+                          : 'bg-blue-50/80 text-slate-900 border border-blue-100 shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <p className={`text-xs ${notif.is_read ? 'font-semibold text-slate-700' : 'font-black text-blue-950'}`}>
+                          {notif.title}
+                        </p>
+                        {!notif.is_read && (
+                          <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 mt-1 ml-1" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">{notif.message}</p>
+                      <p className="text-[10px] text-slate-400 font-mono pt-0.5">
+                        {new Date(notif.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-slate-400">
+                    <Bell className="w-6 h-6 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">{t('nav.noNotifications', 'No new notifications.')}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

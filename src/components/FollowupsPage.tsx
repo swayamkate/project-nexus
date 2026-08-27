@@ -19,7 +19,7 @@ import {
 import { useUser } from '@/context/UserContext';
 
 export const FollowupsPage: React.FC = () => {
-  const { followups, submitFollowup } = useUser();
+  const { followups, submitFollowup, t } = useUser();
   const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
   const [viewDetailsItem, setViewDetailsItem] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -85,9 +85,9 @@ export const FollowupsPage: React.FC = () => {
 
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Follow-ups</h1>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t('followups.title', 'Longitudinal Follow-up Surveys')}</h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Track your progress and update your status in scheduled follow-ups.
+          {t('followups.subtitle', 'Mandatory 3M, 6M, 12M, 18M, and 24M longitudinal tracking surveys for state outcome verification.')}
         </p>
       </div>
 

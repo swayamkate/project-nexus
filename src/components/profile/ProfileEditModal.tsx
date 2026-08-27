@@ -84,6 +84,22 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <h4 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Personal Information</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
+                  <label className="text-xs text-slate-500 block mb-1">Unique Username (@handle)</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2 text-slate-400 text-xs font-bold">@</span>
+                    <input
+                      type="text"
+                      required
+                      value={formData.username || ''}
+                      onChange={e => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '') })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3.5 py-2 text-xs text-slate-800 focus:bg-white focus:border-blue-600 outline-none font-mono"
+                      placeholder="username"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">One username per person only</span>
+                </div>
+
+                <div>
                   <label className="text-xs text-slate-500 block mb-1">Full Legal Name</label>
                   <input
                     type="text"

@@ -19,7 +19,7 @@ import { useUser } from '@/context/UserContext';
 import { EmptyState } from '@/components/EmptyState';
 
 export const TrainingDetailsPage: React.FC = () => {
-  const { profile, enrollments, refreshData } = useUser();
+  const { profile, enrollments, refreshData, t } = useUser();
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
@@ -77,8 +77,8 @@ export const TrainingDetailsPage: React.FC = () => {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Training & Course Details</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Comprehensive syllabus breakdown, attendance history, and course catalog</p>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t('training.title', 'Training & Course Details')}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">{t('training.subtitle', 'Enrolled NSQF-aligned vocational skilling programs and modular syllabus.')}</p>
       </div>
 
       {/* Active Enrolled Program Card or Empty State */}
