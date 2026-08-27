@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabaseBrowser';
+import { createClient, createPublicClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
@@ -48,6 +48,7 @@ export default function LoginPage() {
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const supabase = createClient();
+  const publicSupabase = createPublicClient();
 
   // Resend countdown timer
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function LoginPage() {
       const cleanEmail = identifier.trim().toLowerCase();
 
       // 1. Check if username is already taken via secure RPC
-      const { data: isAvailable, error: checkErr } = await supabase.rpc('is_username_available', {
+      const { data: isAvailable, error: checkErr } = await publicSupabase.rpc('is_username_available', {
         p_username: cleanUsername
       });
 

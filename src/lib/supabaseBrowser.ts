@@ -12,6 +12,7 @@ const SUPABASE_ANON_KEY = rawKey.length > 0 ? rawKey : DEFAULT_ANON_KEY;
 const BROWSER_STORAGE_KEY = 'nexus_candidate_auth_token_v2';
 
 let browserClient: SupabaseClient | null = null;
+let publicClient: SupabaseClient | null = null;
 
 export function createClient(): SupabaseClient {
   if (typeof window === 'undefined') {
@@ -47,4 +48,29 @@ export function createClient(): SupabaseClient {
   }
 
   return browserClient;
+}
+
+/**
+ * Stateless anon client for public lookups. It deliberately has no session
+ * persistence, so a stale candidate bearer token cannot turn an anon RPC into
+ * a 401. Keep authenticated reads/writes on createClient().
+ */
+export function createPublicClient(): SupabaseClient {
+  if (typeof window === 'undefined') {
+    return createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+  }
+
+  if (!publicClient) {
+    publicClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storageKey: 'nexus_public_anon_client_v1',
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      }
+    });
+  }
+  return publicClient;
 }
