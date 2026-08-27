@@ -74,3 +74,20 @@ export function createPublicClient(): SupabaseClient {
   }
   return publicClient;
 }
+
+/** Call a public RPC without Supabase Auth's session/header machinery. */
+export async function callPublicRpc<T>(functionName: string, args: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+  if (!response.ok) {
+    throw new Error(`Public lookup failed (${response.status})`);
+  }
+  return response.json() as Promise<T>;
+}

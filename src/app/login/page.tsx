@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient, createPublicClient } from '@/lib/supabaseBrowser';
+import { createClient, callPublicRpc } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
@@ -48,7 +48,6 @@ export default function LoginPage() {
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const supabase = createClient();
-  const publicSupabase = createPublicClient();
 
   // Resend countdown timer
   useEffect(() => {
@@ -80,11 +79,16 @@ export default function LoginPage() {
 
       // If user entered a username (no @), look up their email via secure RPC
       if (!authEmail.includes('@')) {
-        const { data: lookedUpEmail, error: lookupErr } = await supabase.rpc('get_trainee_email_by_username', {
-          p_username: authEmail.toLowerCase()
-        });
+        let lookedUpEmail: string | null = null;
+        try {
+          lookedUpEmail = await callPublicRpc<string | null>('get_trainee_email_by_username', {
+            p_username: authEmail.toLowerCase()
+          });
+        } catch {
+          lookedUpEmail = null;
+        }
 
-        if (lookupErr || !lookedUpEmail) {
+        if (!lookedUpEmail) {
           throw new Error(`Username "${authEmail}" not found. Please enter your registered email address.`);
         }
         authEmail = lookedUpEmail;
@@ -139,15 +143,14 @@ export default function LoginPage() {
       const cleanEmail = identifier.trim().toLowerCase();
 
       // 1. Check if username is already taken via secure RPC
-      const { data: isAvailable, error: checkErr } = await publicSupabase.rpc('is_username_available', {
-        p_username: cleanUsername
-      });
-
-      // A failed availability check is an infrastructure/configuration error,
-      // not evidence that the requested username exists. Treating every RPC
-      // error as "taken" made all usernames look unavailable when the
-      // migration was missing or the API returned 401/404.
-      if (checkErr) {
+      let isAvailable: boolean;
+      try {
+        isAvailable = await callPublicRpc<boolean>('is_username_available', {
+          p_username: cleanUsername
+        });
+      } catch {
+        // A failed availability check is an infrastructure/configuration
+        // error, not evidence that the requested username exists.
         throw new Error('We could not check username availability right now. Please try again in a moment.');
       }
 
