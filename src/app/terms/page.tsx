@@ -4,8 +4,8 @@ import { ArrowLeft, ShieldCheck, Scale, FileText, CheckCircle2 } from 'lucide-re
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | MahaSkill Track',
-  description: 'Terms of service, statutory compliance, and verification rules for the Maharashtra Skilling Registry.',
+  title: 'Terms of Service | Nexus',
+  description: 'Terms of service, statutory compliance, and verification rules for the Nexus Platform.',
 };
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-semibold mb-8 text-sm transition">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to MahaSkill Track Portal</span>
+          <span>Back to Nexus</span>
         </Link>
         
         <div className="flex items-center space-x-3 mb-4">
@@ -23,22 +23,22 @@ export default function TermsPage() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Terms of Service & Usage Governance</h1>
-            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Maharashtra State Skill Development Society</p>
+            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Nexus Platform</p>
           </div>
         </div>
 
         <p className="text-xs text-slate-500 mb-8 border-b border-slate-800 pb-4">
-          Last Updated: August 27, 2026 • Statutory Terms for Vocational Tracking & Enterprise Grants
+          Last Updated: August 27, 2026 • Terms for Vocational Tracking & Career Records
         </p>
 
         <div className="space-y-8 text-xs sm:text-sm leading-relaxed">
           <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
             <h2 className="text-base font-bold text-white mb-2 flex items-center space-x-2">
               <FileText className="w-4 h-4 text-blue-400" />
-              <span>1. Acceptance & Statutory Framework</span>
+              <span>1. Acceptance & Usage Terms</span>
             </h2>
             <p className="text-slate-400 leading-relaxed">
-              By registering on or accessing MahaSkill Track, you agree to comply with these terms, the National Skills Qualification Framework (NSQF) guidelines, and the rules framed under the Maharashtra State Skill Development Mission. If you do not agree, you may not use the services.
+              By registering on or accessing Nexus, you agree to comply with these terms, standard vocational training guidelines, and verification rules. If you do not agree, you may not use the services.
             </p>
           </section>
 

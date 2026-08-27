@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://administrator.avishkark.in'),
-  title: "MahaSkill Track | Executive Admin & District Control Center",
-  description: "Enterprise Executive Control Center for Maharashtra Skilling Outcomes, Longitudinal Surveys & MSME Verification.",
-  applicationName: "Nexus Executive Admin",
+  title: "Nexus | Executive Admin Control Center",
+  description: "Enterprise Executive Control Center for Skilling Outcomes, Longitudinal Surveys & Verification.",
+  applicationName: "Nexus Admin",
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -27,10 +27,10 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   openGraph: {
-    title: "MahaSkill Track | Executive Admin & District Control Center",
-    description: "State-Level Command Center for Longitudinal Skilling Surveys, MSME Verification and Scheme Governance.",
+    title: "Nexus | Executive Admin Control Center",
+    description: "Command Center for Longitudinal Skilling Surveys, MSME Verification and Scheme Governance.",
     url: 'https://administrator.avishkark.in',
-    siteName: 'Nexus Admin Control Center',
+    siteName: 'Nexus Admin',
     images: [
       {
         url: '/icon.svg',
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "MahaSkill Track | Executive Admin Control Center",
-    description: "Maharashtra Skilling Longitudinal Survey & District Administration Portal.",
+    title: "Nexus | Executive Admin Control Center",
+    description: "Skilling Longitudinal Survey & Administration Portal.",
     images: ['/icon.svg'],
   },
 };

@@ -27,14 +27,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ forceOpen, onC
       setIsOpen(true);
       return;
     }
-    const hasSeenTour = localStorage.getItem('mahaskill_onboarding_completed');
+    const hasSeenTour = localStorage.getItem('nexus_onboarding_completed');
     if (!hasSeenTour) {
       setIsOpen(true);
     }
   }, [forceOpen]);
 
   const handleFinish = () => {
-    localStorage.setItem('mahaskill_onboarding_completed', 'true');
+    localStorage.setItem('nexus_onboarding_completed', 'true');
     setIsOpen(false);
     if (onClose) onClose();
   };
@@ -45,12 +45,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ forceOpen, onC
     {
       icon: Award,
       badge: 'Step 1 of 3: Verified Registry',
-      title: 'Your Verified National Skilling Dossier',
-      description: 'MahaSkill Track preserves your government-certified vocational credentials with cryptographic QR verification. Share your verified CV directly with employers.',
+      title: 'Your Verified Skilling Dossier',
+      description: 'Nexus preserves your certified vocational credentials with cryptographic QR verification. Share your verified CV directly with employers.',
       highlights: [
-        'NSQF-aligned course certificates with anti-counterfeit QR code',
-        'Zero-PII Privacy Enclave protecting your Aadhaar and contact details',
-        'Direct synchronization with Maharashtra State Skill Development Society'
+        'Course certificates with anti-counterfeit QR code verification',
+        'Privacy safeguards protecting your sensitive contact details',
+        'Direct synchronization with verified assessment repositories'
       ],
       tag: 'Certified & Anti-Counterfeit'
     },

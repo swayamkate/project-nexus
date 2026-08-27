@@ -310,14 +310,11 @@ export default function LoginPage() {
       <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between z-10 border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0">
         <Link href="/" className="flex items-center space-x-3 group">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition flex-shrink-0">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="4" r="2" fill="currentColor"/>
-              <path d="M12 7v14M7 11l5-4 5 4M5 18l7-4 7 4"/>
-            </svg>
+            <span className="text-white font-black text-xl tracking-tighter">N</span>
           </div>
           <div>
-            <span className="font-extrabold text-slate-900 text-lg tracking-tight block leading-tight">MahaSkill Track</span>
-            <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block">National Skilling Registry</span>
+            <span className="font-extrabold text-slate-900 text-lg tracking-tight block leading-tight">Nexus</span>
+            <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block">Skilling & Career Intelligence</span>
           </div>
         </Link>
 
@@ -338,7 +335,7 @@ export default function LoginPage() {
           <div className="text-center mb-6">
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold mb-3">
               <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Skill India Mission Portal</span>
+              <span>Nexus Candidate Portal</span>
             </div>
             
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -413,7 +410,7 @@ export default function LoginPage() {
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full bg-slate-50 text-slate-900 text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder:text-slate-400 font-medium"
-                    placeholder="priya.sharma@mahaskill.in or priya_sharma"
+                    placeholder="user@nexus.in or username"
                   />
                 </div>
               </div>
@@ -508,7 +505,7 @@ export default function LoginPage() {
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full bg-slate-50 text-slate-900 text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder:text-slate-400"
-                    placeholder="priya.sharma@mahaskill.in"
+                    placeholder="yourname@nexus.in"
                   />
                 </div>
               </div>
@@ -658,7 +655,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="text-center py-5 text-xs text-slate-400 z-10 border-t border-slate-200/60 bg-white/60">
-        © 2026 MahaSkill Track. Government of Maharashtra Skill Mission. Protected by Zero-PII Enclaves.
+        © {new Date().getFullYear()} Nexus. All rights reserved.
       </footer>
     </div>
   );

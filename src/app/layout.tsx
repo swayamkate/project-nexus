@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sih2026.avishkark.in'),
-  title: "MahaSkill Track | Maharashtra Skilling Outcomes & Longitudinal Tracking Registry",
-  description: "Official Privacy-Preserving, Longitudinal Skilling-Outcomes and Vocational Impact-Measurement System for the Government of Maharashtra.",
-  applicationName: "MahaSkill Track",
-  authors: [{ name: "Government of Maharashtra - MSSDS" }],
-  keywords: ["MahaSkill", "Maharashtra", "Skilling Outcomes", "Longitudinal Survey", "Vocational Training", "MSME Verification", "PMEGP", "Mudra"],
+  title: "Nexus | Skilling Outcomes & Longitudinal Tracking Platform",
+  description: "Official Longitudinal Skilling-Outcomes and Career Intelligence Platform.",
+  applicationName: "Nexus",
+  authors: [{ name: "Nexus" }],
+  keywords: ["Nexus", "Skilling Outcomes", "Longitudinal Survey", "Vocational Training", "Career Intelligence"],
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -30,16 +30,16 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   openGraph: {
-    title: "MahaSkill Track | Maharashtra Skilling Outcomes & Longitudinal Tracking Registry",
-    description: "Official Privacy-Preserving Longitudinal Vocational Impact & MSME Verification System for Government of Maharashtra.",
+    title: "Nexus | Skilling Outcomes & Longitudinal Tracking Platform",
+    description: "Official Longitudinal Vocational Impact & Outcomes Verification Platform.",
     url: 'https://sih2026.avishkark.in',
-    siteName: 'MahaSkill Track',
+    siteName: 'Nexus',
     images: [
       {
         url: '/icon.svg',
         width: 512,
         height: 512,
-        alt: 'MahaSkill Track Emblem',
+        alt: 'Nexus Emblem',
       },
     ],
     locale: 'en_IN',
@@ -47,14 +47,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "MahaSkill Track | Maharashtra Skilling Outcomes Registry",
-    description: "Official Longitudinal Skilling Impact & Verification Platform for the Government of Maharashtra.",
+    title: "Nexus | Skilling Outcomes Registry",
+    description: "Official Longitudinal Skilling Impact & Verification Platform.",
     images: ['/icon.svg'],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'MahaSkill Track',
+    title: 'Nexus',
   },
 };
 

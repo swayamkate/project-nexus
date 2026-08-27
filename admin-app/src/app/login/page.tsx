@@ -165,8 +165,7 @@ export default function AdminLoginPage() {
             </div>
 
             <button
-              type="button"
-              onClick={(e) => handleAuth(e)}
+              type="submit"
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer"
             >
@@ -178,8 +177,8 @@ export default function AdminLoginPage() {
         </div>
       </main>
 
-      <footer className="text-center py-5 text-[11px] text-slate-500 z-10">
-        Unauthorized access attempts are cryptographically audited.
+      <footer className="text-center py-5 text-[11px] text-slate-500 z-10 border-t border-slate-900">
+        &copy; {new Date().getFullYear()} Nexus. All rights reserved.
       </footer>
     </div>
   );

@@ -95,7 +95,7 @@ export const SettingsPage: React.FC = () => {
   const handleExportDossier = () => {
     const dossierData = {
       export_date: new Date().toISOString(),
-      system: 'MahaSkill Track National Framework',
+      system: 'Nexus Platform',
       privacy_enclave_hash: profile?.privacy_hash || 'SHA256-ENCLAVE-VERIFIED',
       trainee_profile: {
         trainee_id: profile?.trainee_id,
@@ -117,7 +117,7 @@ export const SettingsPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `mahaskill_dossier_${profile?.trainee_id || 'TRN'}.json`;
+    link.download = `nexus_dossier_${profile?.trainee_id || 'TRN'}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

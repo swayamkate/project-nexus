@@ -44,7 +44,7 @@ export default function AdminSettingsPage() {
     escalationDaysAfter: 14,
     enableWhatsApp: true,
     enableSMS: true,
-    smsTemplate: 'MahaSkill: Your vocational follow-up check-in is due. Submit at https://sih2026.avishkark.in/login'
+    smsTemplate: 'Nexus: Your vocational follow-up check-in is due. Submit at https://sih2026.avishkark.in/login'
   });
 
   // State 3: RBAC Matrix

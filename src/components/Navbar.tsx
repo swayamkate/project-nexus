@@ -211,7 +211,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in-50 space-y-1">
               <div className="p-3 border-b border-slate-100">
                 <p className="font-bold text-slate-900">{displayName}</p>
-                <p className="text-[11px] text-slate-500 font-mono">{user?.email || 'priya.sharma@mahaskill.in'}</p>
+                <p className="text-[11px] text-slate-500 font-mono">{user?.email || 'user@nexus.in'}</p>
               </div>
 
               <button

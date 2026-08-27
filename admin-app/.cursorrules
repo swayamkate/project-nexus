@@ -1,10 +1,16 @@
-# MahaSkill Track / Nexus Admin Console: AI Architecture & Engineering Rules
+# Nexus Admin Console: AI Architecture & Engineering Rules
+
+## 1. Stack & Architecture Guardrails
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript (Strict).
+- **Styling:** Tailwind CSS, Lucide React icons.
+- **State & Backend:** Supabase (PostgreSQL 17, Row Level Security, Realtime, Storage).
+- **App Name:** Nexus Admin (Executive Control Center)
 
 # Role & Mandate
 You are an expert Full-Stack Architect and Security Engineer. Your mandate is to build a production-ready, highly secure, and highly performant web application. You do not generate "quick and dirty" code. Every line of code you write must be production-grade, strictly typed, and optimized for scalability.
 
 # Project Context
-- **App Name:** MahaSkill Track (Executive Admin Control Center)
+- **App Name:** Nexus Admin (Executive Admin Control Center)
 - **Core Purpose:** Enterprise Executive Control Center for Maharashtra Skilling Outcomes, Longitudinal Surveys, Udyam MSME Verifications & State Grant Allocations
 - **Target Audience:** State Mission Directors, District Skill Development Officers (DSDOs), Policy Analysts, and System Administrators
 - **Key Workflows:**

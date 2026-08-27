@@ -118,8 +118,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ShieldAlert className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="text-white font-black tracking-tight text-sm block leading-none">MahaSkill Admin</span>
-              <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider block mt-1">State Executive Registry</span>
+              <span className="text-white font-black tracking-tight text-sm block leading-none">Nexus Admin</span>
+              <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider block mt-1">Executive Control Center</span>
             </div>
           </div>
           

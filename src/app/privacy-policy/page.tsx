@@ -4,8 +4,8 @@ import { ArrowLeft, ShieldCheck, Download, Trash2, Mail, Lock } from 'lucide-rea
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy & Data Deletion | MahaSkill Track',
-  description: 'Official Privacy Policy, Zero-PII Enclave Guarantees & Data Deletion Process for Maharashtra Skilling Registry.',
+  title: 'Privacy Policy & Data Rights | Nexus',
+  description: 'Official Privacy Policy and Data Rights for the Nexus Platform.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-semibold mb-8 text-sm transition">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to MahaSkill Track Portal</span>
+          <span>Back to Nexus</span>
         </Link>
         
         <div className="flex items-center space-x-3 mb-4">
@@ -23,22 +23,22 @@ export default function PrivacyPolicyPage() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Privacy Policy & Data Rights</h1>
-            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Government of Maharashtra • Zero-PII Enclave</p>
+            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Nexus Platform • Secure Data Architecture</p>
           </div>
         </div>
 
         <p className="text-xs text-slate-500 mb-8 border-b border-slate-800 pb-4">
-          Last Updated: August 27, 2026 | Effective for all 36 Maharashtra Districts
+          Last Updated: August 27, 2026
         </p>
 
         <div className="space-y-8 text-xs sm:text-sm leading-relaxed">
           <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
             <h2 className="text-base font-bold text-white mb-2 flex items-center space-x-2">
               <Lock className="w-4 h-4 text-blue-400" />
-              <span>1. Zero-PII Architecture & Cryptographic Tokenization</span>
+              <span>1. Security Architecture & Cryptographic Tokenization</span>
             </h2>
             <p className="text-slate-400 leading-relaxed">
-              MahaSkill Track operates under a strict **Zero-PII (Personally Identifiable Information) Enclave**. Sensitive data attributes—such as Aadhaar identification numbers and primary contact identifiers—are transformed using one-way SHA-256 cryptographic hashing prior to storage. Government executive dashboards and district evaluators only interact with masked representations and aggregated k-anonymity statistical views (\(k \ge 5\)).
+              Nexus operates under strict privacy safeguards. Sensitive user attributes and contact identifiers are cryptographically hashed and isolated. Platform dashboards and district evaluators only interact with masked representations and verified records.
             </p>
           </section>
 
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
                   <span>Instant Dossier Download</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Log into your Trainee Dashboard, navigate to <strong>Settings & Security</strong>, and click <strong>"Export Zero-PII Data Dossier (JSON)"</strong> to download a full portable copy of all your records.
+                  Log into your Trainee Dashboard, navigate to <strong>Settings & Security</strong>, and click <strong>"Export Data Dossier (JSON)"</strong> to download a full portable copy of all your records.
                 </p>
               </div>
 
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
                   <span>Right to Be Forgotten (Purge)</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  To request complete deletion of your profile, email <strong className="text-slate-200">privacy@mahaskill.gov.in</strong> or use the in-app support widget with subject <em>"Data Purge Request"</em>. Requests are executed within 48 hours.
+                  To request complete deletion of your profile, email <strong className="text-slate-200">privacy@nexus.in</strong> or use the in-app support widget with subject <em>"Data Purge Request"</em>. Requests are executed within 48 hours.
                 </p>
               </div>
             </div>
@@ -100,8 +100,8 @@ export default function PrivacyPolicyPage() {
               For any privacy inquiries or grievance redressals:
             </p>
             <div className="mt-2 text-xs text-slate-300 font-mono bg-slate-900 p-3 rounded-xl border border-slate-800">
-              Grievance Officer: Office of the Chief Technology Officer, MSSDS<br />
-              Email: grievance@mahaskill.gov.in | Phone: 1800-120-8040 (Toll-Free)
+              Privacy Team: Office of Data Governance, Nexus<br />
+              Email: privacy@nexus.in | Helpdesk: support@nexus.in
             </div>
           </section>
         </div>
