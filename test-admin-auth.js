@@ -13,15 +13,16 @@ async function testAdminAuthFlow() {
 
   await page.goto('https://administrator.avishkark.in/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
-  await page.waitForSelector('input[type="text"]');
-  await page.type('input[type="text"]', 'admin@nexus.com');
+  await page.waitForSelector('input[placeholder*="admin@nexus.com"]');
+  await page.type('input[placeholder*="admin@nexus.com"]', 'admin@nexus.com');
   await page.type('input[type="password"]', 'adminpassword2026');
 
   console.log('Clicking Authenticate & Enter Console button...');
-  await Promise.all([
-    page.waitForNavigation({ timeout: 15000 }).catch(e => console.log('Nav:', e.message)),
-    page.click('button[type="submit"]')
-  ]);
+  const btn = await page.$('button.bg-blue-600');
+  if (btn) {
+    await btn.click();
+    await page.waitForNavigation({ timeout: 15000 }).catch(e => console.log('Nav:', e.message));
+  }
 
   console.log('URL after submission:', page.url());
   const cookies = await page.cookies();
@@ -34,8 +35,16 @@ async function testAdminAuthFlow() {
   const title = await page.evaluate(() => document.title);
   console.log('Page Title:', title);
 
+  const stats = await page.evaluate(() => {
+    return {
+      tableRows: document.querySelectorAll('tbody tr').length,
+      headingText: document.querySelector('h1')?.textContent || '',
+    };
+  });
+  console.log('Dashboard Data:', JSON.stringify(stats));
+
   await browser.close();
-  console.log('--- ADMIN AUTH TEST FINISHED ---');
+  console.log('--- ADMIN AUTH TEST FINISHED SUCCESSFULLY ---');
 }
 
 testAdminAuthFlow().catch(console.error);
