@@ -199,6 +199,86 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Multi-Identifier & Migration Enclave (SIH PS-135) */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Permanent Tracking & Multi-Identifier Enclave (Prevents Phone Loss)
+                </h5>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">Alternate WhatsApp Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.alt_phone || ''}
+                      onChange={e => setFormData({ ...formData, alt_phone: e.target.value })}
+                      placeholder="+91 9820011223"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:bg-white focus:border-blue-600 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">Parent / Guardian Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.guardian_phone || ''}
+                      onChange={e => setFormData({ ...formData, guardian_phone: e.target.value })}
+                      placeholder="+91 9422033445"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:bg-white focus:border-blue-600 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">National APAAR / ABC ID</label>
+                    <input
+                      type="text"
+                      value={formData.apaar_id || ''}
+                      onChange={e => setFormData({ ...formData, apaar_id: e.target.value })}
+                      placeholder="APAAR-2026-9842-1049"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-mono focus:bg-white focus:border-blue-600 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">NAPS Apprenticeship ID</label>
+                    <input
+                      type="text"
+                      value={formData.naps_apprentice_id || ''}
+                      onChange={e => setFormData({ ...formData, naps_apprentice_id: e.target.value })}
+                      placeholder="NAPS-MAHA-2026-00482"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-mono focus:bg-white focus:border-blue-600 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Consent Management Ledger (DPDP Act 2023) */}
+              <div className="pt-2 border-t border-slate-100 space-y-2 bg-blue-50/60 p-3.5 rounded-2xl border border-blue-100">
+                <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider block">
+                  Consent Management Ledger (DPDP Act 2023)
+                </span>
+                
+                <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.consent_longitudinal_tracking ?? true}
+                    onChange={e => setFormData({ ...formData, consent_longitudinal_tracking: e.target.checked })}
+                    className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Consent to longitudinal milestone tracking surveys (3M – 48M)</span>
+                </label>
+
+                <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.consent_data_sharing ?? true}
+                    onChange={e => setFormData({ ...formData, consent_data_sharing: e.target.checked })}
+                    className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Consent to share masked vocational profile with verified Rozgar Melawa recruiters</span>
+                </label>
+              </div>
             </div>
           )}
 

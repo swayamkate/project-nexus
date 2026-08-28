@@ -338,6 +338,40 @@ export const EmploymentStatusModal: React.FC<EmploymentStatusModalProps> = ({ is
                 </div>
               </div>
 
+              {/* Training Relevance & Contract Stability (SIH PS-135 Metric) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Training Relevance to Job Role *
+                  </label>
+                  <select
+                    value={formData.training_relevance || 'direct_match'}
+                    onChange={(e) => handleChange('training_relevance' as any, e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none font-semibold"
+                  >
+                    <option value="direct_match">🎯 Direct Match (Employed in trained vocational trade)</option>
+                    <option value="adjacent_trade">🔄 Adjacent Sector (Utilizing core technical skills)</option>
+                    <option value="unrelated_sector">⚠️ Unrelated Domain (Outside vocational trade)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Employment Contract Stability *
+                  </label>
+                  <select
+                    value={formData.contract_type || 'permanent'}
+                    onChange={(e) => handleChange('contract_type' as any, e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none font-semibold"
+                  >
+                    <option value="permanent">Permanent / Direct Company Payroll</option>
+                    <option value="fixed_term_contract">Fixed-Term Contract (1 to 3 Years)</option>
+                    <option value="apprenticeship">NAPS / NATS Official Apprenticeship</option>
+                    <option value="informal_daily_wage">Informal / Daily Wage Basis</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Appreciation, Wage Increments & Performance Milestones

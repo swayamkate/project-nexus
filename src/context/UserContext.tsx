@@ -15,6 +15,16 @@ export interface TraineeProfile {
   full_name: string;
   email: string;
   phone?: string;
+  alt_phone?: string;
+  guardian_phone?: string;
+  apaar_id?: string;
+  digilocker_id?: string;
+  naps_apprentice_id?: string;
+  consent_data_sharing?: boolean;
+  consent_longitudinal_tracking?: boolean;
+  consent_epfo_verification?: boolean;
+  migration_status?: string;
+  current_residence_district?: string;
   dob?: string;
   gender?: string;
   aadhaar_masked?: string;
@@ -44,6 +54,10 @@ export interface TraineeEmployment {
   id?: string;
   trainee_id?: string;
   status: string;
+  training_relevance?: string;
+  contract_type?: string;
+  employer_gstin?: string;
+  is_employer_verified?: boolean;
   company_name?: string;
   designation?: string;
   joining_date?: string;
