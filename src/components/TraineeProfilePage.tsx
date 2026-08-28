@@ -147,7 +147,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
   };
 
   const sampleAvatars = [
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya&backgroundColor=b6e3f4',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Avishkar&backgroundColor=b6e3f4',
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul&backgroundColor=c0aede',
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Snehal&backgroundColor=d1d4f9',
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Amit&backgroundColor=ffd5dc'

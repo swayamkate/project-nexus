@@ -172,7 +172,7 @@ export default function ContactPage() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     className="w-full bg-slate-900/80 text-white text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="e.g. Priya Sharma"
+                    placeholder="e.g. Avishkar Kedar"
                   />
                 </div>
 

@@ -12,8 +12,8 @@ test('TraineeProfileSchema validates correct payload', () => {
   });
 
   const validData = {
-    full_name: 'Priya Sharma',
-    email: 'priya.sharma@mahaskill.in',
+    full_name: 'Avishkar Kedar',
+    email: 'avishkar.kedar@mahaskill.in',
     district: 'Pune',
     profile_completion_pct: 85
   };

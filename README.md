@@ -27,9 +27,9 @@ All administrative credentials are authenticated directly against `auth.users` a
 | **District Administrator** | `admin@nexus.gov.in` | `district_admin` | `AdminPassword@2026!` | **Delegated Regional Access** (Candidate verification, assessments, course tracking, Rozgar Melawas) |
 | **SSDM Evaluator Account** | `evaluator@district.gov.in` | `pune_evaluator` | `Evaluator@2026!` | **Verification Queue Only** (Document audit, Aadhaar checks, trade stamps) |
 
-> **Candidate Sample Credentials:**
-> - `priya.sharma@mahaskill.in` / `priya123456` (Username: `@priya_sharma`)
-> - `rahul.verma@mahaskill.in` / `rahul123456` (Username: `@rahul_verma`)
+> **Official Candidate Credentials:**
+> - `avishkar.kedar@mahaskill.in` / `Avishkar@443322` (Username: `@avishkar_kedar` or `avishkar`)
+> - `avishkarkedar@gmail.com` / `Avishkar@6198` (Username: `admin` / `@avishkarkedar`)
 
 ---
 

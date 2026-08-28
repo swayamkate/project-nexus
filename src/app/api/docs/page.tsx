@@ -42,7 +42,7 @@ export default function ApiDocumentationPage() {
           method: 'GET',
           path: '/verify/[certId]',
           desc: 'Public verification endpoint for QR code scan validation',
-          response: `{\n  "certificate_id": "CERT-2026-849201",\n  "status": "VALID & AUTHENTIC",\n  "nsqf_level": 4,\n  "candidate_name": "Priya Sharma",\n  "issuing_authority": "Maharashtra State Skill Development Society"\n}`
+          response: `{\n  "certificate_id": "CERT-2026-849201",\n  "status": "VALID & AUTHENTIC",\n  "nsqf_level": 4,\n  "candidate_name": "Avishkar Kedar",\n  "issuing_authority": "Maharashtra State Skill Development Society"\n}`
         }
       ]
     },
