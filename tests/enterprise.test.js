@@ -100,3 +100,55 @@ test('calculateWGM computes correct multiplier and wage lift status', () => {
   assert.strictEqual(res.pctIncrease, 175);
   assert.strictEqual(res.status, 'Transformational');
 });
+
+// 6. APAAR / ABC Validator
+function validateApaar(apaar) {
+  if (!apaar) return { valid: false, error: 'APAAR ID is required.' };
+  const clean = apaar.trim().toUpperCase();
+  const regex = /^(APAAR-\d{4}-\d{4}-\d{4}|\d{12})$/;
+  if (!regex.test(clean)) {
+    return { valid: false, error: 'Invalid format' };
+  }
+  return { valid: true };
+}
+
+// 7. Phone Validator
+function validatePhone(phone) {
+  if (!phone) return { valid: false, error: 'Phone number is required.' };
+  const clean = phone.replace(/[^0-9]/g, '');
+  if (clean.length === 10) {
+    return { valid: true, formatted: `+91 ${clean}` };
+  } else if (clean.length === 12 && clean.startsWith('91')) {
+    return { valid: true, formatted: `+91 ${clean.substring(2)}` };
+  }
+  return { valid: false, error: 'Invalid phone' };
+}
+
+// 8. Sanitizer
+function sanitizeInput(input) {
+  if (!input) return '';
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+test('validateApaar accepts valid 12-digit and formatted APAAR IDs', () => {
+  assert.strictEqual(validateApaar('APAAR-2026-9842-1049').valid, true);
+  assert.strictEqual(validateApaar('123456789012').valid, true);
+  assert.strictEqual(validateApaar('invalid-apaar').valid, false);
+});
+
+test('validatePhone accepts valid 10-digit Indian mobile numbers', () => {
+  assert.strictEqual(validatePhone('9820011223').valid, true);
+  assert.strictEqual(validatePhone('+91 9820011223').valid, true);
+  assert.strictEqual(validatePhone('12345').valid, false);
+});
+
+test('sanitizeInput converts XSS payload characters to HTML entities', () => {
+  const dirty = '<script>alert("XSS")</script>';
+  const clean = sanitizeInput(dirty);
+  assert.strictEqual(clean, '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;');
+});

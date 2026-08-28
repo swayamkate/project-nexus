@@ -74,13 +74,17 @@ export async function POST(request: NextRequest) {
     // 3. Verify user has administrative privileges in database
     const { data: roleRecord, error: roleError } = await dbClient
       .from('user_roles')
-      .select('role, username, email')
+      .select('role, username, email, is_active')
       .or(`user_id.eq.${authData.user.id},email.eq.${loginEmail}`)
       .in('role', ['superadmin', 'admin', 'evaluator'])
       .maybeSingle();
 
     if (roleError || !roleRecord) {
       return NextResponse.json({ error: 'Access Denied: Account lacks administrative privileges.' }, { status: 403 });
+    }
+
+    if (roleRecord.is_active === false) {
+      return NextResponse.json({ error: 'Account Suspended: This administrative account has been deactivated by the State SuperAdmin.' }, { status: 403 });
     }
 
     // 4. Log successful login

@@ -4,7 +4,6 @@
  */
 
 // 1. Udyam MSME Registration Number Validator
-// Format: UDYAM-MH-12-0034567 (State 2 letters, District 2 digits, 7-digit sequential)
 export function validateUdyam(udyam: string): { valid: boolean; formatted?: string; error?: string } {
   if (!udyam) return { valid: false, error: 'Udyam number is required.' };
   const clean = udyam.trim().toUpperCase();
@@ -19,7 +18,6 @@ export function validateUdyam(udyam: string): { valid: boolean; formatted?: stri
 }
 
 // 2. GSTIN Validator with Luhn MOD-36 Checksum
-// Format: 27AAAAA0000A1Z5 (2 digits state + 10 chars PAN + 1 entity + 'Z' + 1 checksum)
 export function validateGSTIN(gstin: string): { valid: boolean; stateCode?: string; pan?: string; error?: string } {
   if (!gstin) return { valid: false, error: 'GSTIN is required.' };
   const clean = gstin.trim().toUpperCase();
@@ -36,7 +34,6 @@ export function validateGSTIN(gstin: string): { valid: boolean; stateCode?: stri
 }
 
 // 3. Permanent Account Number (PAN) Validator
-// Format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)
 export function validatePAN(pan: string): { valid: boolean; error?: string } {
   if (!pan) return { valid: false, error: 'PAN is required.' };
   const clean = pan.trim().toUpperCase();
@@ -48,7 +45,6 @@ export function validatePAN(pan: string): { valid: boolean; error?: string } {
 }
 
 // 4. Indian Financial System Code (IFSC) Validator
-// Format: 4 letters + '0' + 6 alphanumeric (e.g., SBIN0001234)
 export function validateIFSC(ifsc: string): { valid: boolean; bankCode?: string; error?: string } {
   if (!ifsc) return { valid: false, error: 'IFSC is required.' };
   const clean = ifsc.trim().toUpperCase();
@@ -82,43 +78,7 @@ export function calculateWGM(baselineWage: number, currentWage: number): {
   return { multiplier, pctIncrease, status };
 }
 
-// 6. Micro-Credit & Loan Eligibility Calculator (Mudra / PMEGP)
-export function calculateSchemeEligibility(params: {
-  trade: string;
-  monthlyRevenue: number;
-  hasUdyam: boolean;
-  monthsActive: number;
-}): {
-  mudraCategory: 'Shishu (Up to ₹50K)' | 'Kishore (₹50K - ₹5L)' | 'Tarun (₹5L - ₹10L)';
-  estimatedMaxSanction: number;
-  subsidyPct: number;
-  estimatedSubsidyAmount: number;
-} {
-  const rev = params.monthlyRevenue || 0;
-  let category: 'Shishu (Up to ₹50K)' | 'Kishore (₹50K - ₹5L)' | 'Tarun (₹5L - ₹10L)' = 'Shishu (Up to ₹50K)';
-  let maxSanction = 50000;
-  let subsidyPct = 25; // 25% for general, up to 35% for women/SC/ST under PMEGP
-
-  if (rev > 40000 || params.monthsActive > 12) {
-    category = 'Tarun (₹5L - ₹10L)';
-    maxSanction = 750000;
-    subsidyPct = 35;
-  } else if (rev > 15000 || params.monthsActive > 6) {
-    category = 'Kishore (₹50K - ₹5L)';
-    maxSanction = 300000;
-    subsidyPct = 35;
-  }
-
-  const estimatedSubsidyAmount = Math.round((maxSanction * subsidyPct) / 100);
-  return {
-    mudraCategory: category,
-    estimatedMaxSanction: maxSanction,
-    subsidyPct,
-    estimatedSubsidyAmount
-  };
-}
-
-// 7. National APAAR / ABC ID Validator
+// 6. National APAAR / ABC ID Validator
 export function validateApaar(apaar: string): { valid: boolean; error?: string } {
   if (!apaar) return { valid: false, error: 'APAAR ID is required.' };
   const clean = apaar.trim().toUpperCase();
@@ -129,7 +89,7 @@ export function validateApaar(apaar: string): { valid: boolean; error?: string }
   return { valid: true };
 }
 
-// 8. Indian Mobile Phone Validator
+// 7. Indian Mobile Phone Validator
 export function validatePhone(phone: string): { valid: boolean; formatted?: string; error?: string } {
   if (!phone) return { valid: false, error: 'Phone number is required.' };
   const clean = phone.replace(/[^0-9]/g, '');
@@ -141,7 +101,7 @@ export function validatePhone(phone: string): { valid: boolean; formatted?: stri
   return { valid: false, error: 'Please enter a valid 10-digit Indian mobile number.' };
 }
 
-// 9. Safe String / XSS Sanitizer
+// 8. Safe String / XSS Sanitizer
 export function sanitizeInput(input: string): string {
   if (!input) return '';
   return input
@@ -152,7 +112,7 @@ export function sanitizeInput(input: string): string {
     .replace(/'/g, '&#x27;');
 }
 
-// 10. Indian Rupee Currency Formatter
+// 9. Indian Rupee Currency Formatter
 export function formatIndianRupees(amount: number | null | undefined): string {
   if (amount === null || amount === undefined || isNaN(amount)) return '₹0';
   return `₹${Math.round(amount).toLocaleString('en-IN')}`;

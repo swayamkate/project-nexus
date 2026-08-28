@@ -19,6 +19,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { validatePhone, validateApaar } from '@/lib/validators';
 import { ProfileHeroHeader } from './profile/ProfileHeroHeader';
 import { ProfileEditModal } from './profile/ProfileEditModal';
 import { ProfileSkillsModal } from './profile/ProfileSkillsModal';
@@ -86,8 +87,37 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
 
+    if (formData.alt_phone && formData.phone && formData.alt_phone.trim() === formData.phone.trim()) {
+      alert('Alternate phone number cannot be identical to your primary phone number.');
+      return;
+    }
+
+    if (formData.alt_phone?.trim()) {
+      const pCheck = validatePhone(formData.alt_phone.trim());
+      if (!pCheck.valid) {
+        alert(pCheck.error || 'Invalid alternate phone format.');
+        return;
+      }
+    }
+
+    if (formData.guardian_phone?.trim()) {
+      const gCheck = validatePhone(formData.guardian_phone.trim());
+      if (!gCheck.valid) {
+        alert(gCheck.error || 'Invalid parent/guardian phone format.');
+        return;
+      }
+    }
+
+    if (formData.apaar_id?.trim()) {
+      const aCheck = validateApaar(formData.apaar_id.trim());
+      if (!aCheck.valid) {
+        alert(aCheck.error || 'Invalid APAAR ID format.');
+        return;
+      }
+    }
+
+    setSaving(true);
     const success = await updateProfile(formData);
     setSaving(false);
     if (success) {

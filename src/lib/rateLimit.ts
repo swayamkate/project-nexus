@@ -5,16 +5,17 @@ interface RateLimitRecord {
 
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
-// Clean expired entries periodically (every 5 minutes)
+// Clean expired entries periodically (every 60 seconds)
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const timer = setInterval(() => {
     const now = Date.now();
     for (const [key, record] of rateLimitStore.entries()) {
       if (now > record.resetAt) {
         rateLimitStore.delete(key);
       }
     }
-  }, 5 * 60 * 1000);
+  }, 60 * 1000);
+  if (timer.unref) timer.unref();
 }
 
 export interface RateLimitOptions {
@@ -27,6 +28,26 @@ export interface RateLimitResult {
   limit: number;
   remaining: number;
   reset: number;
+}
+
+/**
+ * Extract real client IP behind Cloudflare and reverse proxies
+ */
+export function getClientIp(request: Request): string {
+  const headers = request.headers;
+  const cfIp = headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp.trim();
+
+  const forwarded = headers.get('x-forwarded-for');
+  if (forwarded) {
+    const ips = forwarded.split(',');
+    return ips[0].trim();
+  }
+
+  const realIp = headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  return '127.0.0.1';
 }
 
 /**
