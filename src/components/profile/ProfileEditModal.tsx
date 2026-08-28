@@ -50,29 +50,65 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
           
           {/* Avatar Selector Modal */}
           {activeModal === 'avatar' && (
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-600 block">Choose an Avatar</label>
-              <div className="grid grid-cols-4 gap-3">
-                {sampleAvatars.map((url, idx) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt="avatar option"
-                    onClick={() => setFormData({ ...formData, avatar_url: url })}
-                    className={`w-16 h-16 rounded-full object-cover cursor-pointer border-2 transition ${
-                      formData.avatar_url === url ? 'border-blue-600 ring-2 ring-blue-400' : 'border-slate-200 opacity-70 hover:opacity-100'
-                    }`}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-sm bg-white flex items-center justify-center shrink-0">
+                  {formData.avatar_url ? (
+                    <img src={formData.avatar_url} alt="Current profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-blue-600">{(formData.full_name || 'T').charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800 block">Upload Photo from Device</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          alert('Photo size exceeds 2MB limit. Please choose a smaller image.');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData({ ...formData, avatar_url: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="text-xs text-slate-500 file:mr-2.5 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                   />
-                ))}
+                  <p className="text-[10px] text-slate-400">JPEG, PNG, WebP up to 2MB</p>
+                </div>
               </div>
+
               <div>
-                <label className="text-xs text-slate-500 block mt-3 mb-1">Or paste custom image URL</label>
+                <label className="text-xs font-bold text-slate-600 block mb-2">Or Choose Preset State Avatar</label>
+                <div className="grid grid-cols-4 gap-3">
+                  {sampleAvatars.map((url, idx) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt="avatar option"
+                      onClick={() => setFormData({ ...formData, avatar_url: url })}
+                      className={`w-16 h-16 rounded-full object-cover cursor-pointer border-2 transition ${
+                        formData.avatar_url === url ? 'border-blue-600 ring-2 ring-blue-400 scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Or paste direct image URL</label>
                 <input
                   type="url"
                   value={formData.avatar_url || ''}
                   onChange={e => setFormData({ ...formData, avatar_url: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-800"
-                  placeholder="https://..."
+                  placeholder="https://images.unsplash.com/photo-..."
                 />
               </div>
             </div>

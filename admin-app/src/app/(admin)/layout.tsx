@@ -193,14 +193,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Bottom Profile Capsule & Logout */}
         <div className="p-4 border-t border-slate-800/80 space-y-3">
           <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              adminUser?.role === 'superadmin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-blue-600 text-white'
+            }`}>
               {adminUser?.email?.charAt(0).toUpperCase() || 'A'}
             </div>
             <div className="overflow-hidden flex-1">
-              <p className="text-xs font-bold text-white truncate">{adminUser?.email || 'admin@nexus.com'}</p>
-              <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
-                {adminUser?.role || 'Superadmin'}
-              </span>
+              <p className="text-xs font-bold text-white truncate">{adminUser?.email || 'admin@nexus.gov.in'}</p>
+              <div className="flex items-center space-x-1 mt-0.5">
+                {adminUser?.role === 'superadmin' ? (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider">
+                    👑 STATE SUPERADMIN
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">
+                    🛡️ {adminUser?.role || 'Admin'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
