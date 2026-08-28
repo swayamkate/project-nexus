@@ -29,7 +29,9 @@ import {
   Briefcase,
   Award,
   BarChart3,
-  Building2
+  Building2,
+  MessageSquare,
+  CreditCard
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PlatformSettingsSync } from '@/components/PlatformSettingsSync';
@@ -131,11 +133,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Dashboard Overview', href: '/', icon: Activity },
     { name: 'Trainees & Governance', href: '/users', icon: Users },
     { name: 'AI Workforce Suite', href: '/workforce', icon: Sparkles },
+    { name: 'SMS & WhatsApp Hub', href: '/broadcasts', icon: MessageSquare },
     { name: 'Rozgar Melawas & Fairs', href: '/melawas', icon: Building2 },
+    { name: 'ITI & Centers Auditor', href: '/centers', icon: Landmark },
+    { name: 'DBT & Stipends Ledger', href: '/dbt', icon: CreditCard },
+    { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
     { name: 'Accredited Courses (NPTEL)', href: '/courses', icon: BookOpen },
     { name: 'Skill Assessments & Badges', href: '/assessments', icon: Award },
     { name: 'Interview Questions Desk', href: '/interviews', icon: Briefcase },
-    { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
     { name: 'Training Programs', href: '/programs', icon: GraduationCap },
     { name: 'Follow-ups & Milestones', href: '/followups', icon: CalendarClock },
     { name: 'Government Schemes', href: '/schemes', icon: Landmark },
