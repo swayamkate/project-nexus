@@ -16,19 +16,34 @@ import {
   AlertTriangle,
   X,
   Building2,
-  Send
+  Send,
+  Users,
+  ShieldAlert,
+  Fingerprint,
+  QrCode,
+  ScanLine
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { getAdminActorEmail, logAdminAction } from '@/lib/auditLogger';
 import { formatHumanError } from '@/lib/errorUtils';
 
 export default function AdminVerificationsPage() {
+  const [activeMainTab, setActiveMainTab] = useState<'queue' | 'duplicates' | 'fraud'>('queue');
   const [verifications, setVerifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [search, setSearch] = useState('');
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
   
+  // Security Radar State
+  const [securityData, setSecurityData] = useState<any>({
+    duplicateFlags: [],
+    fraudScans: [],
+    profileAuditLogs: [],
+    totalCandidatesScanned: 0
+  });
+  const [loadingSecurity, setLoadingSecurity] = useState(false);
+
   // Reject Modal
   const [rejectItem, setRejectItem] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -39,17 +54,38 @@ export default function AdminVerificationsPage() {
 
   const fetchVerifications = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('verifications')
-      .select('*, trainees(full_name, email, district, trainee_id)')
-      .order('created_at', { ascending: false });
+    try {
+      const { data } = await supabase
+        .from('verifications')
+        .select('*, trainees(full_name, email, district, trainee_id)')
+        .order('created_at', { ascending: false });
 
-    if (data) setVerifications(data);
-    setLoading(false);
+      if (data) setVerifications(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSecurityAudit = async () => {
+    setLoadingSecurity(true);
+    try {
+      const res = await fetch('/api/admin/security-checks');
+      const json = await res.json();
+      if (json.success) {
+        setSecurityData(json);
+      }
+    } catch (err) {
+      console.error('Failed to load security audit:', err);
+    } finally {
+      setLoadingSecurity(false);
+    }
   };
 
   useEffect(() => {
     fetchVerifications();
+    fetchSecurityAudit();
   }, []);
 
   const handleApprove = async (doc: any) => {
@@ -161,7 +197,7 @@ export default function AdminVerificationsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       
       {/* Toast */}
       {toastMsg && (
@@ -174,8 +210,11 @@ export default function AdminVerificationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Document Verification Queue</h1>
-          <p className="text-xs text-slate-400 mt-1">Audit Udyam MSME registrations, GST proofs, salary slips, and educational certificates.</p>
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center space-x-2.5">
+            <ShieldCheck className="w-7 h-7 text-blue-400" />
+            <span>Document Verification & Fraud Radar</span>
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">Audit Udyam MSME proofs, salary slips, detect duplicate identity collusion, and inspect certificate tampering.</p>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -183,249 +222,271 @@ export default function AdminVerificationsPage() {
         </div>
       </div>
 
-      {/* Search & Status Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by trainee name, email, or document title..."
-            className="w-full bg-[#0a1020] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
-          />
-        </div>
+      {/* Top Tabs */}
+      <div className="flex space-x-2 border-b border-slate-800 pb-3">
+        <button
+          onClick={() => setActiveMainTab('queue')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${
+            activeMainTab === 'queue' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Verification Queue ({verifications.length})</span>
+        </button>
 
-        <div className="flex gap-1 bg-[#0a1020] border border-slate-800 p-1 rounded-xl text-xs font-bold">
-          {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-lg transition capitalize cursor-pointer ${
-                filterStatus === s ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => setActiveMainTab('duplicates')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${
+            activeMainTab === 'duplicates' ? 'bg-rose-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+          }`}
+        >
+          <Fingerprint className="w-4 h-4" />
+          <span>Duplicate Identity Radar (35)</span>
+          {securityData.duplicateFlags.length > 0 && (
+            <span className="bg-black/40 text-white px-1.5 py-0.5 rounded text-[10px]">
+              {securityData.duplicateFlags.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('fraud')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${
+            activeMainTab === 'fraud' ? 'bg-amber-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+          }`}
+        >
+          <ScanLine className="w-4 h-4" />
+          <span>Document Tamper Scanner (38)</span>
+        </button>
       </div>
 
-      {/* Queue Table */}
-      <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-          <h3 className="font-bold text-white text-sm">Submitted Document Proofs</h3>
-          <span className="text-[11px] text-slate-400">Direct PostgreSQL Verification Hook</span>
-        </div>
-
-        {loading ? (
-          <div className="py-16 flex items-center justify-center text-slate-400 text-xs">
-            <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading verifications...
-          </div>
-        ) : filteredDocs.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              icon={FileText}
-              title="Verification Queue All Clear"
-              description={`No document verification requests currently match the status "${filterStatus}". All trainee salary slips, trade licenses, and Udyam certificates are fully up to date.`}
-              actionLabel="View All Submissions"
-              onAction={() => { setFilterStatus('all'); setSearch(''); }}
-              badge="Queue Clear"
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
-                  <th className="py-3 px-4">Trainee Candidate</th>
-                  <th className="py-3 px-4">Document Title</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Submission Date</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Audit Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50 text-slate-300">
-                {filteredDocs.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-slate-900/40 transition">
-                    <td className="py-3.5 px-4">
-                      <span className="font-bold text-white block">{doc.trainees?.full_name || 'Trainee'}</span>
-                      <span className="text-[11px] text-slate-400">{doc.trainees?.email}</span>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-slate-200">
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                        <span>{doc.document_name}</span>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">
-                        {doc.document_type}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
-                      {new Date(doc.created_at).toLocaleDateString()}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        doc.status === 'approved' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : doc.status === 'rejected'
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {doc.status}
-                      </span>
-                      {doc.admin_notes && (
-                        <p className="text-[10px] text-rose-400 mt-0.5 truncate max-w-[140px]">{doc.admin_notes}</p>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => setPreviewDoc(doc)}
-                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition"
-                          title="Preview Document"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-
-                        {doc.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(doc)}
-                              disabled={processingId === doc.id}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition flex items-center space-x-1 disabled:opacity-50"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Approve</span>
-                            </button>
-
-                            <button
-                              onClick={() => setRejectItem(doc)}
-                              disabled={processingId === doc.id}
-                              className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-lg font-bold transition flex items-center space-x-1 disabled:opacity-50"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span>Reject</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Document Preview Modal */}
-      {previewDoc && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-bold text-white text-sm">{previewDoc.document_name}</h3>
-              <button onClick={() => setPreviewDoc(null)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+      {/* TAB 1: DOCUMENT VERIFICATION QUEUE */}
+      {activeMainTab === 'queue' && (
+        <div className="space-y-4 animate-in fade-in">
+          {/* Search & Status Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by trainee name, email, or document title..."
+                className="w-full bg-[#0a1020] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              />
             </div>
 
-            <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800/80 space-y-3 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Trainee Name:</span>
-                <span className="font-bold text-white">{previewDoc.trainees?.full_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Registered Email:</span>
-                <span className="font-mono text-slate-300">{previewDoc.trainees?.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Document Type:</span>
-                <span className="font-bold text-blue-400 uppercase">{previewDoc.document_type}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Audit Status:</span>
-                <span className="font-bold text-emerald-400 uppercase">{previewDoc.status}</span>
-              </div>
-              {previewDoc.admin_notes && (
-                <div>
-                  <span className="text-slate-400 block mb-1">Rejection Remarks:</span>
-                  <p className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl">{previewDoc.admin_notes}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setPreviewDoc(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold"
-              >
-                Close
-              </button>
-              {previewDoc.status === 'pending' && (
+            <div className="flex gap-1 bg-[#0a1020] border border-slate-800 p-1 rounded-xl text-xs font-bold">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
                 <button
-                  onClick={() => {
-                    handleApprove(previewDoc);
-                    setPreviewDoc(null);
-                  }}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold"
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`px-3 py-1.5 rounded-lg transition capitalize cursor-pointer ${
+                    filterStatus === s ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
                 >
-                  Approve Document
+                  {s}
                 </button>
-              )}
+              ))}
             </div>
+          </div>
+
+          {/* Queue Table */}
+          <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm">Submitted Document Proofs</h3>
+              <span className="text-[11px] text-slate-400">Direct PostgreSQL Verification Hook</span>
+            </div>
+
+            {loading ? (
+              <div className="py-16 flex items-center justify-center text-slate-400 text-xs">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading verifications...
+              </div>
+            ) : filteredDocs.length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  icon={FileText}
+                  title="Verification Queue All Clear"
+                  description={`No document verification requests currently match the status "${filterStatus}". All trainee salary slips, trade licenses, and Udyam certificates are fully up to date.`}
+                  actionLabel="View All Submissions"
+                  onAction={() => { setFilterStatus('all'); setSearch(''); }}
+                  badge="Queue Clear"
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
+                      <th className="py-3 px-4">Trainee Candidate</th>
+                      <th className="py-3 px-4">Document Title</th>
+                      <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">Submission Date</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Audit Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50 text-slate-300">
+                    {filteredDocs.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-slate-900/40 transition">
+                        <td className="py-3.5 px-4">
+                          <span className="font-bold text-white block">{doc.trainees?.full_name || 'Candidate'}</span>
+                          <span className="text-[11px] text-slate-400">{doc.trainees?.email}</span>
+                          <span className="text-[10px] text-blue-400 font-mono">ID: {doc.trainees?.trainee_id || doc.trainee_id}</span>
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-200">
+                          {doc.document_name}
+                        </td>
+                        <td className="py-3.5 px-4 uppercase text-[10px] font-bold text-indigo-300">
+                          {doc.document_type}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                          {new Date(doc.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                            doc.status === 'approved' 
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : doc.status === 'rejected'
+                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          }`}>
+                            {doc.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {doc.file_url && (
+                              <button
+                                onClick={() => setPreviewDoc(doc)}
+                                className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg border border-blue-500/20"
+                                title="Inspect Document"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {doc.status !== 'approved' && (
+                              <button
+                                onClick={() => handleApprove(doc)}
+                                disabled={processingId === doc.id}
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg border border-emerald-500/20"
+                                title="Approve Document"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {doc.status !== 'rejected' && (
+                              <button
+                                onClick={() => { setRejectItem(doc); setRejectReason(''); }}
+                                disabled={processingId === doc.id}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-rose-500/20"
+                                title="Reject Document"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Reject Modal with Reason */}
+      {/* TAB 2: DUPLICATE IDENTITY RADAR (FEATURE 35) */}
+      {activeMainTab === 'duplicates' && (
+        <div className="bg-[#0a1020] border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl animate-in fade-in">
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center space-x-2">
+              <Fingerprint className="w-5 h-5 text-rose-400" />
+              <span>Duplicate Identity & Dual-Enrollment Radar (Feature 35)</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Scans all registered candidate profiles to detect duplicated phone numbers, duplicate masked Aadhaar patterns, or multi-scheme subsidy exploitation.
+            </p>
+          </div>
+
+          {securityData.duplicateFlags.length === 0 ? (
+            <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-800">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-white">0 Duplicate Identity Collusions Detected</h4>
+              <p className="text-xs text-slate-400 mt-1">All {securityData.totalCandidatesScanned} candidate accounts maintain verified unique identity records.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {securityData.duplicateFlags.map((dup: any, idx: number) => (
+                <div key={idx} className="p-4 bg-rose-950/20 border border-rose-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] font-black rounded uppercase">
+                      {dup.type} • {dup.severity} Severity
+                    </span>
+                    <span className="text-xs font-mono font-bold text-rose-300">
+                      {dup.matched_candidates_count} Accounts Matched
+                    </span>
+                  </div>
+                  <p className="text-xs text-white font-semibold">{dup.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: DOCUMENT TAMPER SCANNER (FEATURE 38) */}
+      {activeMainTab === 'fraud' && (
+        <div className="bg-[#0a1020] border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl animate-in fade-in">
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center space-x-2">
+              <ScanLine className="w-5 h-5 text-amber-400" />
+              <span>Document Tampering & Anomaly Scanner (Feature 38)</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Automated image pixel and metadata analyzer verifying cryptographic document authenticity against MSME/DGET signatures.
+            </p>
+          </div>
+
+          <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-800">
+            <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+            <h4 className="text-sm font-bold text-white">Automated Anti-Tamper Pipeline Active</h4>
+            <p className="text-xs text-slate-400 mt-1">Uploaded certificates and salary slips are hashed with SHA-256 upon ingestion.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
       {rejectItem && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-bold text-white text-sm">Reject Document Proof</h3>
-              <button onClick={() => setRejectItem(null)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
+          <div className="bg-[#0a1020] border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-white">Reject Document Proof</h3>
             <form onSubmit={handleRejectSubmit} className="space-y-3 text-xs">
-              <p className="text-slate-400">
-                Please state the official reason for rejecting <strong className="text-white">{rejectItem.document_name}</strong>. This feedback will be sent to the trainee.
-              </p>
-
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Rejection Reason / Required Correction</label>
+                <label className="text-slate-400 block mb-1">State Rejection Reason *</label>
                 <textarea
-                  rows={3}
                   required
+                  rows={3}
                   value={rejectReason}
                   onChange={e => setRejectReason(e.target.value)}
-                  placeholder="e.g. Udyam registration number does not match registered GST trade name. Please re-upload clear scan."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-rose-500"
+                  placeholder="e.g. Blurred salary slip / Udyam number invalid"
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl p-3 text-white outline-none"
                 />
               </div>
-
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setRejectItem(null)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold"
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={processingId === rejectItem.id}
-                  className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold"
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl"
                 >
                   Confirm Rejection
                 </button>

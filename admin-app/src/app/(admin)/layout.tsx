@@ -28,7 +28,8 @@ import {
   BookOpen,
   Briefcase,
   Award,
-  BarChart3
+  BarChart3,
+  Building2
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PlatformSettingsSync } from '@/components/PlatformSettingsSync';
@@ -126,7 +127,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { name: 'Dashboard Overview', href: '/', icon: Activity },
-    { name: 'Trainees & Enterprises', href: '/users', icon: Users },
+    { name: 'Trainees & Governance', href: '/users', icon: Users },
+    { name: 'AI Workforce Suite', href: '/workforce', icon: Sparkles },
+    { name: 'Rozgar Melawas & Fairs', href: '/melawas', icon: Building2 },
     { name: 'Accredited Courses (NPTEL)', href: '/courses', icon: BookOpen },
     { name: 'Skill Assessments & Badges', href: '/assessments', icon: Award },
     { name: 'Interview Questions Desk', href: '/interviews', icon: Briefcase },
