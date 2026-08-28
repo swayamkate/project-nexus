@@ -394,6 +394,29 @@ export default function AdminOverviewPage() {
 
       </div>
 
+      {/* Multidimensional Matrix Quick Launch Card */}
+      <div className="bg-gradient-to-r from-blue-950/70 via-indigo-950/60 to-slate-900 border border-blue-800/40 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-2xl text-blue-400">
+            <Layers className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-base">SSDM Multidimensional Governance Intelligence Suite</h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Access deep-dive analytics for Authorized Training Providers, Longitudinal 24M Retention, District Labor Deficits, Course Roadmaps, and Candidate Non-Placement Root Causes.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/analytics"
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 shadow-lg shadow-blue-600/20"
+        >
+          <span>Open Analytics Matrix</span>
+          <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
+
     </div>
   );
 }

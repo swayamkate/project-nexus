@@ -30,6 +30,7 @@ export const ProfileSkillsModal: React.FC<ProfileSkillsModalProps> = ({
   };
 
   const suggestedSkills = [
+    'No prior vocational skills / Entry-level beginner',
     'Apparel Manufacturing',
     'Boutique Management',
     'Digital Invoicing',
@@ -38,7 +39,8 @@ export const ProfileSkillsModal: React.FC<ProfileSkillsModalProps> = ({
     'Single Needle Lockstitch',
     'Solar Installation',
     'EV Battery Servicing',
-    'Customer Relations'
+    'Customer Relations',
+    'Basic Computer Operations'
   ];
 
   return (

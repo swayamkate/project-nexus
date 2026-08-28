@@ -33,7 +33,7 @@ import {
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
 import { formatHumanError } from '@/lib/errorUtils';
-import { logAdminAction } from '@/lib/auditLogger';
+import { getAdminActorEmail, logAdminAction } from '@/lib/auditLogger';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -122,8 +122,8 @@ export default function AdminUsersPage() {
       if (goalRes.data) setTraineeGoal(goalRes.data);
       if (subRes.data) setTraineeSubmissions(subRes.data);
       if (enrollRes.data) setTraineeEnrollments(enrollRes.data);
-    } catch (e) {
-      console.error('Error loading trainee drawer details:', e);
+    } catch (err) {
+      console.error('Error loading trainee details:', err);
     }
   };
 
@@ -133,52 +133,68 @@ export default function AdminUsersPage() {
     setFeedbackMsg(null);
 
     try {
-      const res = await fetch('/api/create-admin', {
+      const res = await fetch('/api/admin/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: newAdminEmail.trim(), 
+        body: JSON.stringify({
+          email: newAdminEmail.trim().toLowerCase(),
           password: newAdminPass,
-          username: newAdminUsername.trim() || newAdminEmail.split('@')[0],
+          username: newAdminUsername.trim().toLowerCase() || newAdminEmail.split('@')[0],
           role: newAdminRole
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
 
-      // Log in audit_logs with real actor
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to provision staff account');
+      }
+
+      const actorEmail = await getAdminActorEmail();
       await logAdminAction(
-        'CREATE_ADMIN',
+        'PROVISION_STAFF_ACCOUNT',
         'USER_ROLES',
-        null,
-        `Created administrator ${newAdminEmail} with role ${newAdminRole}`
+        newAdminEmail,
+        `Created staff account with role ${newAdminRole}`,
+        actorEmail
       );
 
-      setFeedbackMsg({ type: 'success', text: `Admin account (${newAdminEmail}) created successfully!` });
+      setFeedbackMsg({ type: 'success', text: `Official ${newAdminRole} account for ${newAdminEmail} provisioned successfully.` });
       setNewAdminEmail('');
       setNewAdminUsername('');
       setNewAdminPass('');
       await fetchUsers();
     } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: err.message || 'Failed to create admin.' });
+      setFeedbackMsg({ type: 'error', text: formatHumanError(err) });
     } finally {
       setCreatingAdmin(false);
     }
   };
 
-  const handleSuspend = async (id: string, currentStatus: boolean, email: string) => {
-    await supabase.from('trainees').update({ is_active: !currentStatus }).eq('id', id);
-    
-    await logAdminAction(
-      currentStatus ? 'SUSPEND_USER' : 'ACTIVATE_USER',
-      'TRAINEES',
-      id,
-      `${currentStatus ? 'Suspended' : 'Activated'} trainee account ${email}`
-    );
+  const handleSuspend = async (userId: string, currentStatus: boolean, userEmail: string) => {
+    try {
+      const { error } = await supabase
+        .from('trainees')
+        .update({ is_active: !currentStatus })
+        .eq('id', userId);
 
-    fetchUsers();
-    if (selectedTrainee?.id === id) {
-      setSelectedTrainee({ ...selectedTrainee, is_active: !currentStatus });
+      if (error) throw error;
+
+      const actorEmail = await getAdminActorEmail();
+      await logAdminAction(
+        currentStatus ? 'SUSPEND_TRAINEE' : 'REACTIVATE_TRAINEE',
+        'TRAINEES',
+        userId,
+        `${currentStatus ? 'Suspended' : 'Reactivated'} trainee account ${userEmail}`,
+        actorEmail
+      );
+
+      setFeedbackMsg({ type: 'success', text: `Trainee account status changed to ${!currentStatus ? 'Active' : 'Suspended'}.` });
+      if (selectedTrainee?.id === userId) {
+        setSelectedTrainee((prev: any) => prev ? { ...prev, is_active: !currentStatus } : null);
+      }
+      await fetchUsers();
+    } catch (err: any) {
+      setFeedbackMsg({ type: 'error', text: formatHumanError(err) });
     }
   };
 
@@ -186,24 +202,73 @@ export default function AdminUsersPage() {
     setUserToDelete(trainee);
   };
 
-  const handleExecuteDelete = async () => {
+  const confirmDelete = async () => {
     if (!userToDelete) return;
     try {
-      await supabase.from('trainees').delete().eq('id', userToDelete.id);
-      
+      const { error } = await supabase
+        .from('trainees')
+        .delete()
+        .eq('id', userToDelete.id);
+
+      if (error) throw error;
+
+      const actorEmail = await getAdminActorEmail();
       await logAdminAction(
-        'DELETE_USER',
+        'DELETE_TRAINEE_RECORD',
         'TRAINEES',
         userToDelete.id,
-        `Permanently deleted user ${userToDelete.email || userToDelete.id}`
+        `Deleted trainee record ${userToDelete.email} (${userToDelete.trainee_id})`,
+        actorEmail
       );
 
+      setFeedbackMsg({ type: 'success', text: `Trainee record for ${userToDelete.email} permanently purged.` });
       setSelectedTrainee(null);
       await fetchUsers();
     } catch (err: any) {
-      console.error('Error deleting user:', err);
+      setFeedbackMsg({ type: 'error', text: formatHumanError(err) });
     } finally {
       setUserToDelete(null);
+    }
+  };
+
+  const handleToggleVerifyTrainee = async (trainee: any) => {
+    try {
+      const actorEmail = await getAdminActorEmail();
+      const nextStatus = !trainee.is_verified;
+
+      const { error } = await supabase
+        .from('trainees')
+        .update({
+          is_verified: nextStatus,
+          verified_by: nextStatus ? actorEmail : null,
+          verified_at: nextStatus ? new Date().toISOString() : null,
+        })
+        .eq('id', trainee.id);
+
+      if (error) throw error;
+
+      await logAdminAction(
+        nextStatus ? 'VERIFY_TRAINEE_DATA' : 'REVOKE_TRAINEE_VERIFICATION',
+        'TRAINEES',
+        trainee.id,
+        `${nextStatus ? 'Approved and marked data verified' : 'Revoked data verification'} for ${trainee.email} (${trainee.trainee_id})`,
+        actorEmail
+      );
+
+      setSelectedTrainee((prev: any) => prev ? {
+        ...prev,
+        is_verified: nextStatus,
+        verified_by: nextStatus ? actorEmail : null,
+        verified_at: nextStatus ? new Date().toISOString() : null
+      } : null);
+
+      setFeedbackMsg({
+        type: 'success',
+        text: `Trainee ${trainee.full_name || trainee.email} ${nextStatus ? 'marked as SSDM Data Verified!' : 'verification revoked.'}`
+      });
+      await fetchUsers();
+    } catch (err: any) {
+      setFeedbackMsg({ type: 'error', text: err.message || 'Failed to update verification status.' });
     }
   };
 
@@ -222,14 +287,14 @@ export default function AdminUsersPage() {
       const { error } = await supabase.from('trainee_notifications').insert(payload);
       if (error) throw error;
 
-      await supabase.from('audit_logs').insert({
-        admin_email: 'admin@nexus.com',
-        action: 'DISPATCH_NOTIFICATION',
-        target_entity: 'TRAINEE_NOTIFICATIONS',
-        target_id: targetTrainee?.id || 'ALL_BROADCAST',
-        details: `Dispatched ${notifType} notification "${notifTitle}" to ${notifTarget === 'single' ? targetTrainee?.email : 'All Trainees (Broadcast)'}`,
-        status: 'Success'
-      });
+      const actorEmail = await getAdminActorEmail();
+      await logAdminAction(
+        'DISPATCH_NOTIFICATION',
+        'TRAINEE_NOTIFICATIONS',
+        targetTrainee?.id || 'ALL_BROADCAST',
+        `Dispatched ${notifType} notification "${notifTitle}" to ${notifTarget === 'single' ? targetTrainee?.email : 'All Trainees (Broadcast)'}`,
+        actorEmail
+      );
 
       setFeedbackMsg({ 
         type: 'success', 
@@ -263,56 +328,52 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Trainee & Executive Directory</h1>
-          <p className="text-xs text-slate-400 mt-1">Candidate dossiers, state enterprise rosters, and real-time push notification dispatch.</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Identity & User Management</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            SSDM State registry, evaluator access provisioning, and trainee dossiers
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              setNotifTarget('broadcast');
-              setTargetTrainee(null);
-              setIsNotifModalOpen(true);
-            }}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-blue-600/20 cursor-pointer"
-          >
-            <Bell className="w-4 h-4" />
-            <span>Send Broadcast Notification</span>
-          </button>
-          <span className="text-xs text-slate-400 font-semibold">{filteredUsers.length} Trainees</span>
-        </div>
+        <button
+          onClick={() => {
+            setNotifTarget('broadcast');
+            setTargetTrainee(null);
+            setIsNotifModalOpen(true);
+          }}
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-blue-600/20 cursor-pointer self-start sm:self-auto"
+        >
+          <Bell className="w-4 h-4" />
+          <span>Broadcast State Announcement</span>
+        </button>
       </div>
 
-      {/* SUPERADMIN CONSOLE: Provision New Admin */}
-      <div className="bg-[#0a1020] border border-blue-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex items-center space-x-2 pb-3 border-b border-slate-800/80 mb-4">
-          <Shield className="w-5 h-5 text-blue-400" />
-          <h3 className="font-bold text-white text-sm">Superadmin Console: Provision New Administrator</h3>
-          <span className="text-[10px] bg-blue-500/10 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase border border-blue-500/20">
-            Privileged Action
-          </span>
+      {feedbackMsg && (
+        <div className={`p-4 rounded-2xl border text-xs font-bold flex items-center space-x-2 animate-in fade-in ${
+          feedbackMsg.type === 'success' 
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+            : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+        }`}>
+          {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+          <span>{feedbackMsg.text}</span>
         </div>
+      )}
 
-        {feedbackMsg && (
-          <div className={`p-3.5 rounded-xl mb-4 text-xs font-semibold flex items-center space-x-2 ${
-            feedbackMsg.type === 'success' 
-              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
-              : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
-          }`}>
-            {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
-            <span>{feedbackMsg.text}</span>
-          </div>
-        )}
+      {/* Provision Staff / Admin Form */}
+      <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
+        <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
+          <Shield className="w-4 h-4 text-blue-400" />
+          <h3 className="font-bold text-white text-sm">Provision Staff Account (District Evaluator / Sub-Admin)</h3>
+        </div>
 
         <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
           <div>
-            <label className="text-slate-400 block mb-1">Admin Email</label>
+            <label className="text-slate-400 block mb-1">Staff Work Email</label>
             <input
               type="email"
               required
               value={newAdminEmail}
               onChange={e => setNewAdminEmail(e.target.value)}
-              placeholder="officer@mssds.gov.in"
+              placeholder="evaluator@district.gov.in"
               className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -392,38 +453,41 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      {/* Trainee Directory Table */}
-      <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-          <h3 className="font-bold text-white text-sm">State Trainee Database</h3>
-          <span className="text-[11px] text-slate-400">Click any row to open candidate dossier</span>
+      {/* Trainee Table */}
+      <div className="bg-[#0a1020] border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <GraduationCap className="w-4 h-4 text-blue-400" />
+            <h3 className="font-bold text-white text-sm">Enrolled Trainee Registry</h3>
+            <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full font-mono font-bold">
+              {filteredUsers.length}
+            </span>
+          </div>
         </div>
 
         {loading ? (
-          <div className="py-16 flex items-center justify-center text-slate-400 text-xs">
-            <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" /> Loading records...
+          <div className="p-12 flex justify-center items-center text-slate-400 space-x-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+            <span className="text-xs">Synchronizing database records...</span>
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="p-6">
+          <div className="p-12">
             <EmptyState
               icon={Search}
-              title="No Candidates Located in Registry"
-              description={`No candidate profiles match the current filter "${search || filterDistrict}". Try adjusting your search keyword or selecting "All Maharashtra Districts".`}
-              actionLabel="Reset Search Filters"
-              onAction={() => { setSearch(''); setFilterDistrict('all'); }}
-              badge="0 Results"
+              title="No Candidates Found"
+              description="No registered trainees match your current search criteria or district filter."
             />
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
-                  <th className="py-3 px-4">Candidate / Profile</th>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-900/80 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                <tr>
+                  <th className="py-3 px-4">Candidate Identity</th>
                   <th className="py-3 px-4">Trainee ID</th>
                   <th className="py-3 px-4">District</th>
-                  <th className="py-3 px-4">Top Skills</th>
-                  <th className="py-3 px-4">Completion</th>
+                  <th className="py-3 px-4">Skills</th>
+                  <th className="py-3 px-4">Verification</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -461,28 +525,32 @@ export default function AdminUsersPage() {
                     {/* Skills Tags */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {(trainee.skills || []).slice(0, 2).map((s: string, idx: number) => (
-                          <span key={idx} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded">
-                            {s}
-                          </span>
-                        ))}
+                        {(trainee.skills || []).length > 0 ? (
+                          trainee.skills.slice(0, 2).map((s: string, idx: number) => (
+                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded">
+                              {s}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-slate-500 italic">Entry beginner</span>
+                        )}
                         {(trainee.skills || []).length > 2 && (
                           <span className="text-[10px] text-slate-500">+{trainee.skills.length - 2}</span>
                         )}
                       </div>
                     </td>
 
-                    {/* Completion Meter */}
+                    {/* Verification Status */}
                     <td className="py-3.5 px-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-emerald-400 h-full rounded-full" 
-                            style={{ width: `${trainee.profile_completion_pct || 50}%` }} 
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-400">{trainee.profile_completion_pct || 50}%</span>
-                      </div>
+                      {trainee.is_verified ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                          🛡️ Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                          ⏳ Unverified
+                        </span>
+                      )}
                     </td>
 
                     {/* Status */}
@@ -540,7 +608,7 @@ export default function AdminUsersPage() {
               </span>
               <button 
                 onClick={() => setSelectedTrainee(null)}
-                className="text-slate-400 hover:text-white transition p-1"
+                className="text-slate-400 hover:text-white transition p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -548,15 +616,29 @@ export default function AdminUsersPage() {
 
             {/* Profile Hero Header */}
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white text-2xl font-black flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white text-2xl font-black flex items-center justify-center shadow-lg flex-shrink-0">
                 {(selectedTrainee.full_name || 'T').charAt(0).toUpperCase()}
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-white">{selectedTrainee.full_name}</h2>
-                <p className="text-xs font-mono text-blue-400">ID: {selectedTrainee.trainee_id} • @{selectedTrainee.username}</p>
-                <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md">
-                  Profile Completion: {selectedTrainee.profile_completion_pct}%
-                </span>
+                <h2 className="text-xl font-bold text-white">{selectedTrainee.full_name || 'Unnamed Trainee'}</h2>
+                <p className="text-xs font-mono text-blue-400">ID: {selectedTrainee.trainee_id} • @{selectedTrainee.username || 'trainee'}</p>
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md">
+                    Profile: {selectedTrainee.profile_completion_pct || 50}%
+                  </span>
+                  {selectedTrainee.is_verified ? (
+                    <span 
+                      title={`Verified by ${selectedTrainee.verified_by || 'SSDM Evaluator'} on ${selectedTrainee.verified_at ? new Date(selectedTrainee.verified_at).toLocaleDateString('en-IN') : 'Recent'}`}
+                      className="inline-flex items-center px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold rounded-md border border-emerald-500/40"
+                    >
+                      🛡️ SSDM Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded-md border border-amber-500/40">
+                      ⏳ Pending Verification
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -572,7 +654,7 @@ export default function AdminUsersPage() {
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">District & State</span>
-                    <span className="text-slate-200 font-semibold">{selectedTrainee.district || 'District not recorded'}</span>
+                <span className="text-slate-200 font-semibold">{selectedTrainee.district || 'District not recorded'}</span>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-500 block">Date of Birth</span>
@@ -594,7 +676,7 @@ export default function AdminUsersPage() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-slate-500 italic">No skills listed yet</span>
+                  <span className="text-xs text-slate-500 italic">No prior vocational skill / Entry-level beginner</span>
                 )}
               </div>
             </div>
@@ -616,27 +698,102 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* Micro-Enterprise Data */}
+            {/* Comprehensive Occupational Status & Outcomes */}
             {traineeEmployment && (
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-slate-300 flex items-center">
-                  <Building2 className="w-3.5 h-3.5 text-purple-400 mr-1.5" />
-                  <span>Tracked Enterprise Information</span>
+                  <Briefcase className="w-3.5 h-3.5 text-indigo-400 mr-1.5" />
+                  <span>Occupational Status & Outcomes</span>
                 </h4>
-                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Business Name:</span>
-                    <span className="font-bold text-white">{traineeEmployment.business_name || 'N/A'}</span>
+
+                {traineeEmployment.status === 'employed' && (
+                  <div className="p-3 bg-slate-900/60 border border-blue-900/40 rounded-xl text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-400 font-bold uppercase text-[10px]">Wage Employed</span>
+                      <span className="font-bold text-emerald-400">₹{Number(traineeEmployment.monthly_salary || 0).toLocaleString()}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Company / Employer:</span>
+                      <span className="font-bold text-white">{traineeEmployment.company_name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Designation:</span>
+                      <span className="text-slate-200">{traineeEmployment.designation || 'N/A'}</span>
+                    </div>
+                    {traineeEmployment.pf_esic_number && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">PF/ESIC UAN:</span>
+                        <span className="font-mono text-slate-300">{traineeEmployment.pf_esic_number}</span>
+                      </div>
+                    )}
+                    {traineeEmployment.appreciation_details && (
+                      <div className="pt-1 text-[11px] text-slate-300 border-t border-slate-800">
+                        <span className="text-slate-400 font-bold block">Appreciation & Increment:</span>
+                        {traineeEmployment.appreciation_details}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Monthly Revenue:</span>
-                    <span className="font-bold text-emerald-400">₹{Number(traineeEmployment.monthly_revenue || 0).toLocaleString()}</span>
+                )}
+
+                {traineeEmployment.status === 'self_employed' && (
+                  <div className="p-3 bg-slate-900/60 border border-indigo-900/40 rounded-xl text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-indigo-400 font-bold uppercase text-[10px]">Micro-Enterprise</span>
+                      <span className="font-bold text-emerald-400">Profit: ₹{Number(traineeEmployment.monthly_profit || 0).toLocaleString()}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Business Name:</span>
+                      <span className="font-bold text-white">{traineeEmployment.business_name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Category:</span>
+                      <span className="text-slate-200">{traineeEmployment.business_category || 'Services'} ({traineeEmployment.employees_count || 1} staff)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Monthly Turnover:</span>
+                      <span className="font-bold text-emerald-400">₹{Number(traineeEmployment.monthly_revenue || 0).toLocaleString()}</span>
+                    </div>
+                    {traineeEmployment.udyam_number && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Udyam Registration:</span>
+                        <span className="font-mono text-blue-400">{traineeEmployment.udyam_number}</span>
+                      </div>
+                    )}
+                    {traineeEmployment.appreciation_details && (
+                      <div className="pt-1 text-[11px] text-slate-300 border-t border-slate-800">
+                        <span className="text-slate-400 font-bold block">Praise & Highlights:</span>
+                        {traineeEmployment.appreciation_details}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Udyam Registration:</span>
-                    <span className="font-mono text-blue-400">{traineeEmployment.udyam_number || 'Pending'}</span>
+                )}
+
+                {traineeEmployment.status === 'not_employed' && (
+                  <div className="p-3 bg-slate-900/60 border border-amber-900/40 rounded-xl text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-amber-400 font-bold uppercase text-[10px]">Seeking Placement</span>
+                      <span className="text-slate-400 text-[10px]">Timeline: {traineeEmployment.target_workforce_timeline || 'Immediate'}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-slate-400 block text-[11px]">Primary Non-Placement Reason:</span>
+                      <span className="font-bold text-amber-300">
+                        {traineeEmployment.unemployed_reason ? traineeEmployment.unemployed_reason.replace(/_/g, ' ') : 'Looking for trade vacancies'}
+                      </span>
+                    </div>
+                    {traineeEmployment.support_needed && (
+                      <div className="space-y-0.5">
+                        <span className="text-slate-400 block text-[11px]">Requested Intervention:</span>
+                        <span className="text-blue-300 font-semibold">{traineeEmployment.support_needed.replace(/_/g, ' ')}</span>
+                      </div>
+                    )}
+                    {traineeEmployment.unemployed_perspective && (
+                      <div className="pt-1 text-[11px] text-slate-300 border-t border-slate-800">
+                        <span className="text-slate-400 font-bold block">Candidate's Statement & Perspective:</span>
+                        <p className="italic text-slate-300 mt-0.5">"{traineeEmployment.unemployed_perspective}"</p>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -725,6 +882,18 @@ export default function AdminUsersPage() {
             {/* Drawer Actions */}
             <div className="pt-4 border-t border-slate-800 space-y-2">
               <button
+                onClick={() => handleToggleVerifyTrainee(selectedTrainee)}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer ${
+                  selectedTrainee.is_verified
+                    ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                <span>{selectedTrainee.is_verified ? 'Revoke Trainee Verification' : '🛡️ Approve & Mark Trainee Data Verified'}</span>
+              </button>
+
+              <button
                 onClick={() => {
                   setNotifTarget('single');
                   setTargetTrainee(selectedTrainee);
@@ -767,7 +936,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    {notifTarget === 'single' ? `Notify ${targetTrainee?.full_name}` : 'Broadcast Notification to All'}
+                    {notifTarget === 'single' ? `Notify ${targetTrainee?.full_name || targetTrainee?.email}` : 'Broadcast Notification to All'}
                   </h3>
                   <p className="text-[11px] text-slate-400">
                     {notifTarget === 'single' ? targetTrainee?.email : 'All enrolled candidate accounts across Maharashtra'}
@@ -792,49 +961,49 @@ export default function AdminUsersPage() {
                 >
                   <option value="info">General Information (Info)</option>
                   <option value="survey">Longitudinal Survey Prompt</option>
-                  <option value="grant">MSME Capital Grant / Subsidy Alert</option>
-                  <option value="verification">Credential Verification Update</option>
+                  <option value="opportunity">New Micro-Loan / Job Melawa Announcement</option>
+                  <option value="alert">Compliance & Verification Notice</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-slate-400 font-bold block mb-1">Notification Title</label>
+                <label className="text-slate-400 font-bold block mb-1">Notification Title *</label>
                 <input
                   type="text"
                   required
                   value={notifTitle}
                   onChange={e => setNotifTitle(e.target.value)}
-                  placeholder="e.g. 6-Month Longitudinal Wage Survey Now Open"
-                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-blue-500 outline-none font-semibold"
+                  placeholder="e.g. Pune Regional Rozgar Melawa - 200+ Openings"
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-blue-500 outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-slate-400 font-bold block mb-1">Message Content</label>
+                <label className="text-slate-400 font-bold block mb-1">Detailed Message / Instructions *</label>
                 <textarea
-                  rows={4}
                   required
+                  rows={4}
                   value={notifMessage}
                   onChange={e => setNotifMessage(e.target.value)}
-                  placeholder="Provide detailed instructions or milestone requirements..."
-                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none resize-none leading-relaxed"
+                  placeholder="Provide comprehensive details, eligibility criteria, venue details, or survey links..."
+                  className="w-full bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:border-blue-500 outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+              <div className="pt-2 flex justify-end space-x-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsNotifModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={sendingNotif}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-blue-600/20 disabled:opacity-60 cursor-pointer"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition flex items-center space-x-1.5 shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
                 >
-                  {sendingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sendingNotif ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   <span>{sendingNotif ? 'Dispatching...' : 'Dispatch Notification'}</span>
                 </button>
               </div>
@@ -843,15 +1012,15 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Admin Destructive Confirmation Friction Modal */}
+      {/* Delete Confirmation Modal */}
       <DestructiveConfirmModal
-        isOpen={Boolean(userToDelete)}
-        onClose={() => setUserToDelete(null)}
-        onConfirm={handleExecuteDelete}
-        title="Permanently Expunge Trainee Record"
-        itemName={userToDelete?.full_name || userToDelete?.email || 'Selected Trainee'}
-        warningMessage="Warning: Deleting this candidate permanently removes their vocational enrollments, survey records, and linked credentials. This operation is cryptographically audited."
+        isOpen={!!userToDelete}
+        title="Permanently Purge Trainee Record"
+        itemName={userToDelete?.full_name || userToDelete?.email || 'Candidate'}
+        warningMessage={`Are you sure you want to completely remove the candidate record for "${userToDelete?.full_name || userToDelete?.email}" (ID: ${userToDelete?.trainee_id})? This action cannot be undone.`}
         requiredWord="DELETE"
+        onConfirm={confirmDelete}
+        onClose={() => setUserToDelete(null)}
       />
 
     </div>

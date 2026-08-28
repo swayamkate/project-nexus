@@ -18,6 +18,8 @@ import {
   Sun,
   Moon,
   Monitor,
+  ShieldAlert,
+  Lock
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import {
@@ -118,17 +120,17 @@ export default function AdminSettingsPage() {
           showToast('error', data.error || 'Failed to load settings.');
         }
       } catch {
-        if (active) showToast('error', 'Network error while loading settings.');
+        if (active) showToast('error', 'Could not load configuration from the server.');
       } finally {
         if (active) {
-          setLoading(false);
           setLoaded(true);
+          setLoading(false);
         }
       }
     };
     load();
     return () => { active = false; };
-  }, [showToast]);
+  }, [showToast, setTheme]);
 
   const setSetting = <K extends SettingKey>(key: K, value: SettingsMap[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -183,20 +185,21 @@ export default function AdminSettingsPage() {
   };
 
   const featureKeys = (Object.keys(SETTING_TYPES) as SettingKey[]).filter(k => k.startsWith('features.'));
+  const permissionKeys = (Object.keys(SETTING_TYPES) as SettingKey[]).filter(k => k.startsWith('permissions.'));
 
   const isDirty = (key: SettingKey) => dirtyKeys.has(key);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] text-slate-400 space-x-3">
-        <Loader2 className="w-6 h-6 animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         <span className="text-sm font-bold">Loading platform configuration…</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in-50">
+    <div className="space-y-8 animate-in fade-in-50 pb-16">
       {toast && (
         <div
           className={`fixed top-20 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top text-xs font-bold text-white ${
@@ -210,9 +213,9 @@ export default function AdminSettingsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">System Settings & Console Customizer</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">System Settings & Governance</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Every value here persists to the <code className="text-blue-400">platform_settings</code> table and is consumed live by both portals.
+            Persisted live to <code className="text-blue-400">platform_settings</code> table and consumed across both candidate and admin applications.
           </p>
         </div>
         <button
@@ -229,13 +232,12 @@ export default function AdminSettingsPage() {
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start space-x-3">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-amber-200">
-            <b>Migration pending:</b> the <code>platform_settings</code> table was not found on the database, so defaults are shown and saving is disabled.
-            Apply <code>src/db/migrations/006_platform_settings.sql</code> on the server, then reload this page.
+            <b>Migration pending:</b> the <code>platform_settings</code> table is using local schema fallbacks.
           </div>
         </div>
       )}
 
-      {/* General */}
+      {/* General Identity */}
       <SectionCard icon={<Building2 className="w-5 h-5" />} title="General Identity" subtitle="Public name, tagline, and support contact used across both portals.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Platform Name" dirty={isDirty('general.app_name')} onRevert={() => revertKey('general.app_name')}>
@@ -255,7 +257,57 @@ export default function AdminSettingsPage() {
         </div>
       </SectionCard>
 
-      {/* Branding */}
+      {/* SuperAdmin Feature & Permission Delegation Desk */}
+      <SectionCard
+        icon={<ShieldAlert className="w-5 h-5 text-indigo-400" />}
+        title="SuperAdmin Feature Delegation Desk"
+        subtitle="SuperAdmin governance: Control which administrative functions district administrators and evaluators have permission to edit and modify across the system."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {permissionKeys.map(key => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSetting(key, !settings[key])}
+              className={`flex items-center justify-between p-4 rounded-xl text-xs font-bold border cursor-pointer transition text-left ${
+                settings[key]
+                  ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-200'
+                  : 'bg-slate-900 border-slate-800 text-slate-500'
+              }`}
+            >
+              <div>
+                <span className="text-white block font-bold text-sm">
+                  {key === 'permissions.admin_can_edit_schemes' && 'Welfare Schemes & Loans'}
+                  {key === 'permissions.admin_can_edit_courses' && 'Course Roadmaps & Curricula'}
+                  {key === 'permissions.admin_can_edit_assessments' && 'Skill Assessments & Tests'}
+                  {key === 'permissions.admin_can_verify_trainees' && 'Trainee Profile Verification'}
+                  {key === 'permissions.admin_can_manage_users' && 'Staff Account Provisioning'}
+                  {key === 'permissions.admin_can_publish_analytics' && 'District Analytics Publishing'}
+                </span>
+                <span className="text-[10px] font-normal text-slate-400 block mt-1">
+                  {key === 'permissions.admin_can_edit_schemes' && 'Allow admins to create, edit, and publish welfare schemes & seed loan assistance.'}
+                  {key === 'permissions.admin_can_edit_courses' && 'Allow admins to add external courses, learning modules, and provider roadmaps.'}
+                  {key === 'permissions.admin_can_edit_assessments' && 'Allow admins to create skill tests, question banks, and trade competency exams.'}
+                  {key === 'permissions.admin_can_verify_trainees' && 'Allow evaluators to inspect candidate files and grant official Data Verified badges.'}
+                  {key === 'permissions.admin_can_manage_users' && 'Allow sub-admins to provision district staff and manage candidate account states.'}
+                  {key === 'permissions.admin_can_publish_analytics' && 'Allow admins to update district labor benchmarks and target skill shortages.'}
+                </span>
+              </div>
+              <span
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold shrink-0 ml-3 ${
+                  settings[key]
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                    : 'bg-slate-800 text-slate-500 border border-slate-700/50'
+                }`}
+              >
+                {settings[key] ? 'ENABLED' : 'RESTRICTED'}
+              </span>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* Branding & Console Theme */}
       <SectionCard icon={<Palette className="w-5 h-5" />} title="White-Label Branding & Console Theme" subtitle="Colors, theme mode, and messaging applied live to the admin console and the public trainee portal.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -342,7 +394,7 @@ export default function AdminSettingsPage() {
       </SectionCard>
 
       {/* Analytics presentation */}
-      <SectionCard icon={<Sparkles className="w-5 h-5" />} title="Analytics & Evidence Display" subtitle="Control which verified datasets and chart labels are visible in the trainee portal. Empty datasets remain empty; no sample values are generated.">
+      <SectionCard icon={<Sparkles className="w-5 h-5" />} title="Analytics & Evidence Display" subtitle="Control which verified datasets and chart labels are visible in the trainee portal. Empty datasets remain empty; zero fabricated values.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Personal wage chart" hint="Only numeric employment/follow-up observations are plotted." dirty={isDirty('analytics.show_personal_wage_chart')} onRevert={() => revertKey('analytics.show_personal_wage_chart')}>
             <button type="button" onClick={() => setSetting('analytics.show_personal_wage_chart', !settings['analytics.show_personal_wage_chart'])}

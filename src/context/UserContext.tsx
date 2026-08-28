@@ -32,6 +32,10 @@ export interface TraineeProfile {
   about_me?: string;
   notification_preferences?: any;
   privacy_hash?: string;
+  is_verified?: boolean;
+  verified_by?: string;
+  verified_at?: string;
+  verification_notes?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -44,6 +48,8 @@ export interface TraineeEmployment {
   designation?: string;
   joining_date?: string;
   monthly_salary?: number;
+  pf_esic_number?: string;
+  work_location?: string;
   business_name?: string;
   business_type?: string;
   business_category?: string;
@@ -56,6 +62,11 @@ export interface TraineeEmployment {
   gst_number?: string;
   business_address?: string;
   employees_count?: number;
+  unemployed_reason?: string;
+  unemployed_perspective?: string;
+  target_workforce_timeline?: string;
+  support_needed?: string;
+  appreciation_details?: string;
   verified_by_admin?: boolean;
   verified_at?: string;
 }
@@ -207,7 +218,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: userEmail,
             username: username,
             full_name: fullName,
-            // Let the database generate the trainee ID atomically.
             phone: session.user.user_metadata?.phone || '',
             dob: session.user.user_metadata?.dob || null,
             gender: session.user.user_metadata?.gender || null,
@@ -353,11 +363,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', profile.id);
 
       if (error) throw error;
-      setProfile((prev) => (prev ? { ...prev, ...data, profile_completion_pct: completionPct } : null));
+      setProfile(prev => prev ? { ...prev, ...data } : null);
       return true;
-    } catch (err: any) {
-      console.error('Error updating profile:', err);
-      alert(err.message || 'Failed to update profile.');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
       return false;
     }
   };
@@ -365,44 +374,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateEmployment = async (data: Partial<TraineeEmployment>): Promise<boolean> => {
     if (!profile) return false;
     try {
+      const payload = {
+        ...data,
+        trainee_id: profile.id,
+        updated_at: new Date().toISOString(),
+      };
+
       if (employment?.id) {
         const { error } = await supabase
           .from('trainee_employment')
-          .update({
-            ...data,
-            updated_at: new Date().toISOString(),
-          })
+          .update(payload)
           .eq('id', employment.id);
-
         if (error) throw error;
-        setEmployment((prev) => (prev ? { ...prev, ...data } : null));
+        setEmployment(prev => prev ? { ...prev, ...payload } : null);
       } else {
-        const { data: newEmp, error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('trainee_employment')
-          .insert({
-            trainee_id: profile.id,
-            status: data.status || 'not_employed',
-            business_name: data.business_name || '',
-            business_type: data.business_type || '',
-            business_category: data.business_category || '',
-            business_status: data.business_status || '',
-            monthly_revenue: data.monthly_revenue || 0,
-            monthly_profit: data.monthly_profit || 0,
-            udyam_number: data.udyam_number || '',
-            gst_number: data.gst_number || '',
-            business_address: data.business_address || '',
-            employees_count: data.employees_count ?? 0,
-            verified_by_admin: false,
-          })
+          .insert([payload])
           .select()
           .single();
-
         if (error) throw error;
-        if (newEmp) setEmployment(newEmp);
+        setEmployment(inserted);
       }
       return true;
     } catch (err) {
-      console.error('Error updating employment details:', err);
+      console.error('Failed to update employment details:', err);
       return false;
     }
   };
@@ -410,47 +406,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const submitFollowup = async (milestone: string, surveyData: any): Promise<boolean> => {
     if (!profile) return false;
     try {
-      const existing = followups.find((f) => f.milestone === milestone);
+      const existing = followups.find(f => f.milestone === milestone);
+      const payload = {
+        trainee_id: profile.id,
+        milestone,
+        status: 'completed',
+        completed_date: new Date().toISOString().split('T')[0],
+        current_status: surveyData.status || 'employed',
+        current_income_range: surveyData.income_range || '15000_25000',
+        job_satisfaction_score: surveyData.satisfaction || 5,
+        skill_utilization_score: surveyData.utilization || 5,
+        remarks: surveyData.remarks || '',
+        survey_data_json: surveyData,
+        updated_at: new Date().toISOString(),
+      };
+
       if (existing) {
         const { error } = await supabase
           .from('trainee_followups')
-          .update({
-            status: 'completed',
-            completed_date: new Date().toISOString().split('T')[0],
-            current_status: surveyData.current_status || null,
-            current_income_range: surveyData.current_income_range || '',
-            job_satisfaction_score: surveyData.job_satisfaction_score ?? null,
-            skill_utilization_score: surveyData.skill_utilization_score ?? null,
-            remarks: surveyData.remarks || '',
-            survey_data_json: surveyData,
-            updated_at: new Date().toISOString(),
-          })
+          .update(payload)
           .eq('id', existing.id);
-
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('trainee_followups')
-          .insert({
-            trainee_id: profile.id,
-            milestone: milestone as any,
-            due_date: new Date().toISOString().split('T')[0],
-            completed_date: new Date().toISOString().split('T')[0],
-            status: 'completed',
-            current_status: surveyData.current_status || null,
-            current_income_range: surveyData.current_income_range || '',
-            job_satisfaction_score: surveyData.job_satisfaction_score ?? null,
-            skill_utilization_score: surveyData.skill_utilization_score ?? null,
-            remarks: surveyData.remarks || '',
-            survey_data_json: surveyData,
-          });
-
+          .insert([payload]);
         if (error) throw error;
       }
+
       await loadUserData();
       return true;
     } catch (err) {
-      console.error('Error submitting followup survey:', err);
+      console.error('Failed to submit followup milestone:', err);
       return false;
     }
   };
@@ -463,12 +450,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
-      console.error('Error marking notification as read:', err);
+      console.error('Failed to mark notification as read:', err);
     }
   };
 
   const markAllNotificationsAsRead = async () => {
-    if (!profile?.id) return;
+    if (!profile) return;
     try {
       await supabase
         .from('trainee_notifications')
@@ -476,8 +463,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .or(`trainee_id.eq.${profile.id},trainee_id.is.null`);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
-      console.error('Error marking all notifications as read:', err);
+      console.error('Failed to mark all notifications as read:', err);
     }
+  };
+
+  const refreshData = async () => {
+    await loadUserData();
   };
 
   const signOut = async () => {
@@ -508,7 +499,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         t,
         markNotificationAsRead,
         markAllNotificationsAsRead,
-        refreshData: loadUserData,
+        refreshData,
         updateProfile,
         updateEmployment,
         submitFollowup,

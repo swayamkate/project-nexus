@@ -69,12 +69,23 @@ export default function AdminVerificationsPage() {
 
       if (verifErr) throw verifErr;
 
-      // 2. Mark enterprise verified in trainee_employment
+      // 2. Mark enterprise and candidate verified
       if (doc.trainee_id) {
-        await supabase
-          .from('trainee_employment')
-          .update({ verified_by_admin: true, verified_at: new Date().toISOString() })
-          .eq('trainee_id', doc.trainee_id);
+        await Promise.all([
+          supabase
+            .from('trainee_employment')
+            .update({ verified_by_admin: true, verified_at: new Date().toISOString() })
+            .eq('trainee_id', doc.trainee_id),
+          supabase
+            .from('trainees')
+            .update({
+              is_verified: true,
+              verified_by: actorEmail,
+              verified_at: new Date().toISOString(),
+              verification_notes: `Document ${doc.document_name} (${doc.document_type}) verified.`
+            })
+            .eq('id', doc.trainee_id)
+        ]);
       }
 
       // 3. Log to audit_logs with real actor

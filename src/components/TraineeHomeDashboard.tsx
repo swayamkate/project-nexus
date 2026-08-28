@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { EmptyState } from '@/components/EmptyState';
+import { EmploymentStatusModal } from './profile/EmploymentStatusModal';
 
 interface TraineeHomeDashboardProps {
   onNavigate: (section: string) => void;
@@ -39,6 +40,7 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
   const { user, profile, employment, enrollments, followups, notifications, opportunities, updateEmployment, submitFollowup, t } = useUser();
   
   // Modals state
+  const [showEmploymentModal, setShowEmploymentModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showFollowupModal, setShowFollowupModal] = useState(false);
   const [showOpportunityModal, setShowOpportunityModal] = useState<any | null>(null);
@@ -418,18 +420,18 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
                   icon={Building2}
                   title="No Enterprise Registered"
                   description="Add your micro-enterprise, shop, or freelance practice to track monthly income growth and qualify for MUDRA & PMEGP subsidies."
-                  actionLabel="Register Enterprise"
-                  onAction={() => setShowBusinessModal(true)}
+                  actionLabel="Update Occupational Status"
+                  onAction={() => setShowEmploymentModal(true)}
                 />
               </div>
             )}
           </div>
 
           <button
-            onClick={() => setShowBusinessModal(true)}
+            onClick={() => setShowEmploymentModal(true)}
             className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer mt-4"
           >
-            <span>{employment ? 'Update Business Details' : 'Register New Enterprise'}</span>
+            <span>{employment ? 'Update Employment / Outcome Status' : 'Record Occupational Status'}</span>
           </button>
         </div>
 
@@ -845,6 +847,12 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
           </div>
         </div>
       )}
+
+      {/* Dynamic Employment & Outcome Modal */}
+      <EmploymentStatusModal
+        isOpen={showEmploymentModal}
+        onClose={() => setShowEmploymentModal(false)}
+      />
 
     </div>
   );

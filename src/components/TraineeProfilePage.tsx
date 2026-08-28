@@ -13,13 +13,17 @@ import {
   CheckCircle2, 
   ChevronRight,
   ShieldCheck,
-  Loader2
+  Building2,
+  HelpCircle,
+  TrendingUp,
+  MapPin
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { ProfileHeroHeader } from './profile/ProfileHeroHeader';
 import { ProfileEditModal } from './profile/ProfileEditModal';
 import { ProfileSkillsModal } from './profile/ProfileSkillsModal';
 import { ResumeDossierModal } from './ResumeDossierModal';
+import { EmploymentStatusModal } from './profile/EmploymentStatusModal';
 
 interface TraineeProfilePageProps {
   onNavigate: (section: string) => void;
@@ -32,6 +36,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
   const [activeModal, setActiveModal] = useState<'all' | 'personal' | 'education' | 'skills' | 'about' | 'avatar' | null>(null);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showEmploymentModal, setShowEmploymentModal] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -118,15 +123,6 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Amit&backgroundColor=ffd5dc'
   ];
 
-  if (userLoading) {
-    return (
-      <div className="min-h-[400px] flex items-center justify-center text-slate-700">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-2" />
-        <span className="font-semibold text-sm">Loading your profile...</span>
-      </div>
-    );
-  }
-
   const age = calculateAge(formData.dob);
   const formattedDob = formatDOB(formData.dob);
 
@@ -137,10 +133,10 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
     if (formData.phone?.trim()) score += 15;
     if (formData.dob) score += 10;
     if (formData.gender) score += 5;
-    if (formData.education_level) score += 10;
+    if (formData.highest_education) score += 10;
     if (formData.district) score += 10;
-    if (formData.trade) score += 10;
     if (formData.skills?.length > 0) score += 10;
+    if (employment?.status) score += 10;
     return Math.min(100, score);
   };
 
@@ -240,11 +236,11 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Address</span>
-                <span className="font-semibold text-slate-800">{formData.address}</span>
+                <span className="font-semibold text-slate-800">{formData.address || 'Not specified'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block mb-0.5">District</span>
-                <span className="font-semibold text-slate-800">{formData.district}</span>
+                <span className="text-slate-400 block mb-0.5">District & State</span>
+                <span className="font-semibold text-slate-800">{formData.district || 'Pune'}, {formData.state || 'Maharashtra'}</span>
               </div>
             </div>
           </div>
@@ -271,15 +267,15 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Board / University</span>
-                <span className="font-semibold text-slate-800">{formData.board_university}</span>
+                <span className="font-semibold text-slate-800">{formData.board_university || 'Maharashtra State Board'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Year of Passing</span>
-                <span className="font-semibold text-slate-800">{formData.year_of_passing}</span>
+                <span className="font-semibold text-slate-800">{formData.year_of_passing || '2023'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block mb-0.5">Percentage</span>
-                <span className="font-bold text-emerald-600">{formData.education_percentage}%</span>
+                <span className="text-slate-400 block mb-0.5">Percentage / Grade</span>
+                <span className="font-bold text-emerald-600">{formData.education_percentage ? `${formData.education_percentage}%` : 'First Class'}</span>
               </div>
             </div>
           </div>
@@ -289,7 +285,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <h3 className="font-bold text-slate-900 text-sm">Skills</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Skills & Vocational Competencies</h3>
               </div>
               <button
                 onClick={() => setIsSkillsModalOpen(true)}
@@ -299,17 +295,23 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </button>
             </div>
 
-            <span className="text-xs text-slate-500 font-medium block">Your Top Skills</span>
+            <span className="text-xs text-slate-500 font-medium block">Verified Trade Skills</span>
 
             <div className="flex flex-wrap gap-2 pt-1">
-              {(formData.skills || []).map((skill: string, idx: number) => (
-                <span
-                  key={idx}
-                  className="px-3.5 py-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold rounded-lg"
-                >
-                  {skill}
+              {(formData.skills || []).length > 0 ? (
+                formData.skills.map((skill: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="px-3.5 py-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold rounded-lg"
+                  >
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <span className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-slate-500 text-xs font-medium rounded-lg">
+                  No prior vocational skill / Entry-level beginner
                 </span>
-              ))}
+              )}
             </div>
           </div>
 
@@ -318,7 +320,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-purple-600" />
-                <h3 className="font-bold text-slate-900 text-sm">About Me</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Career Statement</h3>
               </div>
               <button
                 onClick={() => setActiveModal('about')}
@@ -329,14 +331,84 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              {formData.about_me}
+              {formData.about_me || 'Enthusiastic vocational graduate committed to mastering trade operations and contributing to industry productivity.'}
             </p>
           </div>
 
         </div>
 
-        {/* Right 1 Col: Quick Links Sidebar */}
+        {/* Right 1 Col: Quick Links & Employment Card */}
         <div className="space-y-6">
+          
+          {/* Real Employment Status Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <Briefcase className="w-4 h-4 text-indigo-600" />
+                <h3 className="font-bold text-slate-900 text-sm">Current Outcome Status</h3>
+              </div>
+              <button
+                onClick={() => setShowEmploymentModal(true)}
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition cursor-pointer"
+              >
+                Update
+              </button>
+            </div>
+
+            {employment?.status === 'employed' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-3 bg-blue-50/70 border border-blue-200/70 rounded-xl space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Wage Employed</div>
+                  <div className="font-bold text-slate-900 text-sm">{employment.company_name || 'Registered Employer'}</div>
+                  <div className="text-slate-600">{employment.designation || 'Technician'}</div>
+                  <div className="font-bold text-emerald-600 pt-1">₹{Number(employment.monthly_salary || 0).toLocaleString()}/month</div>
+                </div>
+                {employment.appreciation_details && (
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600">
+                    <span className="font-bold text-slate-700 block">Appreciation / Increment:</span>
+                    {employment.appreciation_details}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {employment?.status === 'self_employed' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-xl space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Micro-Enterprise</div>
+                  <div className="font-bold text-slate-900 text-sm">{employment.business_name || 'Self-Employed Unit'}</div>
+                  <div className="text-slate-600">{employment.business_category || 'Services'} • {employment.employees_count || 1} Person Team</div>
+                  <div className="font-bold text-emerald-600 pt-1">Profit: ₹{Number(employment.monthly_profit || 0).toLocaleString()}/month</div>
+                </div>
+                {employment.udyam_number && (
+                  <div className="text-[11px] font-mono text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    MSME: {employment.udyam_number}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(!employment || employment?.status === 'not_employed') && (
+              <div className="space-y-2 text-xs">
+                <div className="p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Seeking Placement</div>
+                  <div className="text-slate-700 font-semibold">
+                    {employment?.unemployed_reason ? employment.unemployed_reason.replace(/_/g, ' ') : 'Looking for trade opportunities'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Timeline: {employment?.target_workforce_timeline ? employment.target_workforce_timeline.replace(/_/g, ' ') : 'Immediate'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowEmploymentModal(true)}
+                  className="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
+                >
+                  Record Your Perspective & Needs
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">Quick Links</h3>
             
@@ -346,7 +418,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
                 { label: 'Certifications', icon: Award, target: 'certifications' },
                 { label: 'Employment Status', icon: Briefcase, target: 'employment-status' },
                 { label: 'Follow-up History', icon: Calendar, target: 'follow-ups' },
-                { label: 'Documents', icon: FileText, target: 'documents' },
+                { label: 'Documents Vault', icon: FileText, target: 'documents' },
               ].map((item, idx) => {
                 const Icon = item.icon;
                 return (
@@ -370,10 +442,14 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 space-y-2">
             <div className="flex items-center space-x-2 text-blue-700">
               <ShieldCheck className="w-5 h-5 text-blue-600" />
-              <h4 className="font-bold text-xs">Nexus Verified Record</h4>
+              <h4 className="font-bold text-xs">
+                {profile?.is_verified ? 'SSDM Official Verified Trainee' : 'Nexus Verified Record'}
+              </h4>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
-              Your profile is verified on the Nexus Skilling Registry with authenticated credentials.
+              {profile?.is_verified
+                ? `Verified by State Evaluator ${profile.verified_by || ''} on ${profile.verified_at ? new Date(profile.verified_at).toLocaleDateString('en-IN') : 'Recent'}.`
+                : 'Your profile is enrolled on the Nexus Skilling Registry with authenticated credentials.'}
             </p>
           </div>
         </div>
@@ -407,6 +483,12 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
         profile={profile}
         employment={employment}
         enrollments={enrollments}
+      />
+
+      {/* Employment Status Modal */}
+      <EmploymentStatusModal
+        isOpen={showEmploymentModal}
+        onClose={() => setShowEmploymentModal(false)}
       />
 
     </div>

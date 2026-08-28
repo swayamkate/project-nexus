@@ -53,11 +53,26 @@ export const ProfileHeroHeader: React.FC<ProfileHeroHeaderProps> = ({
 
           {/* Profile Core Attributes */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-center sm:justify-start space-x-2">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <h2 className="text-xl font-bold text-slate-900">{formData.full_name}</h2>
               <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold rounded-full">
                 Active
               </span>
+              {profile?.is_verified ? (
+                <span 
+                  title={`Official SSDM Verification approved by ${profile.verified_by || 'State Evaluator'} on ${profile.verified_at ? new Date(profile.verified_at).toLocaleDateString('en-IN') : 'Recent'}`}
+                  className="px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[11px] font-extrabold rounded-full shadow-sm flex items-center space-x-1"
+                >
+                  <span>🛡️ Data Verified by SSDM Evaluator</span>
+                </span>
+              ) : (
+                <span 
+                  title="Profile is undergoing routine evaluation by District Skill Development Officer"
+                  className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold rounded-full flex items-center space-x-1"
+                >
+                  <span>⏳ Verification in Progress</span>
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-2 text-xs font-mono">

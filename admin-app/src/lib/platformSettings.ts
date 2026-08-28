@@ -46,6 +46,13 @@ export const SETTING_TYPES = {
   'features.voice_surveys': z.boolean(),
   'features.community_hub': z.boolean(),
   'features.self_employment': z.boolean(),
+
+  'permissions.admin_can_edit_schemes': z.boolean(),
+  'permissions.admin_can_edit_courses': z.boolean(),
+  'permissions.admin_can_edit_assessments': z.boolean(),
+  'permissions.admin_can_verify_trainees': z.boolean(),
+  'permissions.admin_can_manage_users': z.boolean(),
+  'permissions.admin_can_publish_analytics': z.boolean(),
 } as const;
 
 export type SettingKey = keyof typeof SETTING_TYPES;
@@ -88,6 +95,13 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   'features.voice_surveys': false,
   'features.community_hub': true,
   'features.self_employment': true,
+
+  'permissions.admin_can_edit_schemes': true,
+  'permissions.admin_can_edit_courses': true,
+  'permissions.admin_can_edit_assessments': true,
+  'permissions.admin_can_verify_trainees': true,
+  'permissions.admin_can_manage_users': true,
+  'permissions.admin_can_publish_analytics': true,
 };
 
 export function categoryOf(key: SettingKey): string {
