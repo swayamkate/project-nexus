@@ -27,7 +27,8 @@ import {
   Headphones,
   BookOpen,
   Briefcase,
-  Award
+  Award,
+  BarChart3
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PlatformSettingsSync } from '@/components/PlatformSettingsSync';
@@ -133,6 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Training Programs', href: '/programs', icon: GraduationCap },
     { name: 'Follow-ups & Milestones', href: '/followups', icon: CalendarClock },
     { name: 'Government Schemes', href: '/schemes', icon: Landmark },
+    { name: 'Analytics Evidence', href: '/analytics', icon: BarChart3 },
     { name: 'Support & Feedback', href: '/support', icon: Headphones },
     { name: 'Billing & Subsidies', href: '/billing', icon: Tag },
     { name: 'Audit Logs & Pipeline', href: '/audit', icon: Database },

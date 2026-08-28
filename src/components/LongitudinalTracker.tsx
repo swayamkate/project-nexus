@@ -192,11 +192,11 @@ export const LongitudinalTracker: React.FC = () => {
                   <tr key={idx} className="hover:bg-slate-50 transition">
                     <td className="py-3 px-4 font-bold text-slate-900 flex items-center space-x-1.5">
                       <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{row.district}</span>
+                      <span>{row.district_name || 'District not recorded'}</span>
                     </td>
                     <td className="py-3 px-4">{row.total_trained == null ? 'Not reported' : Number(row.total_trained).toLocaleString()}</td>
                     <td className="py-3 px-4 font-bold text-emerald-600">{row.placement_rate == null ? 'Not reported' : `${row.placement_rate}%`}</td>
-                    <td className="py-3 px-4 font-semibold">{row.avg_monthly_wage == null ? 'Not reported' : `₹${Number(row.avg_monthly_wage).toLocaleString()}`}</td>
+                    <td className="py-3 px-4 font-semibold">{row.avg_wage == null ? 'Not reported' : `₹${Number(row.avg_wage).toLocaleString()}`}</td>
                     <td className="py-3 px-4 text-right font-medium text-slate-500">{row.top_industry || 'Not reported'}</td>
                   </tr>
                 )) : <tr><td colSpan={5} className="py-8 text-center text-slate-500">No verified district statistics have been published yet.</td></tr>}

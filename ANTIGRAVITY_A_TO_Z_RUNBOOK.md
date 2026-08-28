@@ -56,6 +56,7 @@ Expected: platform settings contains `general.support_email = "support@nexus.in"
 - Hard-refresh existing browsers after deployment; the updated client removes the legacy `sb-api-auth-token`.
 - Add a scheduled call for the admin milestone cron only after authenticating it with a secret; do not expose a public cron endpoint.
 - Either implement `/api/schemes/apply` or remove it from `src/app/api/docs/page.tsx`; it is currently documentation without a matching public route.
+- Use the Admin Console `Analytics Evidence` page to publish/edit/delete `district_employment_stats` and `top_skill_gaps`; never seed chart values in frontend code.
 
 ## AI features that can stay free or nearly free
 

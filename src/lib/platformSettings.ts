@@ -18,6 +18,12 @@ export const PUBLIC_SETTING_KEYS = [
   'branding.accent_color',
   'branding.login_headline',
   'branding.theme_mode',
+  'analytics.show_personal_wage_chart',
+  'analytics.show_district_benchmarks',
+  'analytics.show_skill_gaps',
+  'analytics.wage_chart_title',
+  'analytics.benchmark_title',
+  'analytics.skill_gap_title',
   'branding.banner_enabled',
   'branding.banner_text',
   'localization.enabled_languages',
@@ -39,6 +45,12 @@ export interface PublicPlatformSettings {
   'branding.accent_color': string;
   'branding.login_headline': string;
   'branding.theme_mode': 'system' | 'light' | 'dark';
+  'analytics.show_personal_wage_chart': boolean;
+  'analytics.show_district_benchmarks': boolean;
+  'analytics.show_skill_gaps': boolean;
+  'analytics.wage_chart_title': string;
+  'analytics.benchmark_title': string;
+  'analytics.skill_gap_title': string;
   'branding.banner_enabled': boolean;
   'branding.banner_text': string;
   'localization.enabled_languages': string[];
@@ -58,6 +70,12 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicPlatformSettings = {
   'branding.accent_color': '#0ea5e9',
   'branding.login_headline': 'Skilling Outcomes & Longitudinal Tracking',
   'branding.theme_mode': 'system',
+  'analytics.show_personal_wage_chart': true,
+  'analytics.show_district_benchmarks': true,
+  'analytics.show_skill_gaps': true,
+  'analytics.wage_chart_title': 'Longitudinal Wage Progression Trajectory',
+  'analytics.benchmark_title': 'District Labor Deficit Matrix',
+  'analytics.skill_gap_title': 'High-Demand Skill Shortages',
   'branding.banner_enabled': false,
   'branding.banner_text': '',
   'localization.enabled_languages': ['en', 'hi', 'mr'],

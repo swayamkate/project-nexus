@@ -341,6 +341,39 @@ export default function AdminSettingsPage() {
         </div>
       </SectionCard>
 
+      {/* Analytics presentation */}
+      <SectionCard icon={<Sparkles className="w-5 h-5" />} title="Analytics & Evidence Display" subtitle="Control which verified datasets and chart labels are visible in the trainee portal. Empty datasets remain empty; no sample values are generated.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Personal wage chart" hint="Only numeric employment/follow-up observations are plotted." dirty={isDirty('analytics.show_personal_wage_chart')} onRevert={() => revertKey('analytics.show_personal_wage_chart')}>
+            <button type="button" onClick={() => setSetting('analytics.show_personal_wage_chart', !settings['analytics.show_personal_wage_chart'])}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold border cursor-pointer transition ${settings['analytics.show_personal_wage_chart'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+              {settings['analytics.show_personal_wage_chart'] ? 'Visible' : 'Hidden'}
+            </button>
+          </Field>
+          <Field label="District benchmarks" hint="Reads only from district_employment_stats." dirty={isDirty('analytics.show_district_benchmarks')} onRevert={() => revertKey('analytics.show_district_benchmarks')}>
+            <button type="button" onClick={() => setSetting('analytics.show_district_benchmarks', !settings['analytics.show_district_benchmarks'])}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold border cursor-pointer transition ${settings['analytics.show_district_benchmarks'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+              {settings['analytics.show_district_benchmarks'] ? 'Visible' : 'Hidden'}
+            </button>
+          </Field>
+          <Field label="Skill-gap dataset" hint="Reads only from top_skill_gaps." dirty={isDirty('analytics.show_skill_gaps')} onRevert={() => revertKey('analytics.show_skill_gaps')}>
+            <button type="button" onClick={() => setSetting('analytics.show_skill_gaps', !settings['analytics.show_skill_gaps'])}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold border cursor-pointer transition ${settings['analytics.show_skill_gaps'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+              {settings['analytics.show_skill_gaps'] ? 'Visible' : 'Hidden'}
+            </button>
+          </Field>
+          <Field label="Wage chart title" dirty={isDirty('analytics.wage_chart_title')} onRevert={() => revertKey('analytics.wage_chart_title')}>
+            <input type="text" className={inputClass} value={settings['analytics.wage_chart_title']} onChange={e => setSetting('analytics.wage_chart_title', e.target.value)} />
+          </Field>
+          <Field label="Benchmark title" dirty={isDirty('analytics.benchmark_title')} onRevert={() => revertKey('analytics.benchmark_title')}>
+            <input type="text" className={inputClass} value={settings['analytics.benchmark_title']} onChange={e => setSetting('analytics.benchmark_title', e.target.value)} />
+          </Field>
+          <Field label="Skill-gap title" dirty={isDirty('analytics.skill_gap_title')} onRevert={() => revertKey('analytics.skill_gap_title')}>
+            <input type="text" className={inputClass} value={settings['analytics.skill_gap_title']} onChange={e => setSetting('analytics.skill_gap_title', e.target.value)} />
+          </Field>
+        </div>
+      </SectionCard>
+
       {/* Localization */}
       <SectionCard icon={<Globe className="w-5 h-5" />} title="Localization" subtitle="Languages offered in the trainee portal and the default fallback.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

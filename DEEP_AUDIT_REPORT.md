@@ -77,6 +77,7 @@ The database setting is now standardized to `support@nexus.in`, but all public/a
 - The service worker caches navigations; bump the cache version on releases and ensure stale HTML cannot preserve obsolete client auth code.
 - The dashboard header exposed language and theme controls that were not consistently reflected across the product. Those non-functional quick toggles were removed from the header; language/theme configuration remains available only in Settings until each translation/theme surface is fully verified.
 - Analytics and longitudinal charts previously synthesized wage multipliers, baselines, district rows, and skill-gap chips when queries were empty. They now render an explicit no-verified-data state and only plot numeric observations from the database.
+- The admin console now includes an Analytics Evidence registry for maintaining those two datasets and Settings controls for visibility and chart labels.
 
 ## Recommended execution order
 

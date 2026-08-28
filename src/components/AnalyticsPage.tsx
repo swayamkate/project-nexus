@@ -20,17 +20,35 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
+import { fetchPublicSettings } from '@/lib/platformSettings';
 
 export const AnalyticsPage: React.FC = () => {
   const { profile, employment, enrollments, followups, t } = useUser();
   const [skillGaps, setSkillGaps] = useState<any[]>([]);
   const [districtStats, setDistrictStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyticsConfig, setAnalyticsConfig] = useState({
+    showPersonalWage: true,
+    showDistrictBenchmarks: true,
+    showSkillGaps: true,
+    wageTitle: 'Longitudinal Wage Progression Trajectory',
+    benchmarkTitle: 'District Labor Deficit Matrix',
+    skillGapTitle: 'High-Demand Skill Shortages',
+  });
   const supabase = createClient();
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        const settings = await fetchPublicSettings();
+        setAnalyticsConfig({
+          showPersonalWage: settings['analytics.show_personal_wage_chart'],
+          showDistrictBenchmarks: settings['analytics.show_district_benchmarks'],
+          showSkillGaps: settings['analytics.show_skill_gaps'],
+          wageTitle: settings['analytics.wage_chart_title'],
+          benchmarkTitle: settings['analytics.benchmark_title'],
+          skillGapTitle: settings['analytics.skill_gap_title'],
+        });
         const { data: gaps } = await supabase
           .from('top_skill_gaps')
           .select('*')
@@ -254,10 +272,10 @@ export const AnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Longitudinal Wage Progression Chart (7 cols) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs space-y-5">
+        {analyticsConfig.showPersonalWage && <div className="lg:col-span-7 bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Longitudinal Wage Progression Trajectory</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">{analyticsConfig.wageTitle}</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Verified outcome tracking at 3, 6, 12, and 24 months post-training.
               </p>
@@ -328,13 +346,13 @@ export const AnalyticsPage: React.FC = () => {
           <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
             Benchmarks are shown only when the administrator has published verified registry data.
           </div>
-        </div>
+        </div>}
 
         {/* Regional Labor Demand & District Stats (5 cols) */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs space-y-4">
+        {analyticsConfig.showDistrictBenchmarks && <div className="lg:col-span-5 bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">District Labor Deficit Matrix</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">{analyticsConfig.benchmarkTitle}</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">MSSDS State Skill Registry Demand</p>
             </div>
             <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -360,16 +378,16 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs">High-Demand Skill Shortages:</h4>
+            {analyticsConfig.showSkillGaps && <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs">{analyticsConfig.skillGapTitle}:</h4>}
             <div className="flex flex-wrap gap-1.5">
-              {skillGaps.length > 0 ? skillGaps.map((g, idx) => (
+              {analyticsConfig.showSkillGaps && (skillGaps.length > 0 ? skillGaps.map((g, idx) => (
                 <span key={idx} className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold">
                   {g.skill_name} ({g.gap_percentage}% Deficit)
                 </span>
-              )) : <span className="text-xs text-slate-500">No verified skill-gap data published yet.</span>}
+              )) : <span className="text-xs text-slate-500">No verified skill-gap data published yet.</span>)}
             </div>
           </div>
-        </div>
+        </div>}
 
       </div>
 
