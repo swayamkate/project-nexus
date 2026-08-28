@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Section: Support Card & Logout */}
+      {/* Bottom Section: Support Card, Logout & Attribution */}
       <div className="p-4 border-t border-slate-100 space-y-3">
         {viewMode === 'admin' ? (
           <div className="bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl relative overflow-hidden shadow-sm">
@@ -168,6 +168,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <LogOut className="w-4 h-4" />
           <span>Logout</span>
         </button>
+
+        {/* GitHub Attribution */}
+        <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400 text-center">
+          <span>Built with precision by </span>
+          <a
+            href="https://github.com/avishkarkedar-org/SIH2026"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-700 font-bold hover:underline"
+          >
+            avishkarkedar-org ↗
+          </a>
+        </div>
       </div>
 
     </aside>

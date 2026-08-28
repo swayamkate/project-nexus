@@ -33,12 +33,14 @@ import {
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PlatformSettingsSync } from '@/components/PlatformSettingsSync';
+import { InteractiveTutorialModal } from '@/components/InteractiveTutorialModal';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [adminUser, setAdminUser] = useState<any | null>(null);
   const [pendingVerifsCount, setPendingVerifsCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -251,6 +253,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsTutorialOpen(true)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>System Guide</span>
+            </button>
+
             <a
               href="https://sih2026.avishkark.in"
               target="_blank"
@@ -308,6 +318,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {children}
           </ErrorBoundary>
         </main>
+
+        {/* Executive Footer Attribution */}
+        <footer className="border-t border-slate-800/80 bg-[#0a1020]/60 px-6 py-4 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div>
+            &copy; {new Date().getFullYear()} Maharashtra State Skill Development Mission (SSDM) • Nexus Admin Control Center
+          </div>
+          <div className="flex items-center space-x-2 text-slate-400">
+            <span>Built with precision by</span>
+            <a 
+              href="https://github.com/avishkarkedar-org/SIH2026" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 font-bold hover:underline inline-flex items-center space-x-1"
+            >
+              <span>avishkarkedar-org</span>
+              <span className="text-[10px]">↗</span>
+            </a>
+          </div>
+        </footer>
+
+        <InteractiveTutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} roleMode="admin" />
 
       </div>
     </div>

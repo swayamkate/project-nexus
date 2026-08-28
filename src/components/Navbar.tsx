@@ -15,6 +15,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { InteractiveTutorialModal } from '@/components/InteractiveTutorialModal';
 
 interface NavbarProps {
   viewMode: 'admin' | 'trainee';
@@ -34,6 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user, profile, notifications, signOut, t, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const displayName = profile?.full_name || 'Nexus Trainee';
   const firstName = displayName.split(' ')[0];
@@ -70,6 +72,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Right Controls */}
       <div className="flex items-center space-x-2 sm:space-x-3.5">
         
+        {/* Interactive Platform Guide */}
+        <button
+          onClick={() => setIsTutorialOpen(true)}
+          className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+          <span>Interactive Guide</span>
+        </button>
+
         {/* Superadmin Console Quick Access (Only if admin email) */}
         {user?.email === 'admin@nexus.com' && (
           <a
@@ -98,55 +109,48 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
+          {/* Notifications Dropdown Panel */}
           {showNotifMenu && (
-            <div className="absolute right-0 mt-2 w-84 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 space-y-3 z-50 text-xs animate-in fade-in-50">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="font-bold text-slate-900">{t('nav.notifications', 'Notifications')} ({unreadNotifs})</span>
-                <div className="flex items-center space-x-2">
-                  {unreadNotifs > 0 && (
-                    <button 
-                      onClick={() => markAllNotificationsAsRead()} 
-                      className="text-[10px] text-blue-600 hover:underline font-bold cursor-pointer"
-                    >
-                      {t('nav.markAllRead', 'Mark all read')}
-                    </button>
-                  )}
-                  <button onClick={() => setShowNotifMenu(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                    <X className="w-4 h-4" />
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-4 space-y-3 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-800 dark:text-white flex items-center space-x-1">
+                  <Bell className="w-3.5 h-3.5 text-blue-600" />
+                  <span>State Broadcasts & Alerts</span>
+                </span>
+                {unreadNotifs > 0 && (
+                  <button 
+                    onClick={markAllNotificationsAsRead}
+                    className="text-[10px] text-blue-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Mark all as read
                   </button>
-                </div>
+                )}
               </div>
 
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div className="max-h-64 overflow-y-auto space-y-2 text-xs">
                 {notifications && notifications.length > 0 ? (
-                  notifications.map((notif) => (
+                  notifications.map((n) => (
                     <div 
-                      key={notif.id} 
-                      onClick={() => !notif.is_read && markNotificationAsRead(notif.id)}
-                      className={`p-3 rounded-xl space-y-1 transition cursor-pointer ${
-                        notif.is_read 
-                          ? 'bg-slate-50 text-slate-600 hover:bg-slate-100/80' 
-                          : 'bg-blue-50/80 text-slate-900 border border-blue-100 shadow-xs'
+                      key={n.id} 
+                      onClick={() => markNotificationAsRead(n.id)}
+                      className={`p-2.5 rounded-xl border transition cursor-pointer ${
+                        n.is_read 
+                          ? 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800/80 text-slate-500' 
+                          : 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30 text-slate-800 dark:text-slate-200'
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <p className={`text-xs ${notif.is_read ? 'font-semibold text-slate-700' : 'font-black text-blue-950'}`}>
-                          {notif.title}
-                        </p>
-                        {!notif.is_read && (
-                          <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 mt-1 ml-1" />
-                        )}
+                      <div className="flex justify-between items-start">
+                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{n.title}</p>
+                        <span className="text-[9px] text-slate-400 font-mono">
+                          {new Date(n.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{notif.message}</p>
-                      <p className="text-[10px] text-slate-400 font-mono pt-0.5">
-                        {new Date(notif.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-normal">{n.message}</p>
                     </div>
                   ))
                 ) : (
-                  <div className="py-6 text-center text-slate-400">
-                    <Bell className="w-6 h-6 mx-auto mb-1 opacity-40" />
-                    <p className="text-xs">{t('nav.noNotifications', 'No new notifications.')}</p>
+                  <div className="py-6 text-center text-slate-400 text-xs">
+                    No new notifications from District Skill Mission.
                   </div>
                 )}
               </div>
@@ -154,82 +158,82 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
 
-        {/* User Profile Pill Capsule */}
+        {/* Profile Pill & Dropdown */}
         <div className="relative">
-          <div 
+          <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center space-x-2.5 pl-2 py-1 cursor-pointer group"
+            className="flex items-center space-x-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition cursor-pointer"
           >
             {profile?.avatar_url ? (
               <img 
                 src={profile.avatar_url} 
                 alt={displayName} 
-                className="w-9 h-9 rounded-full object-cover border border-slate-200"
+                className="w-7 h-7 rounded-full object-cover border border-blue-500 flex-shrink-0"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-xs">
-                {displayName.charAt(0).toUpperCase()}
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                {firstName.charAt(0).toUpperCase()}
               </div>
             )}
             
             <div className="hidden sm:block text-left">
-              <h4 className="text-xs font-bold text-slate-900 leading-tight flex items-center">
-                <span>{displayName}</span>
-                <ChevronDown className="w-3 h-3 ml-1 text-slate-400 group-hover:text-slate-600 transition" />
-              </h4>
-              <p className="text-[10px] text-blue-600 font-semibold font-mono">
+              <span className="text-xs font-bold text-slate-800 block leading-tight truncate max-w-[110px]">
+                {firstName}
+              </span>
+              <span className="text-[10px] text-blue-600 font-mono font-semibold block leading-tight">
                 {displayId}
-              </p>
+              </span>
             </div>
-          </div>
 
-          {/* User Dropdown Menu */}
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          {/* User Menu Dropdown */}
           {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in-50 space-y-1">
-              <div className="p-3 border-b border-slate-100">
-                <p className="font-bold text-slate-900">{displayName}</p>
-                <p className="text-[11px] text-slate-500 font-mono">{user?.email || 'user@nexus.in'}</p>
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95">
+              <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{displayName}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
               </div>
 
               <button
-                onClick={() => handleDropdownNavigate('my-profile')}
-                className="w-full p-2 text-left text-slate-700 hover:bg-slate-50 rounded-xl font-semibold flex items-center space-x-2 transition cursor-pointer"
+                onClick={() => handleDropdownNavigate('profile')}
+                className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
               >
-                <User className="w-4 h-4 text-blue-600" />
+                <User className="w-3.5 h-3.5 text-blue-600" />
                 <span>My Profile</span>
               </button>
 
               <button
                 onClick={() => handleDropdownNavigate('analytics')}
-                className="w-full p-2 text-left text-slate-700 hover:bg-slate-50 rounded-xl font-semibold flex items-center space-x-2 transition cursor-pointer"
+                className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
               >
-                <BarChart3 className="w-4 h-4 text-purple-600" />
-                <span>Career Analytics</span>
+                <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Analytics & Wage Lift</span>
               </button>
 
               <button
                 onClick={() => handleDropdownNavigate('settings')}
-                className="w-full p-2 text-left text-slate-700 hover:bg-slate-50 rounded-xl font-semibold flex items-center space-x-2 transition cursor-pointer"
+                className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
               >
-                <Settings className="w-4 h-4 text-slate-600" />
-                <span>Settings & Security</span>
+                <Settings className="w-3.5 h-3.5 text-slate-600" />
+                <span>Account Settings</span>
               </button>
 
-              <div className="pt-1 border-t border-slate-100">
-                <button 
-                  onClick={signOut}
-                  className="w-full p-2 text-left text-rose-600 hover:bg-rose-50 rounded-xl font-bold flex items-center space-x-2 transition cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
+              <button
+                onClick={() => signOut()}
+                className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition cursor-pointer border-t border-slate-100 dark:border-slate-800 mt-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
             </div>
           )}
         </div>
 
       </div>
 
+      <InteractiveTutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} roleMode="trainee" />
     </header>
   );
 };

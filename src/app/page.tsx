@@ -14,9 +14,11 @@ import {
   Target
 } from 'lucide-react';
 import { CookieBanner } from '@/components/CookieBanner';
+import { InteractiveTutorialModal } from '@/components/InteractiveTutorialModal';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans selection:bg-blue-600 selection:text-white relative">
@@ -39,6 +41,13 @@ export default function LandingPage() {
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-8 text-xs font-bold text-slate-300">
             <Link href="#features" className="hover:text-white transition">Features</Link>
+            <button 
+              onClick={() => setIsTutorialOpen(true)}
+              className="text-indigo-400 hover:text-indigo-300 transition flex items-center space-x-1 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Interactive Guide</span>
+            </button>
             <Link href="/contact" className="hover:text-white transition">Contact</Link>
             <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms</Link>
@@ -46,6 +55,14 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="hidden sm:flex items-center space-x-3">
+            <button
+              onClick={() => setIsTutorialOpen(true)}
+              className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>System Tutorial</span>
+            </button>
+
             <Link 
               href="/login" 
               className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center space-x-1.5 cursor-pointer"
@@ -230,9 +247,21 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500">
             <div>
-              &copy; {new Date().getFullYear()} Nexus. All rights reserved.
+              &copy; {new Date().getFullYear()} Nexus (PS-135). All rights reserved.
+            </div>
+            <div className="flex items-center space-x-2 text-slate-400 text-xs">
+              <span>Built with precision by</span>
+              <a 
+                href="https://github.com/avishkarkedar-org/SIH2026" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 font-bold hover:underline inline-flex items-center space-x-1"
+              >
+                <span>avishkarkedar-org</span>
+                <span className="text-[10px]">↗</span>
+              </a>
             </div>
             <div className="flex items-center space-x-4 text-slate-500">
               <Link href="/terms" className="hover:text-slate-400 transition">Terms</Link>
@@ -246,6 +275,7 @@ export default function LandingPage() {
       </footer>
 
       <CookieBanner />
+      <InteractiveTutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} roleMode="trainee" />
     </div>
   );
 }
