@@ -1086,15 +1086,15 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* MODAL 2: MANAGE STAFF, RESET PASSWORD & TOGGLE PERMISSIONS */}
+      {/* MODAL 2: MANAGE STAFF, RESET PASSWORD, SUSPEND & TOGGLE PERMISSIONS */}
       {isManageStaffOpen && selectedStaff && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl space-y-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center space-x-2">
                   <Crown className="w-4 h-4 text-amber-400" />
-                  <span>Manage {selectedStaff.email}</span>
+                  <span>Manage Administrator: {selectedStaff.email}</span>
                 </h3>
                 <p className="text-[11px] text-slate-400">Role: <b className="uppercase text-indigo-400">{selectedStaff.role}</b> • @{selectedStaff.username}</p>
               </div>
@@ -1103,6 +1103,37 @@ export default function AdminUsersPage() {
                 className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Suspension & Status Banner */}
+            <div className={`p-4 rounded-2xl border flex items-center justify-between transition ${
+              selectedStaff.is_active !== false
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <div className={`w-3 h-3 rounded-full ${selectedStaff.is_active !== false ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                <div>
+                  <p className="text-xs font-bold text-white">
+                    Account Status: {selectedStaff.is_active !== false ? 'Active & Authorized' : 'Suspended (Access Blocked)'}
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    {selectedStaff.is_active !== false ? 'Admin has active console and mutation privileges' : 'Admin is blocked from signing in or mutating platform data'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleStaffStatus(selectedStaff)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md ${
+                  selectedStaff.is_active !== false
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                }`}
+              >
+                {selectedStaff.is_active !== false ? 'Suspend Admin' : 'Reactivate Admin'}
               </button>
             </div>
 
@@ -1132,15 +1163,24 @@ export default function AdminUsersPage() {
 
             {/* Granular Permissions Toggles */}
             <div className="space-y-2 text-xs">
-              <label className="text-slate-300 font-bold block">Granular Feature Permissions</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-300 font-bold block">Granular Feature Access Matrix (SuperAdmin Control)</label>
+                <span className="text-[10px] text-blue-400 font-mono">12 Modules</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
-                  { key: 'can_edit_schemes', label: 'Welfare Schemes' },
-                  { key: 'can_edit_courses', label: 'Courses & Curricula' },
-                  { key: 'can_edit_assessments', label: 'Skill Assessments' },
-                  { key: 'can_verify_trainees', label: 'Verify Candidates' },
-                  { key: 'can_manage_users', label: 'Staff Management' },
-                  { key: 'can_publish_analytics', label: 'Publish Analytics' },
+                  { key: 'can_verify_trainees', label: 'KYC Document Verification' },
+                  { key: 'can_edit_trainees', label: 'Trainee Profile & Wage Overrides' },
+                  { key: 'can_manage_workforce', label: 'AI Workforce Suite & Demand' },
+                  { key: 'can_broadcast_sms', label: 'SMS & WhatsApp Broadcasts' },
+                  { key: 'can_manage_melawas', label: 'Rozgar Melawas & QR Passes' },
+                  { key: 'can_audit_centers', label: 'ITI Infrastructure Auditor' },
+                  { key: 'can_disburse_dbt', label: 'Direct Benefit Transfer (DBT)' },
+                  { key: 'can_edit_schemes', label: 'Government Welfare Schemes' },
+                  { key: 'can_edit_courses', label: 'NPTEL Course Catalog' },
+                  { key: 'can_edit_assessments', label: 'Skill Assessments & Badges' },
+                  { key: 'can_publish_analytics', label: 'Analytics & Policy Simulator' },
+                  { key: 'can_manage_users', label: 'Sub-Admin Staff Management' },
                 ].map((perm) => {
                   const isGranted = selectedStaff.permissions?.[perm.key] ?? true;
                   return (
@@ -1154,11 +1194,11 @@ export default function AdminUsersPage() {
                           : 'bg-slate-900 border-slate-800 text-slate-500'
                       }`}
                     >
-                      <span>{perm.label}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      <span className="truncate pr-2">{perm.label}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
                         isGranted ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'
                       }`}>
-                        {isGranted ? 'ON' : 'OFF'}
+                        {isGranted ? 'ALLOWED' : 'REVOKED'}
                       </span>
                     </button>
                   );

@@ -85,7 +85,7 @@ export const AnalyticsPage: React.FC = () => {
 
   const profilePct = calculateProfileScore();
   const verifiedSkillsCount = profile?.skills?.length || 0;
-  const completedEnrollmentsCount = enrollments?.filter((e: any) => e.status === 'completed')?.length || 0;
+  const completedEnrollmentsCount = enrollments?.filter((e: any) => e.status === 'completed' || e.status === 'certified')?.length || 0;
   
   // 2. Real Market Readiness Index
   const employmentWeight = employment?.verified_by_admin ? 25 : employment ? 15 : 0;
@@ -99,14 +99,16 @@ export const AnalyticsPage: React.FC = () => {
   const baselineWage = initialSalary > 0 ? initialSalary : initialRevenue > 0 ? initialRevenue : null;
 
   // Milestone check-ins from database
-  const m3Followup = followups.find((f: any) => f.milestone === '3_months');
-  const m6Followup = followups.find((f: any) => f.milestone === '6_months');
-  const m12Followup = followups.find((f: any) => f.milestone === '12_months');
-  const m24Followup = followups.find((f: any) => f.milestone === '24_months');
+  const m3Followup = followups.find((f: any) => f.milestone === '3_months' || f.milestone === '3M');
+  const m6Followup = followups.find((f: any) => f.milestone === '6_months' || f.milestone === '6M');
+  const m12Followup = followups.find((f: any) => f.milestone === '12_months' || f.milestone === '12M');
+  const m18Followup = followups.find((f: any) => f.milestone === '18_months' || f.milestone === '18M');
+  const m24Followup = followups.find((f: any) => f.milestone === '24_months' || f.milestone === '24M');
 
   // Compute wage for a followup if completed
   const getMilestoneWage = (f: any) => {
-    if (!f || f.status !== 'completed') return null;
+    if (!f) return null;
+    if (f.current_salary && Number(f.current_salary) > 0) return Number(f.current_salary);
     const reportedWage = f.survey_data_json?.monthly_income || f.survey_data_json?.current_wage;
     if (reportedWage && Number(reportedWage) > 0) return Number(reportedWage);
     return null;
@@ -115,10 +117,11 @@ export const AnalyticsPage: React.FC = () => {
   const m3Wage = getMilestoneWage(m3Followup);
   const m6Wage = getMilestoneWage(m6Followup);
   const m12Wage = getMilestoneWage(m12Followup);
+  const m18Wage = getMilestoneWage(m18Followup);
   const m24Wage = getMilestoneWage(m24Followup);
 
   // Latest verified wage
-  const latestVerifiedWage = m24Wage || m12Wage || m6Wage || m3Wage || baselineWage;
+  const latestVerifiedWage = m24Wage || m18Wage || m12Wage || m6Wage || m3Wage || baselineWage;
   const wageMultiplier = baselineWage && latestVerifiedWage 
     ? (latestVerifiedWage / baselineWage).toFixed(2) 
     : null;
@@ -140,7 +143,7 @@ export const AnalyticsPage: React.FC = () => {
       isActual: m3Followup?.status === 'completed'
     },
     {
-      period: '6M Longitudinal Survey',
+      period: '6M Wage Lift & Udyam Audit',
       wage: m6Wage,
       status: m6Followup?.status || 'upcoming',
       dueDate: m6Followup?.due_date,
@@ -148,7 +151,7 @@ export const AnalyticsPage: React.FC = () => {
       isActual: m6Followup?.status === 'completed'
     },
     {
-      period: '12M Annual Audit',
+      period: '12M Retention & Progression',
       wage: m12Wage,
       status: m12Followup?.status || 'upcoming',
       dueDate: m12Followup?.due_date,
@@ -156,7 +159,15 @@ export const AnalyticsPage: React.FC = () => {
       isActual: m12Followup?.status === 'completed'
     },
     {
-      period: '24M Final Milestone',
+      period: '18M Progression Review',
+      wage: m18Wage,
+      status: m18Followup?.status || 'upcoming',
+      dueDate: m18Followup?.due_date,
+      label: m18Followup?.status === 'completed' ? 'Verified 18-Month Check-in' : 'Scheduled 18-Month Check-in',
+      isActual: m18Followup?.status === 'completed'
+    },
+    {
+      period: '24M Career Advancement',
       wage: m24Wage,
       status: m24Followup?.status || 'upcoming',
       dueDate: m24Followup?.due_date,
