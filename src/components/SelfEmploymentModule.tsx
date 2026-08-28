@@ -96,11 +96,11 @@ export const SelfEmploymentModule: React.FC = () => {
   useEffect(() => {
     if (employment) {
       setFormData({
-        status: employment.status || 'self_employed',
+        status: employment.status || 'not_employed',
         business_name: employment.business_name || '',
         business_type: employment.business_type || '',
-        business_category: employment.business_category || 'Micro-Enterprise',
-        business_status: employment.business_status || 'active',
+        business_category: employment.business_category || '',
+        business_status: employment.business_status || '',
         establishment_date: employment.establishment_date || '',
         monthly_revenue: employment.monthly_revenue || 0,
         monthly_profit: employment.monthly_profit || 0,
@@ -108,23 +108,23 @@ export const SelfEmploymentModule: React.FC = () => {
         udyam_number: employment.udyam_number || '',
         gst_number: employment.gst_number || '',
         business_address: employment.business_address || '',
-        employees_count: employment.employees_count || 1,
+        employees_count: employment.employees_count || 0,
       });
     } else {
       setFormData({
-        status: 'self_employed',
+        status: 'not_employed',
         business_name: '',
         business_type: '',
-        business_category: 'Micro-Enterprise',
-        business_status: 'active',
-        establishment_date: new Date().toISOString().split('T')[0],
+        business_category: '',
+        business_status: '',
+        establishment_date: '',
         monthly_revenue: 0,
         monthly_profit: 0,
-        monthly_income_range: '₹15,000 – ₹25,000',
+        monthly_income_range: '',
         udyam_number: '',
         gst_number: '',
-        business_address: profile?.district ? `${profile.district}, Maharashtra` : '',
-        employees_count: 1,
+        business_address: '',
+        employees_count: 0,
       });
     }
 
@@ -156,7 +156,11 @@ export const SelfEmploymentModule: React.FC = () => {
     setSaving(true);
     setSuccessMsg(null);
 
-    const success = await updateEmployment(formData);
+    const payload = {
+      ...formData,
+      status: formData.business_name?.trim() ? 'self_employed' : 'not_employed',
+    };
+    const success = await updateEmployment(payload);
     setSaving(false);
     if (success) {
       setSuccessMsg('Business profile saved and synchronized successfully!');
@@ -401,7 +405,7 @@ export const SelfEmploymentModule: React.FC = () => {
               <label className="text-slate-600 font-bold block mb-1">Number of Employees Supported</label>
               <input
                 type="number"
-                value={formData.employees_count || 1}
+                value={formData.employees_count ?? 0}
                 onChange={e => setFormData({ ...formData, employees_count: Number(e.target.value) })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium"
               />

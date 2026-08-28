@@ -39,7 +39,7 @@ The live browser also emitted React minified error #418 on interactive public ro
 
 ### C7 — Database defaults created synthetic outcomes
 
-The original setup scripts gave `trainee_enrollments.certificate_id`, `grade`, profile DOB/state, employment status, and follow-up income fields plausible defaults. A normal enrollment could therefore appear certified and charts could display a made-up baseline. Migration `src/db/migrations/008_real_data_only.sql` removes those defaults, normalizes non-authoritative certificate fields, and adds a certification consistency constraint. Apply it to the live database.
+The original setup scripts gave `trainee_enrollments.certificate_id`, `grade`, profile DOB/state, employment status, and follow-up income fields plausible defaults. A normal enrollment could therefore appear certified and charts could display a made-up baseline. Run `src/db/COMPLETE_SUPABASE_REPAIR.sql` on a live database with unknown migration history; it adds missing compatibility columns (including `monthly_income_range`), removes those defaults, installs the settings/username RPC dependencies, and normalizes non-authoritative certificate fields without seeding demo outcomes. The focused `src/db/migrations/008_real_data_only.sql` is also schema-compatible for installations where the base tables already exist.
 
 ## High-priority findings
 
@@ -82,7 +82,7 @@ The database setting is now standardized to `support@nexus.in`, but all public/a
 ## Recommended execution order
 
 1. Deploy commit `8ae9deb` and verify the new bundle is live.
-2. Apply `src/db/SQL_EDITOR_COMPLETE.sql` and verify RPC/settings queries.
+2. Apply `src/db/COMPLETE_SUPABASE_REPAIR.sql` and verify RPC/settings queries. Use `src/db/SQL_EDITOR_COMPLETE.sql` only as the smaller settings/RPC patch when the schema is already known to be complete.
 3. Fix C1–C5 (authorization, fabricated data, live health/cron, docs).
 4. Fix H2–H6 and add route-level smoke tests.
 5. Add an authenticated test account and execute signup, OTP, profile, settings, certificate, employer, and admin workflows end-to-end.

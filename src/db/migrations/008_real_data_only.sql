@@ -1,69 +1,57 @@
--- Migration 008: enforce real trainee outcomes only
--- Run once in Supabase SQL Editor after the hardened RLS migration.
--- This removes schema defaults that made an enrollment look certified before
--- an evaluator issued a credential. It does not delete any user records.
+-- Migration 008: enforce real trainee outcomes only (schema-compatible)
+--
+-- Some historical installations do not have trainee_employment.monthly_income_range
+-- or employees_count. Every optional column is checked before ALTER/UPDATE.
+-- For a one-shot repair that also creates missing portal tables/settings, run
+-- src/db/COMPLETE_SUPABASE_REPAIR.sql instead.
 
-ALTER TABLE IF EXISTS public.trainee_enrollments
-  ALTER COLUMN certificate_id DROP DEFAULT;
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT * FROM (VALUES
+    ('trainees','dob'), ('trainees','gender'), ('trainees','aadhaar_masked'),
+    ('trainees','state'), ('trainees','year_of_passing'),
+    ('trainee_enrollments','certificate_id'), ('trainee_enrollments','grade'),
+    ('trainee_employment','status'), ('trainee_employment','business_category'),
+    ('trainee_employment','business_status'), ('trainee_employment','establishment_date'),
+    ('trainee_employment','monthly_income_range'), ('trainee_employment','employees_count'),
+    ('trainee_employment','employee_count'), ('trainee_followups','current_status'),
+    ('trainee_followups','current_income_range'), ('trainee_followups','job_satisfaction_score'),
+    ('trainee_followups','skill_utilization_score')
+  ) AS x(table_name, column_name)
+  LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.columns c
+               WHERE c.table_schema='public' AND c.table_name=r.table_name AND c.column_name=r.column_name) THEN
+      EXECUTE format('ALTER TABLE public.%I ALTER COLUMN %I DROP DEFAULT', r.table_name, r.column_name);
+    END IF;
+  END LOOP;
+END $$;
 
-ALTER TABLE IF EXISTS public.trainee_enrollments
-  ALTER COLUMN grade DROP DEFAULT;
+-- Do not erase enrollment history. Clear only credential fields that are not
+-- backed by a certified status; this prevents UI-only/fake certificates.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='status')
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='certificate_id')
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='certified_date')
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='grade') THEN
+    EXECUTE 'UPDATE public.trainee_enrollments
+      SET certificate_id=NULL, certified_date=NULL, grade=NULL
+      WHERE status IS DISTINCT FROM ''certified''';
+    EXECUTE 'UPDATE public.trainee_enrollments
+      SET status=''completed'', certified_date=NULL, grade=NULL
+      WHERE status=''certified'' AND NULLIF(btrim(certificate_id),'''') IS NULL';
+  END IF;
+END $$;
 
--- Profile defaults must be empty/unknown, never plausible-looking personal
--- facts. The database-generated trainee_id remains the sole identifier default.
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN dob DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN gender DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN aadhaar_masked DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN state DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN year_of_passing DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainees ALTER COLUMN profile_completion_pct SET DEFAULT 0;
-
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN status DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN business_category DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN business_status DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN establishment_date DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN monthly_income_range DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_employment ALTER COLUMN employees_count DROP DEFAULT;
-
-ALTER TABLE IF EXISTS public.trainee_followups ALTER COLUMN current_status DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_followups ALTER COLUMN current_income_range DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_followups ALTER COLUMN job_satisfaction_score DROP DEFAULT;
-ALTER TABLE IF EXISTS public.trainee_followups ALTER COLUMN skill_utilization_score DROP DEFAULT;
-
--- A certificate is valid only when an administrator/evaluator has supplied all
--- three authoritative fields. In-progress rows must never retain a generated
--- certificate reference or grade.
-UPDATE public.trainee_enrollments
-SET certificate_id = NULL,
-    certified_date = NULL,
-    grade = NULL
-WHERE status IS DISTINCT FROM 'certified';
-
--- Certified rows missing an authoritative certificate ID are not certified.
--- Keep the enrollment for auditability, but return it to an explicit completed
--- state so the trainee UI cannot present a credential.
-UPDATE public.trainee_enrollments
-SET status = 'completed',
-    certified_date = NULL,
-    grade = NULL
-WHERE status = 'certified'
-  AND NULLIF(BTRIM(certificate_id), '') IS NULL;
-
--- Prevent future inconsistent writes at the database boundary.
-ALTER TABLE public.trainee_enrollments
-  DROP CONSTRAINT IF EXISTS trainee_enrollments_certification_fields_check;
-
-ALTER TABLE public.trainee_enrollments
-  ADD CONSTRAINT trainee_enrollments_certification_fields_check
-  CHECK (
-    (status = 'certified'
-      AND NULLIF(BTRIM(certificate_id), '') IS NOT NULL
-      AND certified_date IS NOT NULL)
-    OR status <> 'certified'
-  );
-
-COMMENT ON COLUMN public.trainee_enrollments.certificate_id IS
-  'Issued only by an authorized evaluator after a verified assessment; NULL until then.';
-
-COMMENT ON COLUMN public.trainee_enrollments.grade IS
-  'Authoritative evaluator grade; NULL until certification is issued.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='certificate_id') THEN
+    COMMENT ON COLUMN public.trainee_enrollments.certificate_id IS
+      'Issued only by an authorized evaluator after a verified assessment; NULL until then.';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='trainee_enrollments' AND column_name='grade') THEN
+    COMMENT ON COLUMN public.trainee_enrollments.grade IS
+      'Authoritative evaluator grade; NULL until certification is issued.';
+  END IF;
+END $$;

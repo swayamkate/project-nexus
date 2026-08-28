@@ -21,10 +21,9 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
-import { calculateWGM } from '@/lib/validators';
 
 export const FollowupsPage: React.FC = () => {
-  const { profile, employment, followups, submitFollowup, t, language } = useUser();
+  const { profile, followups, submitFollowup, t, language } = useUser();
   const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
   const [viewDetailsItem, setViewDetailsItem] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -33,11 +32,11 @@ export const FollowupsPage: React.FC = () => {
 
   // Form State
   const [surveyState, setSurveyState] = useState({
-    current_status: 'Active',
-    current_income_range: '₹15,000 – ₹25,000',
-    job_satisfaction_score: 5,
-    skill_utilization_score: 5,
-    remarks: 'Enterprise is operating profitably with growing local client base.'
+    current_status: '',
+    current_income_range: '',
+    job_satisfaction_score: null as number | null,
+    skill_utilization_score: null as number | null,
+    remarks: ''
   });
 
   const startVoiceInput = () => {
@@ -72,10 +71,6 @@ export const FollowupsPage: React.FC = () => {
     recognition.start();
   };
 
-  const baselineWage = 10000;
-  const currentIncome = Number(employment?.monthly_revenue || 22000);
-  const wgm = calculateWGM(baselineWage, currentIncome);
-
   const standardMilestones: Array<{ milestone: '3_months' | '6_months' | '12_months' | '18_months' | '24_months'; title: string; defaultMonths: number }> = [
     { milestone: '3_months', title: '3 Months Follow-up', defaultMonths: 3 },
     { milestone: '6_months', title: '6 Months Follow-up', defaultMonths: 6 },
@@ -92,11 +87,11 @@ export const FollowupsPage: React.FC = () => {
       status: existing?.status || 'upcoming',
       scheduledDate: existing?.due_date || `M+${m.defaultMonths} Post-Training`,
       submittedDate: existing?.completed_date || (existing?.status === 'completed' ? existing.due_date : '-'),
-      businessStatus: existing?.current_status ? existing.current_status.replace('_', ' ') : (existing?.status === 'completed' ? 'Active' : 'Pending'),
+      businessStatus: existing?.current_status ? existing.current_status.replace('_', ' ') : (existing?.status === 'completed' ? 'Reported' : 'Pending'),
       incomeRange: existing?.current_income_range || (existing?.status === 'completed' ? 'Reported' : '-'),
-      remarks: existing?.remarks || (existing?.status === 'completed' ? 'Verified' : 'Pending submission'),
-      satisfactionScore: existing?.job_satisfaction_score || 5,
-      skillScore: existing?.skill_utilization_score || 5,
+      remarks: existing?.remarks || (existing?.status === 'completed' ? 'Submitted' : 'Pending submission'),
+      satisfactionScore: existing?.job_satisfaction_score ?? null,
+      skillScore: existing?.skill_utilization_score ?? null,
     };
   });
 
@@ -360,6 +355,7 @@ export const FollowupsPage: React.FC = () => {
                   onChange={e => setSurveyState({ ...surveyState, current_status: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
                 >
+                  <option value="">Select status</option>
                   <option value="Active">Active (Generating steady income)</option>
                   <option value="Scaling">Scaling (Expanding customer base)</option>
                   <option value="Needs Support">Struggling / Needs Training Support</option>
@@ -373,6 +369,7 @@ export const FollowupsPage: React.FC = () => {
                   onChange={e => setSurveyState({ ...surveyState, current_income_range: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
                 >
+                  <option value="">Select income range</option>
                   <option value="₹5,000 – ₹10,000">₹5,000 – ₹10,000</option>
                   <option value="₹10,000 – ₹20,000">₹10,000 – ₹20,000</option>
                   <option value="₹20,000 – ₹35,000">₹20,000 – ₹35,000</option>

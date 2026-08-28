@@ -13,7 +13,7 @@ Run these files in order. Each is already in the repository and is intentionally
 5. `src/db/migrations/006_platform_settings.sql` — platform settings table, defaults and public-read policy.
 6. `src/db/HARDENED_PRODUCTION_RLS.sql` — removes permissive policies and installs production RLS.
 7. `src/db/007_auth_rpcs.sql` — safe anonymous username availability/email lookup used by login.
-8. `src/db/migrations/008_real_data_only.sql` — removes synthetic personal/outcome defaults and enforces real certification fields.
+8. `src/db/migrations/008_real_data_only.sql` — schema-compatible cleanup of synthetic personal/outcome defaults.
 9. Optional data only: `src/db/SEED_REAL_CANDIDATES.sql` and `src/db/SEED_CERT.sql`. Use only in a non-production/demo database unless the records are explicitly approved.
 
 Do not run these as part of a normal production setup:
@@ -23,7 +23,7 @@ Do not run these as part of a normal production setup:
 - `src/db/SETUP_COMPLETE_NEXUS_DB.sql` — older permissive consolidated setup; use `SETUP_MASTER.sql` plus the ordered migrations above instead.
 - `src/db/seed.sql` — demo seed data; do not mix with real production records.
 
-For an existing database where the base schema already exists, run steps 5–8. The focused patch `src/db/SQL_EDITOR_COMPLETE.sql` is safe for settings/RPC dependencies, but the real-data migration must also be applied.
+For an existing database with an unknown/partially applied history, run **only** `src/db/COMPLETE_SUPABASE_REPAIR.sql`. It is idempotent, adds missing compatibility columns (including `monthly_income_range`), installs settings and username RPCs, and performs the real-data cleanup without seeding demo outcomes. Do not run old setup files on top of a live database unless you have reviewed their seed data. If the base schema is known to be complete, steps 5–8 remain valid; `src/db/SQL_EDITOR_COMPLETE.sql` is only the smaller settings/RPC patch.
 
 ## Verification queries
 
