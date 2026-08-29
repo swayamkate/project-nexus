@@ -22,6 +22,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { createClient } from '@/lib/supabaseBrowser';
 import {
   DEFAULT_SETTINGS,
   SETTING_TYPES,
@@ -102,11 +103,22 @@ export default function AdminSettingsPage() {
     setTimeout(() => setToast(null), 4500);
   }, []);
 
+  const supabase = createClient();
+
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
-        const res = await fetch('/api/settings', { cache: 'no-store' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/settings', { 
+          cache: 'no-store',
+          headers
+        });
         const data = await res.json();
         if (!active) return;
         if (res.ok && data.settings) {
@@ -153,12 +165,18 @@ export default function AdminSettingsPage() {
     }
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const patch: Record<string, unknown> = {};
       dirtyKeys.forEach(key => { patch[key] = settings[key]; });
 
       const res = await fetch('/api/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ settings: patch }),
       });
       const data = await res.json();

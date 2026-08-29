@@ -1,3 +1,5 @@
+import { createClient } from '@/lib/supabaseBrowser';
+
 /**
  * Secure Admin Client Mutation Utility
  * Dispatches database writes through Next.js server-side API with Service Role authority.
@@ -15,11 +17,20 @@ export interface MutationOptions {
 
 export async function mutateAdminDb<T = any>(options: MutationOptions): Promise<{ data: T | null; error: Error | null }> {
   try {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const res = await fetch('/api/admin/mutate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(options)
     });
 
@@ -33,3 +44,4 @@ export async function mutateAdminDb<T = any>(options: MutationOptions): Promise<
     return { data: null, error: err };
   }
 }
+
