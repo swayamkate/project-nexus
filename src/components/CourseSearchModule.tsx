@@ -464,7 +464,20 @@ export const CourseSearchModule: React.FC = () => {
   }, [profile]);
 
   const handleEnrollCourse = async (course: Course) => {
-    if (!profile?.id) {
+    let effectiveTraineeId = profile?.id;
+    if (!effectiveTraineeId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        const { data: tData } = await supabase
+          .from('trainees')
+          .select('id')
+          .eq('email', session.user.email)
+          .maybeSingle();
+        effectiveTraineeId = tData?.id;
+      }
+    }
+
+    if (!effectiveTraineeId) {
       setToastMsg('Please sign in to track course progress.');
       setTimeout(() => setToastMsg(null), 3500);
       return;
@@ -553,7 +566,7 @@ export const CourseSearchModule: React.FC = () => {
           action: 'upsert',
           table: 'trainee_course_enrollments',
           payload: {
-            trainee_id: profile.id,
+            trainee_id: effectiveTraineeId,
             course_id: targetCourseUuid,
             status: 'in_progress',
             progress_pct: 10

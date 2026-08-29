@@ -154,8 +154,21 @@ export const TrainingDetailsPage: React.FC = () => {
   };
 
   const handleEnroll = async (programId: string) => {
-    if (!profile?.id) {
-      showToast('Please complete your candidate profile before enrolling.', 'error');
+    let effectiveTraineeId = profile?.id;
+    if (!effectiveTraineeId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        const { data: tData } = await supabase
+          .from('trainees')
+          .select('id')
+          .eq('email', session.user.email)
+          .maybeSingle();
+        effectiveTraineeId = tData?.id;
+      }
+    }
+
+    if (!effectiveTraineeId) {
+      showToast('Please sign in or complete your candidate profile before enrolling.', 'error');
       return;
     }
 
@@ -175,36 +188,63 @@ export const TrainingDetailsPage: React.FC = () => {
       let targetProgramId = programId;
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(programId);
 
-      // If program is from static fallback and not yet in database, provision it via mutateDb first
+      // If program is from static fallback and not yet in database, look up by title or provision it
       if (!isUUID && course) {
-        const { data: progData, error: progErr } = await mutateDb({
-          action: 'insert',
-          table: 'training_programs',
-          payload: {
-            title: course.title,
-            sector: course.sector,
-            duration_months: Number(course.duration_months) || 3,
-            provider_name: course.provider_name || '',
-            description: course.description || ''
+        const { data: existingProg } = await supabase
+          .from('training_programs')
+          .select('id')
+          .ilike('title', course.title.trim())
+          .maybeSingle();
+
+        if (existingProg?.id) {
+          targetProgramId = existingProg.id;
+        } else {
+          const { data: progData, error: progErr } = await mutateDb({
+            action: 'insert',
+            table: 'training_programs',
+            payload: {
+              title: course.title.trim(),
+              sector: course.sector,
+              duration_months: Number(course.duration_months) || 3,
+              provider_name: course.provider_name || '',
+              description: course.description || ''
+            }
+          });
+          if (progErr || !progData?.[0]?.id) {
+            throw progErr || new Error('Failed to register training program in database');
           }
-        });
-        if (progErr || !progData?.[0]?.id) {
-          throw progErr || new Error('Failed to register training program in database');
+          targetProgramId = progData[0].id;
         }
-        targetProgramId = progData[0].id;
       }
 
-      const { error } = await mutateDb({
-        action: 'insert',
-        table: 'trainee_enrollments',
-        payload: {
-          trainee_id: profile.id,
-          program_id: targetProgramId,
-          enrolled_date: new Date().toISOString().split('T')[0],
-          status: 'enrolled'
-        }
-      });
-      if (error) throw error;
+      // Check if enrollment already exists for this trainee and program
+      const { data: existingEnr } = await supabase
+        .from('trainee_enrollments')
+        .select('id')
+        .eq('trainee_id', effectiveTraineeId)
+        .eq('program_id', targetProgramId)
+        .maybeSingle();
+
+      if (existingEnr?.id) {
+        await mutateDb({
+          action: 'update',
+          table: 'trainee_enrollments',
+          payload: { status: 'enrolled', enrolled_date: new Date().toISOString().split('T')[0] },
+          match: { id: existingEnr.id }
+        });
+      } else {
+        const { error } = await mutateDb({
+          action: 'insert',
+          table: 'trainee_enrollments',
+          payload: {
+            trainee_id: effectiveTraineeId,
+            program_id: targetProgramId,
+            enrolled_date: new Date().toISOString().split('T')[0],
+            status: 'enrolled'
+          }
+        });
+        if (error) throw error;
+      }
 
       await refreshData();
       await loadCourses();
@@ -220,7 +260,20 @@ export const TrainingDetailsPage: React.FC = () => {
     e.preventDefault();
     setFormError(null);
 
-    if (!profile?.id) {
+    let effectiveTraineeId = profile?.id;
+    if (!effectiveTraineeId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        const { data: tData } = await supabase
+          .from('trainees')
+          .select('id')
+          .eq('email', session.user.email)
+          .maybeSingle();
+        effectiveTraineeId = tData?.id;
+      }
+    }
+
+    if (!effectiveTraineeId) {
       setFormError('Candidate profile session is required. Please ensure you are logged in.');
       return;
     }
@@ -251,25 +304,35 @@ export const TrainingDetailsPage: React.FC = () => {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCatalogId);
 
         if (!isUUID && selectedCourse) {
-          const { data: progData, error: progErr } = await mutateDb({
-            action: 'insert',
-            table: 'training_programs',
-            payload: {
-              title: selectedCourse.title,
-              sector: selectedCourse.sector,
-              duration_months: Number(selectedCourse.duration_months) || 3,
-              provider_name: selectedCourse.provider_name || '',
-              description: selectedCourse.description || ''
+          const { data: existingProg } = await supabase
+            .from('training_programs')
+            .select('id')
+            .ilike('title', selectedCourse.title.trim())
+            .maybeSingle();
+
+          if (existingProg?.id) {
+            targetProgramId = existingProg.id;
+          } else {
+            const { data: progData, error: progErr } = await mutateDb({
+              action: 'insert',
+              table: 'training_programs',
+              payload: {
+                title: selectedCourse.title.trim(),
+                sector: selectedCourse.sector,
+                duration_months: Number(selectedCourse.duration_months) || 3,
+                provider_name: selectedCourse.provider_name || '',
+                description: selectedCourse.description || ''
+              }
+            });
+            if (progErr || !progData?.[0]?.id) {
+              throw progErr || new Error('Failed to register training program');
             }
-          });
-          if (progErr || !progData?.[0]?.id) {
-            throw progErr || new Error('Failed to register training program');
+            targetProgramId = progData[0].id;
           }
-          targetProgramId = progData[0].id;
         }
 
         const enrollmentPayload: Record<string, any> = {
-          trainee_id: profile.id,
+          trainee_id: effectiveTraineeId,
           program_id: targetProgramId,
           enrolled_date: catalogEnrolledDate || new Date().toISOString().split('T')[0],
           status: catalogStatus,
@@ -279,13 +342,29 @@ export const TrainingDetailsPage: React.FC = () => {
           grade: catalogGrade?.trim() ? catalogGrade.trim().slice(0, 10) : null
         };
 
-        const { error: enrErr } = await mutateDb({
-          action: 'insert',
-          table: 'trainee_enrollments',
-          payload: enrollmentPayload
-        });
+        const { data: existingEnr } = await supabase
+          .from('trainee_enrollments')
+          .select('id')
+          .eq('trainee_id', effectiveTraineeId)
+          .eq('program_id', targetProgramId)
+          .maybeSingle();
 
-        if (enrErr) throw enrErr;
+        if (existingEnr?.id) {
+          const { error: enrErr } = await mutateDb({
+            action: 'update',
+            table: 'trainee_enrollments',
+            payload: enrollmentPayload,
+            match: { id: existingEnr.id }
+          });
+          if (enrErr) throw enrErr;
+        } else {
+          const { error: enrErr } = await mutateDb({
+            action: 'insert',
+            table: 'trainee_enrollments',
+            payload: enrollmentPayload
+          });
+          if (enrErr) throw enrErr;
+        }
 
       } else {
         // Custom Course Mode
@@ -310,29 +389,39 @@ export const TrainingDetailsPage: React.FC = () => {
           return;
         }
 
-        // 1. Insert into training_programs via mutateDb proxy
-        const { data: progData, error: progErr } = await mutateDb({
-          action: 'insert',
-          table: 'training_programs',
-          payload: {
-            title: customTitle.trim(),
-            sector: customSector.trim(),
-            duration_months: Math.max(1, Number(customDuration) || 3),
-            provider_name: customProvider.trim(),
-            description: customDescription.trim() || `${customSector} vocational training program certified by ${customProvider.trim()}.`
+        // 1. Check if program with same title already exists in training_programs
+        let targetProgramId: string | null = null;
+        const { data: existingProg } = await supabase
+          .from('training_programs')
+          .select('id')
+          .ilike('title', customTitle.trim())
+          .maybeSingle();
+
+        if (existingProg?.id) {
+          targetProgramId = existingProg.id;
+        } else {
+          const { data: progData, error: progErr } = await mutateDb({
+            action: 'insert',
+            table: 'training_programs',
+            payload: {
+              title: customTitle.trim(),
+              sector: customSector.trim(),
+              duration_months: Math.max(1, Number(customDuration) || 3),
+              provider_name: customProvider.trim(),
+              description: customDescription.trim() || `${customSector} vocational training program certified by ${customProvider.trim()}.`
+            }
+          });
+
+          if (progErr || !progData?.[0]?.id) {
+            throw progErr || new Error('Failed to create training program record');
           }
-        });
-
-        if (progErr || !progData?.[0]?.id) {
-          throw progErr || new Error('Failed to create training program record');
+          targetProgramId = progData[0].id;
         }
-
-        const newProgramId = progData[0].id;
 
         // 2. Link in trainee_enrollments with candidate details
         const enrollmentPayload: Record<string, any> = {
-          trainee_id: profile.id,
-          program_id: newProgramId,
+          trainee_id: effectiveTraineeId,
+          program_id: targetProgramId,
           enrolled_date: customEnrolledDate || new Date().toISOString().split('T')[0],
           status: customStatus,
           completed_date: (customStatus === 'completed' || customStatus === 'certified') && customCompletedDate?.trim() ? customCompletedDate.trim() : null,
@@ -341,13 +430,29 @@ export const TrainingDetailsPage: React.FC = () => {
           grade: customGrade?.trim() ? customGrade.trim().slice(0, 10) : null
         };
 
-        const { error: enrErr } = await mutateDb({
-          action: 'insert',
-          table: 'trainee_enrollments',
-          payload: enrollmentPayload
-        });
+        const { data: existingEnr } = await supabase
+          .from('trainee_enrollments')
+          .select('id')
+          .eq('trainee_id', effectiveTraineeId)
+          .eq('program_id', targetProgramId)
+          .maybeSingle();
 
-        if (enrErr) throw enrErr;
+        if (existingEnr?.id) {
+          const { error: enrErr } = await mutateDb({
+            action: 'update',
+            table: 'trainee_enrollments',
+            payload: enrollmentPayload,
+            match: { id: existingEnr.id }
+          });
+          if (enrErr) throw enrErr;
+        } else {
+          const { error: enrErr } = await mutateDb({
+            action: 'insert',
+            table: 'trainee_enrollments',
+            payload: enrollmentPayload
+          });
+          if (enrErr) throw enrErr;
+        }
       }
 
       // Refresh context and program catalog
