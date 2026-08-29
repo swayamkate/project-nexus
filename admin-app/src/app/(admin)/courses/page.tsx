@@ -104,7 +104,9 @@ export default function AdminCoursesPage() {
       duration_weeks: course.duration_weeks,
       estimated_hours: course.estimated_hours,
       nsqf_level: course.nsqf_level || 4,
-      skill_tags: (course.skill_tags || []).join(', '),
+      skill_tags: Array.isArray(course.skill_tags) 
+        ? course.skill_tags.join(', ') 
+        : (typeof course.skill_tags === 'string' ? course.skill_tags.replace(/[\[\]"]/g, '') : ''),
       url: course.url,
       rating: course.rating || 4.8,
       is_free: course.is_free,
@@ -324,9 +326,12 @@ export default function AdminCoursesPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {course.skill_tags?.map((tag: string, i: number) => (
+                    {(Array.isArray(course.skill_tags) 
+                      ? course.skill_tags 
+                      : (typeof course.skill_tags === 'string' ? course.skill_tags.replace(/[\[\]"]/g, '').split(',') : [])
+                    ).filter(Boolean).map((tag: string, i: number) => (
                       <span key={i} className="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 text-[10px]">
-                        {tag}
+                        {tag.trim()}
                       </span>
                     ))}
                   </div>

@@ -310,6 +310,39 @@ export const CourseSearchModule: React.FC = () => {
             return urlMatch || titleMatch;
           });
 
+          // Safely parse skill_tags
+          let parsedSkillTags: string[] = matchingStatic?.skill_tags || ['Vocational Skill', 'State Certified'];
+          if (Array.isArray(dbc.skill_tags) && dbc.skill_tags.length > 0) {
+            parsedSkillTags = dbc.skill_tags;
+          } else if (typeof dbc.skill_tags === 'string' && dbc.skill_tags.trim()) {
+            try {
+              const parsed = JSON.parse(dbc.skill_tags);
+              if (Array.isArray(parsed)) parsedSkillTags = parsed;
+              else parsedSkillTags = [dbc.skill_tags];
+            } catch {
+              parsedSkillTags = dbc.skill_tags.split(',').map((s: string) => s.trim());
+            }
+          }
+
+          // Safely parse syllabus
+          let parsedSyllabus: string[] = matchingStatic?.syllabus || [
+            'Foundational Theory & Safety Standards',
+            'Practical Tool Handling & Core Operations',
+            'Quality Inspection & Defect Remediation',
+            'Final Project & Examination Prep'
+          ];
+          if (Array.isArray(dbc.syllabus) && dbc.syllabus.length > 0) {
+            parsedSyllabus = dbc.syllabus;
+          } else if (typeof dbc.syllabus === 'string' && dbc.syllabus.trim()) {
+            try {
+              const parsed = JSON.parse(dbc.syllabus);
+              if (Array.isArray(parsed)) parsedSyllabus = parsed;
+              else parsedSyllabus = [dbc.syllabus];
+            } catch {
+              parsedSyllabus = dbc.syllabus.split('\n').map((s: string) => s.trim());
+            }
+          }
+
           const courseObj: Course = {
             id: dbc.id,
             title: dbc.title || matchingStatic?.title || 'Accredited Course',
@@ -328,14 +361,9 @@ export const CourseSearchModule: React.FC = () => {
             exam_date: dbc.exam_date || matchingStatic?.exam_date || '26 Oct 2025',
             prerequisites: dbc.prerequisites || matchingStatic?.prerequisites || '10th Standard or Vocational Certificate',
             description: dbc.description || matchingStatic?.description || 'Government accredited vocational upskilling program with verified credential output.',
-            syllabus: dbc.syllabus || matchingStatic?.syllabus || [
-              'Foundational Theory & Safety Standards',
-              'Practical Tool Handling & Core Operations',
-              'Quality Inspection & Defect Remediation',
-              'Final Project & Examination Prep'
-            ],
+            syllabus: parsedSyllabus,
             url: dbc.url || matchingStatic?.url || 'https://onlinecourses.nptel.ac.in',
-            skill_tags: (dbc.skill_tags && dbc.skill_tags.length > 0) ? dbc.skill_tags : (matchingStatic?.skill_tags || ['Vocational Skill', 'State Certified'])
+            skill_tags: parsedSkillTags
           };
 
           if (matchingStatic) {
