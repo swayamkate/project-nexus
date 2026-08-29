@@ -512,35 +512,54 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const submitFollowup = async (milestone: string, surveyData: any): Promise<boolean> => {
     if (!profile) return false;
     try {
-      const existing = followups.find(f => f.milestone === milestone);
-      const payload = {
+      const existingState = followups.find(f => f.milestone === milestone);
+      const payload: Record<string, any> = {
         trainee_id: profile.id,
         milestone,
         status: 'completed',
+        due_date: existingState?.due_date || new Date().toISOString().split('T')[0],
         completed_date: new Date().toISOString().split('T')[0],
-        current_status: surveyData.current_status || surveyData.status || 'Active',
-        current_income_range: surveyData.current_income_range || surveyData.income_range || '₹0 (Unemployed / In Training)',
+        current_status: surveyData.current_status || surveyData.status || 'employed',
+        current_income_range: surveyData.current_income_range || surveyData.income_range || '₹20,000 – ₹30,000',
         job_satisfaction_score: Number(surveyData.job_satisfaction_score ?? surveyData.satisfaction ?? 5),
-        additional_support_needed: surveyData.remarks || surveyData.additional_support_needed || '',
-        survey_data_json: surveyData,
+        skill_utilization_score: Number(surveyData.skill_utilization_score ?? 5),
+        additional_support_needed: surveyData.additional_support_needed || surveyData.remarks || (typeof surveyData.voice_remarks === 'string' ? surveyData.voice_remarks : null),
         updated_at: new Date().toISOString(),
       };
 
-      if (existing) {
+      if (existingState?.id) {
         const { error } = await mutateDb({
           action: 'update',
           table: 'trainee_followups',
           payload,
-          match: { id: existing.id }
+          match: { id: existingState.id }
         });
         if (error) throw error;
       } else {
-        const { error } = await mutateDb({
-          action: 'insert',
-          table: 'trainee_followups',
-          payload
-        });
-        if (error) throw error;
+        // Query DB in case state wasn't populated yet
+        const { data: dbExisting } = await supabase
+          .from('trainee_followups')
+          .select('id')
+          .eq('trainee_id', profile.id)
+          .eq('milestone', milestone)
+          .maybeSingle();
+
+        if (dbExisting?.id) {
+          const { error } = await mutateDb({
+            action: 'update',
+            table: 'trainee_followups',
+            payload,
+            match: { id: dbExisting.id }
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await mutateDb({
+            action: 'insert',
+            table: 'trainee_followups',
+            payload
+          });
+          if (error) throw error;
+        }
       }
 
       await loadUserData();

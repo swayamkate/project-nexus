@@ -62,6 +62,18 @@ function sanitizePayload(table: string, payload: any): any {
     clean.grade = clean.grade.trim().slice(0, 10);
   }
 
+  // Sanitize trainee_followups columns for PostgreSQL
+  if (table === 'trainee_followups') {
+    if (clean.remarks && !clean.additional_support_needed) {
+      clean.additional_support_needed = clean.remarks;
+    }
+    delete clean.remarks;
+    delete clean.notes;
+    delete clean.feedback;
+    delete clean.comments;
+    delete clean.survey_answers;
+  }
+
   return clean;
 }
 
