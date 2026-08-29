@@ -148,7 +148,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   mr: {
     // Brand & Top Header
-    'brand.name': 'नेक्सस (Nexus)',
+    'brand.name': 'करिअरलूप (CareerLoop)',
     'brand.subtitle': 'एकात्मिक कौशल्य नोंदणी प्रणाली',
     'nav.dashboard': 'मुख्य पृष्ठ (Overview)',
     'nav.profile': 'माझे प्रोफाईल (Profile)',
@@ -293,7 +293,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   hi: {
     // Brand & Top Header
-    'brand.name': 'नेक्सस (Nexus)',
+    'brand.name': 'करियरलूप (CareerLoop)',
     'brand.subtitle': 'एकीकृत कौशल रजिस्ट्री प्रणाली',
     'nav.dashboard': 'अवलोकन (Overview)',
     'nav.profile': 'मेरी प्रोफ़ाइल (Profile)',

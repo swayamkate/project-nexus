@@ -84,7 +84,7 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   'surveys.escalation_days_after': 14,
   'surveys.enable_whatsapp': true,
   'surveys.enable_sms': true,
-  'surveys.sms_template': 'Nexus: Your vocational follow-up check-in is due. Submit at {portal}',
+  'surveys.sms_template': 'CareerLoop: Your vocational follow-up check-in is due. Submit at {portal}',
 
   'security.session_timeout_minutes': 1440,
   'security.require_2fa_superadmins': true,
