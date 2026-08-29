@@ -102,8 +102,23 @@ export default function BroadcastsPage() {
         .single();
 
       if (!error && data) {
+        // Also fan-out in-app alert to all trainees so they can immediately fill the survey
+        const { data: allTrainees } = await supabase.from('trainees').select('id');
+        if (allTrainees && allTrainees.length > 0) {
+          const notifPayloads = allTrainees.map(t => ({
+            trainee_id: t.id,
+            title: template === '3M_SURVEY' ? '📋 3-Month Longitudinal Skilling Survey Due'
+                  : template === '6M_WAGE_LIFT' ? '📊 6-Month Longitudinal Wage & Retention Survey Due'
+                  : '🔔 State Skilling Mission Alert',
+            message: customMsg,
+            type: 'survey_due',
+            is_read: false
+          }));
+          await supabase.from('trainee_notifications').insert(notifPayloads);
+        }
+
         setBroadcasts([data, ...broadcasts]);
-        setToast(`Successfully dispatched ${channel.toUpperCase()} broadcast via Gov Gateway!`);
+        setToast(`Successfully dispatched ${channel.toUpperCase()} broadcast & alerted all candidates!`);
         setTimeout(() => setToast(null), 4000);
       }
     } catch (err) {

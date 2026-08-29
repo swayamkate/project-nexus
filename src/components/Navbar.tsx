@@ -22,6 +22,7 @@ import { useUser } from '@/context/UserContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Language } from '@/lib/i18n';
 import { InteractiveTutorialModal } from '@/components/InteractiveTutorialModal';
+import { LongitudinalSurveyModal } from '@/components/LongitudinalSurveyModal';
 
 interface NavbarProps {
   viewMode: 'admin' | 'trainee';
@@ -45,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
 
   const displayName = profile?.full_name || 'CareerLoop Trainee';
   const firstName = displayName.split(' ')[0];
@@ -228,7 +230,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   notifications.map((n) => (
                     <div 
                       key={n.id} 
-                      onClick={() => markNotificationAsRead(n.id)}
+                      onClick={() => {
+                        markNotificationAsRead(n.id);
+                        if (n.type === 'survey_due' || n.title.toLowerCase().includes('survey') || n.title.toLowerCase().includes('milestone') || n.title.toLowerCase().includes('follow-up')) {
+                          setIsSurveyModalOpen(true);
+                          setShowNotifMenu(false);
+                        }
+                      }}
                       className={`p-2.5 rounded-xl border transition cursor-pointer ${
                         n.is_read 
                           ? 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800/80 text-slate-500' 
@@ -236,12 +244,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-slate-900 dark:text-white">{n.title}</span>
+                        <span className="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                          <span>{n.title}</span>
+                          {(n.type === 'survey_due' || n.title.toLowerCase().includes('survey')) && (
+                            <span className="px-1.5 py-0.2 bg-blue-600 text-white rounded text-[9px] font-black uppercase">
+                              Survey
+                            </span>
+                          )}
+                        </span>
                         {!n.is_read && (
                           <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                         )}
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">{n.message}</p>
+                      {(n.type === 'survey_due' || n.title.toLowerCase().includes('survey')) && (
+                        <div className="mt-1.5 text-[10px] font-bold text-blue-600 flex items-center space-x-1 hover:underline">
+                          <span>Click here to fill 10-question survey →</span>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -328,6 +348,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         <InteractiveTutorialModal 
           isOpen={isTutorialOpen} 
           onClose={() => setIsTutorialOpen(false)} 
+        />
+      )}
+
+      {/* 10-Question Longitudinal Survey Modal */}
+      {isSurveyModalOpen && (
+        <LongitudinalSurveyModal
+          isOpen={isSurveyModalOpen}
+          onClose={() => setIsSurveyModalOpen(false)}
+          milestone="6_months"
         />
       )}
 

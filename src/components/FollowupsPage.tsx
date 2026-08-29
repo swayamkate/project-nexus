@@ -21,6 +21,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { LongitudinalSurveyModal } from '@/components/LongitudinalSurveyModal';
 
 export const FollowupsPage: React.FC = () => {
   const { profile, followups, submitFollowup, t, language } = useUser();
@@ -372,112 +373,13 @@ export const FollowupsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Update Survey Modal */}
+      {/* 10-Question Longitudinal Outcome Survey Modal */}
       {selectedMilestone && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">
-                {selectedMilestone.replace('_', ' ').toUpperCase()} Survey Submission
-              </h3>
-              <button onClick={() => setSelectedMilestone(null)} className="text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSurveySubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-500 block mb-1">Current Operating Status *</label>
-                <select
-                  required
-                  value={surveyState.current_status}
-                  onChange={e => setSurveyState({ ...surveyState, current_status: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                >
-                  <option value="">Select status</option>
-                  <option value="Active">Active (Generating steady income)</option>
-                  <option value="Scaling">Scaling (Expanding customer base)</option>
-                  <option value="Employed">Employed / Wage Worker</option>
-                  <option value="Needs Support">Struggling / In Training / Needs Support</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-500 block mb-1">Current Monthly Income</label>
-                <select
-                  value={surveyState.current_income_range}
-                  onChange={e => setSurveyState({ ...surveyState, current_income_range: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                >
-                  <option value="">Select income range</option>
-                  <option value="₹0 (Unemployed / In Training)">₹0 (Unemployed / In Training / Seeking Work)</option>
-                  <option value="₹5,000 – ₹10,000">₹5,000 – ₹10,000</option>
-                  <option value="₹10,000 – ₹20,000">₹10,000 – ₹20,000</option>
-                  <option value="₹20,000 – ₹35,000">₹20,000 – ₹35,000</option>
-                  <option value="₹35,000+">₹35,000+</option>
-                </select>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-slate-500 font-semibold block">Remarks & Progress Details</label>
-                  <button
-                    type="button"
-                    onClick={startVoiceInput}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center space-x-1 cursor-pointer ${
-                      isListening 
-                        ? 'bg-rose-500 text-white animate-pulse' 
-                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
-                    }`}
-                  >
-                    {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                    <span>{isListening ? 'Listening (Speak Now)...' : 'Speak Voice Input (मराठी / हिंदी / EN)'}</span>
-                  </button>
-                </div>
-                <textarea
-                  rows={3}
-                  value={surveyState.remarks}
-                  onChange={e => setSurveyState({ ...surveyState, remarks: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                  placeholder="Share details about your work progress or click microphone to speak..."
-                />
-              </div>
-
-              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSurveyState({
-                    current_status: '',
-                    current_income_range: '',
-                    job_satisfaction_score: null,
-                    skill_utilization_score: null,
-                    remarks: ''
-                  })}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-xs transition cursor-pointer"
-                >
-                  Reset Form
-                </button>
-
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMilestone(null)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition disabled:opacity-50 cursor-pointer shadow-sm shadow-blue-600/20"
-                  >
-                    {submitting ? 'Saving...' : 'Submit Survey'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <LongitudinalSurveyModal
+          isOpen={Boolean(selectedMilestone)}
+          onClose={() => setSelectedMilestone(null)}
+          milestone={selectedMilestone}
+        />
       )}
 
       {/* View Details Modal */}

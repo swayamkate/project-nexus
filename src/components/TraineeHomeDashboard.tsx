@@ -31,6 +31,7 @@ import {
 import { useUser } from '@/context/UserContext';
 import { EmptyState } from '@/components/EmptyState';
 import { EmploymentStatusModal } from './profile/EmploymentStatusModal';
+import { LongitudinalSurveyModal } from '@/components/LongitudinalSurveyModal';
 
 interface TraineeHomeDashboardProps {
   onNavigate: (section: string) => void;
@@ -726,88 +727,13 @@ export const TraineeHomeDashboard: React.FC<TraineeHomeDashboardProps> = ({ onNa
         </div>
       )}
 
-      {/* Followup Update Modal */}
+      {/* 10-Question Longitudinal Survey Modal */}
       {showFollowupModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Record Follow-up Check-in</h3>
-              <button onClick={() => setShowFollowupModal(false)} className="text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveFollowup} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-500 block mb-1">Milestone</label>
-                <select
-                  value={surveyForm.milestone}
-                  onChange={e => setSurveyForm({ ...surveyForm, milestone: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                >
-                  <option value="6_months">6 Months Follow-up</option>
-                  <option value="12_months">12 Months Follow-up</option>
-                  <option value="18_months">18 Months Follow-up</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-500 block mb-1">Current Operating Status</label>
-                <select
-                  value={surveyForm.current_status}
-                  onChange={e => setSurveyForm({ ...surveyForm, current_status: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                >
-                  <option value="Active">Active (Generating steady income)</option>
-                  <option value="Scaling">Scaling (Expanding workshop/shop)</option>
-                  <option value="Needs Support">Struggling / Needs Guidance</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-500 block mb-1">Current Monthly Income</label>
-                <select
-                  value={surveyForm.current_income_range}
-                  onChange={e => setSurveyForm({ ...surveyForm, current_income_range: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                >
-                  <option value="₹5,000 – ₹10,000">₹5,000 – ₹10,000</option>
-                  <option value="₹10,000 – ₹20,000">₹10,000 – ₹20,000</option>
-                  <option value="₹20,000 – ₹35,000">₹20,000 – ₹35,000</option>
-                  <option value="₹35,000+">₹35,000+</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-500 block mb-1">Remarks & Feedback</label>
-                <textarea
-                  rows={2}
-                  value={surveyForm.remarks}
-                  onChange={e => setSurveyForm({ ...surveyForm, remarks: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
-                  placeholder="e.g. Business is going well. Getting regular clients."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowFollowupModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700"
-                >
-                  {saving ? 'Submitting...' : 'Submit Follow-up'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <LongitudinalSurveyModal
+          isOpen={showFollowupModal}
+          onClose={() => setShowFollowupModal(false)}
+          milestone={nextPendingFollowup?.milestone || '6_months'}
+        />
       )}
 
       {/* Opportunity Details Modal */}
