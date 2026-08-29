@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin@nexus.com or username"
+                  placeholder="admin@avishkark.in or username"
                   className="w-full bg-[#050811] border border-slate-800 text-white rounded-xl px-10 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition font-medium"
                 />
               </div>

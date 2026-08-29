@@ -184,7 +184,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let active = true;
     const loadLanguage = async () => {
       const savedLang = typeof window !== 'undefined'
-        ? localStorage.getItem('nexus_language') as Language | null
+        ? (localStorage.getItem('careerloop_language') || localStorage.getItem('nexus_language')) as Language | null
         : null;
       if (savedLang && ['en', 'mr', 'hi'].includes(savedLang)) {
         if (active) setLanguageState(savedLang);
@@ -203,7 +203,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('nexus_language', lang);
+      localStorage.setItem('careerloop_language', lang);
     }
   };
 

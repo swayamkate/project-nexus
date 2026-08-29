@@ -210,7 +210,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Target email is required.' }, { status: 400 });
     }
 
-    if (email === 'admin@nexus.com' || email === 'superadmin@careerloop.gov.in') {
+    if (email === 'admin@avishkark.in' || email === 'admin@nexus.com' || email === 'superadmin@careerloop.gov.in') {
       return NextResponse.json({ error: 'Cannot delete primary root superadmin account.' }, { status: 403 });
     }
 

@@ -8,10 +8,10 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://api.avishk
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization');
-    const cronSecret = process.env.CRON_SECRET || 'nexus_cron_secret_2026';
+    const cronSecret = process.env.CRON_SECRET || 'careerloop_cron_secret_2026';
     
     // Optional bearer auth verification if header passed
-    if (authHeader && authHeader !== `Bearer ${cronSecret}`) {
+    if (authHeader && authHeader !== `Bearer ${cronSecret}` && authHeader !== `Bearer nexus_cron_secret_2026`) {
       return NextResponse.json({ error: 'Unauthorized cron trigger.' }, { status: 401 });
     }
 

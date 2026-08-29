@@ -174,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Superadmin Console Quick Access (Only if admin email) */}
-        {user?.email === 'admin@nexus.com' && (
+        {(user?.email === 'admin@avishkark.in' || user?.email === 'admin@nexus.com' || user?.email?.includes('admin')) && (
           <a
             href="https://administrator.avishkark.in"
             target="_blank"

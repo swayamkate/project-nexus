@@ -117,6 +117,16 @@ export async function POST(request: NextRequest) {
     const isProd = process.env.NODE_ENV === 'production';
 
     response.cookies.set({
+      name: 'careerloop_admin_session',
+      value: authData.session.access_token,
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+
+    response.cookies.set({
       name: 'nexus_admin_session',
       value: authData.session.access_token,
       httpOnly: true,

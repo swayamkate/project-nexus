@@ -149,24 +149,23 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={(s) => handleNavigate(s)} />}
-              {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={(s) => handleNavigate(s)} />}
-              {activeSection === 'career-goal' && <CareerGoalModule onNavigate={(s) => handleNavigate(s)} />}
-              {activeSection === 'career-roadmap' && <CareerRoadmapModule onNavigate={(s) => handleNavigate(s)} />}
-              {activeSection === 'courses' && <CourseSearchModule />}
-              {activeSection === 'skill-assessments' && <SkillAssessmentModule />}
-              {activeSection === 'interview-prep' && <InterviewPrepModule />}
-              {activeSection === 'analytics' && <AnalyticsPage />}
-              {activeSection === 'training-details' && <TrainingDetailsPage />}
-              {activeSection === 'certifications' && <CertificationsPage />}
-              {activeSection === 'employment-status' && <LongitudinalTracker />}
-              {activeSection === 'follow-ups' && <FollowupsPage />}
-              {activeSection === 'self-employment' && <SelfEmploymentModule />}
-              {activeSection === 'skill-development' && <TraineePortal />}
-              {activeSection === 'documents' && <DocumentsPage />}
-              {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={(s) => handleNavigate(s)} />}
-              {activeSection === 'settings' && <SettingsPage />}
-              {activeSection === 'help-support' && <HelpSupportPage />}
+              {['dashboard', 'overview', 'home', 'notifications'].includes(activeSection) && <TraineeHomeDashboard onNavigate={(s) => handleNavigate(s)} />}
+              {['my-profile', 'profile', 'user-profile', 'candidate-profile'].includes(activeSection) && <TraineeProfilePage onNavigate={(s) => handleNavigate(s)} />}
+              {['career-goal', 'goals', 'career-goals'].includes(activeSection) && <CareerGoalModule onNavigate={(s) => handleNavigate(s)} />}
+              {['career-roadmap', 'roadmap', 'learning-path'].includes(activeSection) && <CareerRoadmapModule onNavigate={(s) => handleNavigate(s)} />}
+              {['courses', 'course-catalog', 'course-search', 'catalog'].includes(activeSection) && <CourseSearchModule />}
+              {['skill-assessments', 'assessments', 'quizzes'].includes(activeSection) && <SkillAssessmentModule />}
+              {['interview-prep', 'interview-coach', 'interview'].includes(activeSection) && <InterviewPrepModule />}
+              {['analytics', 'wage-analytics', 'progression'].includes(activeSection) && <AnalyticsPage />}
+              {['training-details', 'training', 'courses-enrolled', 'programs'].includes(activeSection) && <TrainingDetailsPage />}
+              {['certifications', 'certificates', 'credentials', 'qr-verify'].includes(activeSection) && <CertificationsPage />}
+              {['employment-status', 'employment', 'career-outcome'].includes(activeSection) && <LongitudinalTracker />}
+              {['follow-ups', 'followups', 'surveys', 'milestones'].includes(activeSection) && <FollowupsPage />}
+              {['self-employment', 'enterprise', 'msme', 'business'].includes(activeSection) && <SelfEmploymentModule />}
+              {['skill-development', 'career-pathway'].includes(activeSection) && <TraineePortal />}
+              {['documents', 'vault', 'dossier'].includes(activeSection) && <DocumentsPage />}
+              {['settings', 'security', 'privacy'].includes(activeSection) && <SettingsPage />}
+              {['help-support', 'help', 'support', 'helpdesk'].includes(activeSection) && <HelpSupportPage />}
             </main>
           </div>
 

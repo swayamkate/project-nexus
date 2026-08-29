@@ -15,8 +15,10 @@ export interface VerifiedAdminUser {
 export async function verifyAdminSession(request?: NextRequest): Promise<VerifiedAdminUser | null> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('sb_access_token')?.value || 
+    const token = cookieStore.get('careerloop_admin_session')?.value ||
+                  cookieStore.get('sb_access_token')?.value || 
                   cookieStore.get('nexus_admin_session')?.value ||
+                  request?.cookies.get('careerloop_admin_session')?.value ||
                   request?.cookies.get('sb_access_token')?.value ||
                   request?.cookies.get('nexus_admin_session')?.value ||
                   request?.headers.get('Authorization')?.replace('Bearer ', '');

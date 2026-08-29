@@ -24,7 +24,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     setMounted(true);
-    const saved = typeof window !== 'undefined' ? (localStorage.getItem('nexus_ui_theme') as ThemeMode | null) : null;
+    const saved = typeof window !== 'undefined' ? ((localStorage.getItem('careerloop_ui_theme') || localStorage.getItem('nexus_ui_theme')) as ThemeMode | null) : null;
     if (saved && (saved === 'light' || saved === 'dark' || saved === 'system')) {
       setThemeState(saved);
     } else {
@@ -32,7 +32,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const configured = settings['branding.theme_mode'];
         if (configured === 'light' || configured === 'dark' || configured === 'system') {
           // Only use configured if user has not set a local preference
-          const currentLocal = localStorage.getItem('nexus_ui_theme');
+          const currentLocal = localStorage.getItem('careerloop_ui_theme') || localStorage.getItem('nexus_ui_theme');
           if (!currentLocal) {
             setThemeState(configured);
           }
@@ -87,7 +87,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(mode);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('nexus_ui_theme', mode);
+        localStorage.setItem('careerloop_ui_theme', mode);
       } catch {}
     }
   };

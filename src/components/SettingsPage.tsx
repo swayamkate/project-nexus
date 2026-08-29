@@ -186,7 +186,7 @@ export const SettingsPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nexus_dossier_${profile?.trainee_id || 'TRN'}.json`;
+    link.download = `careerloop_dossier_${profile?.trainee_id || 'TRN'}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

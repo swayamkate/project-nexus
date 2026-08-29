@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           const saData = await saRes.json();
           if (saData.isAdmin || saData.isSuperadmin) {
             setIsAdmin(true);
-            setAdminUser(saData.user || { email: 'admin@nexus.com', role: saData.role || 'admin' });
+            setAdminUser(saData.user || { email: 'admin@avishkark.in', role: saData.role || 'admin' });
             fetchPendingCount();
             return;
           }
@@ -111,6 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    document.cookie = 'careerloop_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'nexus_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'sb_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'superadmin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';

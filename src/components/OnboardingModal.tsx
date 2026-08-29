@@ -27,14 +27,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ forceOpen, onC
       setIsOpen(true);
       return;
     }
-    const hasSeenTour = localStorage.getItem('nexus_onboarding_completed');
+    const hasSeenTour = localStorage.getItem('careerloop_onboarding_completed') || localStorage.getItem('nexus_onboarding_completed');
     if (!hasSeenTour) {
       setIsOpen(true);
     }
   }, [forceOpen]);
 
   const handleFinish = () => {
-    localStorage.setItem('nexus_onboarding_completed', 'true');
+    localStorage.setItem('careerloop_onboarding_completed', 'true');
     setIsOpen(false);
     if (onClose) onClose();
   };

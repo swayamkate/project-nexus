@@ -7,14 +7,14 @@ export const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem('nexus_cookie_consent');
+    const consent = localStorage.getItem('careerloop_cookie_consent') || localStorage.getItem('nexus_cookie_consent');
     if (!consent) {
       setIsVisible(true);
     }
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem('nexus_cookie_consent', 'true');
+    localStorage.setItem('careerloop_cookie_consent', 'true');
     setIsVisible(false);
   };
 

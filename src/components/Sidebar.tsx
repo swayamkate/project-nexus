@@ -19,7 +19,8 @@ import {
   Settings, 
   HelpCircle, 
   LogOut,
-  Headphones
+  Headphones,
+  ChevronRight
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 
@@ -47,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeSection, 
   setActiveSection 
 }) => {
-  const { signOut, notifications, t } = useUser();
+  const { profile, signOut, notifications, t } = useUser();
 
   const unreadNotifs = notifications?.filter(n => !n.is_read)?.length || 0;
 
@@ -165,6 +166,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom Sticky Action Panel */}
       <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 shrink-0 bg-slate-50/50 dark:bg-[#070b14]/50">
+        
+        {/* User Profile Quick Card in Sidebar */}
+        <button
+          onClick={() => setActiveSection('my-profile')}
+          className={`w-full p-2.5 rounded-xl flex items-center space-x-2.5 transition text-left cursor-pointer border ${
+            ['my-profile', 'profile'].includes(activeSection)
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200 shadow-xs'
+              : 'bg-white dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-200'
+          }`}
+          title="View My Profile"
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+            {(profile?.full_name || 'T').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold truncate leading-tight">{profile?.full_name || 'My Profile'}</p>
+            <p className="text-[10px] text-slate-400 font-mono truncate leading-tight">{profile?.trainee_id || 'TRN-ACTIVE'}</p>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        </button>
+
         <button
           onClick={() => setActiveSection('help-support')}
           className="w-full bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 p-2 rounded-xl flex items-center justify-center space-x-1.5 text-xs font-bold transition cursor-pointer border border-blue-100 dark:border-blue-900/40"

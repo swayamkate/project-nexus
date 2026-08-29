@@ -23,7 +23,7 @@ export async function getAdminActorEmail(explicitEmail?: string): Promise<string
     console.error('Failed to resolve admin actor email:', err);
   }
 
-  return 'avishkarkedar@gmail.com';
+  return 'admin@avishkark.in';
 }
 
 /**
