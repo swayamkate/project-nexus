@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
       if (profile.full_name !== undefined) traineeUpdates.full_name = profile.full_name;
       if (profile.email !== undefined) traineeUpdates.email = profile.email;
       if (profile.phone !== undefined) traineeUpdates.phone = profile.phone;
-      if (profile.dob !== undefined) traineeUpdates.dob = profile.dob;
+      if (profile.dob !== undefined) traineeUpdates.dob = profile.dob?.trim() ? profile.dob.trim() : null;
       if (profile.gender !== undefined) traineeUpdates.gender = profile.gender;
       if (profile.aadhaar_masked !== undefined) traineeUpdates.aadhaar_masked = profile.aadhaar_masked;
       if (profile.address !== undefined) traineeUpdates.address = profile.address;
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
       if (profile.is_verified !== undefined) traineeUpdates.is_verified = profile.is_verified;
       if (profile.verification_notes !== undefined) traineeUpdates.verification_notes = profile.verification_notes;
       if (profile.verified_by !== undefined) traineeUpdates.verified_by = profile.verified_by;
-      if (profile.verified_at !== undefined) traineeUpdates.verified_at = profile.verified_at;
+      if (profile.verified_at !== undefined) traineeUpdates.verified_at = profile.verified_at?.trim() ? profile.verified_at.trim() : null;
 
       const { error: tErr } = await supabase
         .from('trainees')
@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest) {
         status: employment.status || 'not_employed',
         company_name: employment.company_name || null,
         designation: employment.designation || null,
-        joining_date: employment.joining_date || null,
+        joining_date: employment.joining_date?.trim() ? employment.joining_date.trim() : null,
         monthly_salary: employment.monthly_salary ? Number(employment.monthly_salary) : null,
         pf_esic_number: employment.pf_esic_number || null,
         work_location: employment.work_location || null,
@@ -82,15 +82,29 @@ export async function PUT(req: NextRequest) {
         unemployed_perspective: employment.unemployed_perspective || null,
         target_workforce_timeline: employment.target_workforce_timeline || null,
         support_needed: employment.support_needed || null,
-        verified_by_admin: employment.verified_by_admin ?? false,
-        verified_at: employment.verified_at || null
+        verified_by_admin: Boolean(employment.verified_by_admin),
+        verified_at: employment.verified_at?.trim() ? employment.verified_at.trim() : null,
+        updated_at: new Date().toISOString()
       };
 
-      const { error: empErr } = await supabase
+      const { data: existingEmp } = await supabase
         .from('trainee_employment')
-        .upsert(empPayload, { onConflict: 'trainee_id' });
+        .select('id')
+        .eq('trainee_id', trainee_id)
+        .maybeSingle();
 
-      if (empErr) throw empErr;
+      if (existingEmp?.id) {
+        const { error: empErr } = await supabase
+          .from('trainee_employment')
+          .update(empPayload)
+          .eq('id', existingEmp.id);
+        if (empErr) throw empErr;
+      } else {
+        const { error: empErr } = await supabase
+          .from('trainee_employment')
+          .insert(empPayload);
+        if (empErr) throw empErr;
+      }
     }
 
     // 3. Log to audit trail
