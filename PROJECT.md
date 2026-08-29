@@ -21,10 +21,10 @@
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | Milestone 1: Employment Status & Career Outcome Persistence | Fix `EmploymentStatusModal.tsx`, `UserContext.tsx`, `TraineeProfilePage.tsx` | none | PLANNED |
-| 2 | Milestone 2: Add Training and Course Details | Whitelist `training_programs` in `/api/trainee/mutate/route.ts` and add interactive Add Course modal in `TrainingDetailsPage.tsx` | none | PLANNED |
-| 3 | Milestone 3: Course Enrollment & Enrolled Courses Reflection | Fix `CourseSearchModule.tsx` data hydration, string ID mapping, upsert, and active roadmap rendering | none | PLANNED |
-| 4 | Milestone 4: Verification, Review & Forensic Audit | Full integration verification, typecheck, challenger stress-tests, reviewer gates, and forensic audit | M1, M2, M3 | PLANNED |
+| 1 | Milestone 1: Employment Status & Career Outcome Persistence | Fix `EmploymentStatusModal.tsx`, `UserContext.tsx`, `TraineeProfilePage.tsx` | none | DONE |
+| 2 | Milestone 2: Add Training and Course Details | Whitelist `training_programs` in `/api/trainee/mutate/route.ts` and add interactive Add Course modal in `TrainingDetailsPage.tsx` | none | DONE |
+| 3 | Milestone 3: Course Enrollment & Enrolled Courses Reflection | Fix `CourseSearchModule.tsx` data hydration, string ID mapping, upsert, and active roadmap rendering | none | DONE |
+| 4 | Milestone 4: Verification, Review & Forensic Audit | Full integration verification, typecheck, challenger stress-tests, reviewer gates, and forensic audit | M1, M2, M3 | DONE |
 
 ## Interface Contracts
 ### Client ↔ `/api/trainee/mutate`

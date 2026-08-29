@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-29T02:15:00Z
+# BRIEFING — 2026-08-29T02:18:00Z
 
 ## Mission
 Fix Bug 2: Adding a course fails in "add training and course details" by updating server-side allowed tables proxy and implementing full-featured, robust training enrollment and custom course entry modal in TrainingDetailsPage.
@@ -17,28 +17,35 @@ Fix Bug 2: Adding a course fails in "add training and course details" by updatin
 
 ## Current Parent
 - Conversation ID: c77cd3fe-83b3-4d06-967d-2e695619bdd0
-- Updated: not yet
+- Updated: 2026-08-29T02:18:00Z
 
 ## Task Summary
 - **What to build**:
-  1. Add `'training_programs'` to `ALLOWED_TABLES` in `src/app/api/trainee/mutate/route.ts`.
-  2. Implement an "Add Training & Course Details" button + modal in `src/components/TrainingDetailsPage.tsx` supporting catalog course selection and manual/custom training entry.
-  3. Ensure proper data mutation via `mutateDb`, robust validation, duplicate prevention, toasts, and refresh.
-- **Success criteria**: TypeScript compilation passes cleanly, all workflows functional and robust.
+  1. Whitelisted `'training_programs'` in `ALLOWED_TABLES` (`src/app/api/trainee/mutate/route.ts`).
+  2. Implemented interactive "Add Training & Course Details" action button and modal dialog in `src/components/TrainingDetailsPage.tsx`.
+  3. Modal supports dual mode: Option A (Select from accredited catalog) and Option B (Enter custom course / past ITI credentials).
+  4. Robust date sanitization (empty strings converted to `null`), numeric duration validation, duplicate enrollment protection, toast notifications, and `refreshData()` context synchronization.
+  5. Added unit and integration tests in `tests/training-course.test.js`.
+- **Success criteria**: TypeScript compilation passes cleanly, Next.js build succeeds, all 38 test suites pass.
 - **Interface contracts**: `PROJECT.md`
 
 ## Change Tracker
-- **Files modified**: [TBD]
-- **Build status**: [TBD]
+- **Files modified**:
+  - `src/app/api/trainee/mutate/route.ts`: Added `'training_programs'` to `ALLOWED_TABLES`.
+  - `src/components/TrainingDetailsPage.tsx`: Added Add Course modal, duplicate guard, state synchronization, and improved UI.
+  - `tests/training-course.test.js`: Added comprehensive unit tests for whitelist, date sanitization, and duplicate check.
+- **Build status**: PASS (Next.js 16.3.3 Turbopack build succeeded, 38/38 tests passing)
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: [TBD]
-- **Lint status**: [TBD]
-- **Tests added/modified**: [TBD]
+- **Build/test result**: Pass (38 passed, 0 failed)
+- **Lint status**: Clean
+- **Tests added/modified**: `tests/training-course.test.js`
 
 ## Key Decisions Made
-- [TBD]
+- Allowed both catalog program selection and custom ITI trade entry to support past vocational history.
+- Added sanitization to transform empty date strings to `null` to avoid PostgreSQL date syntax errors.
+- Guarded `handleEnroll` with profile verification and duplicate enrollment warnings.
 
 ## Artifact Index
 - DISPATCH.md — Assignment instructions

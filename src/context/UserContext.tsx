@@ -456,13 +456,46 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.support_needed !== undefined) sanitizedPayload.support_needed = data.support_needed || null;
       if (data.appreciation_details !== undefined) sanitizedPayload.appreciation_details = data.appreciation_details?.trim() || null;
 
-      // 2. Perform atomic, idempotent upsert on trainee_id
-      const { data: resultData, error } = await mutateDb({
-        action: 'upsert',
-        table: 'trainee_employment',
-        payload: sanitizedPayload,
-        onConflict: 'trainee_id'
-      });
+      // 2. Perform safe, resilient update or insert
+      let resultData: any = null;
+      let error: any = null;
+
+      if (employment?.id || data.id) {
+        const updateRes = await mutateDb({
+          action: 'update',
+          table: 'trainee_employment',
+          payload: sanitizedPayload,
+          match: { id: data.id || employment?.id }
+        });
+        resultData = updateRes.data;
+        error = updateRes.error;
+      } else {
+        // Query if an existing row exists for this trainee
+        const { data: existing } = await supabase
+          .from('trainee_employment')
+          .select('id')
+          .eq('trainee_id', profile.id)
+          .maybeSingle();
+
+        if (existing?.id) {
+          const updateRes = await mutateDb({
+            action: 'update',
+            table: 'trainee_employment',
+            payload: sanitizedPayload,
+            match: { id: existing.id }
+          });
+          resultData = updateRes.data;
+          error = updateRes.error;
+        } else {
+          const insertRes = await mutateDb({
+            action: 'insert',
+            table: 'trainee_employment',
+            payload: sanitizedPayload
+          });
+          resultData = insertRes.data;
+          error = insertRes.error;
+        }
+      }
 
       if (error) throw error;
 

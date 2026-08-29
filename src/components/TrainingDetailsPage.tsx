@@ -276,7 +276,7 @@ export const TrainingDetailsPage: React.FC = () => {
           completed_date: (catalogStatus === 'completed' || catalogStatus === 'certified') && catalogCompletedDate?.trim() ? catalogCompletedDate.trim() : null,
           certified_date: catalogStatus === 'certified' && catalogCertifiedDate?.trim() ? catalogCertifiedDate.trim() : null,
           certificate_id: (catalogStatus === 'certified' || catalogStatus === 'completed') && catalogCertificateId?.trim() ? catalogCertificateId.trim() : null,
-          grade: catalogGrade?.trim() ? catalogGrade.trim() : null
+          grade: catalogGrade?.trim() ? catalogGrade.trim().slice(0, 10) : null
         };
 
         const { error: enrErr } = await mutateDb({
@@ -338,7 +338,7 @@ export const TrainingDetailsPage: React.FC = () => {
           completed_date: (customStatus === 'completed' || customStatus === 'certified') && customCompletedDate?.trim() ? customCompletedDate.trim() : null,
           certified_date: customStatus === 'certified' && customCertifiedDate?.trim() ? customCertifiedDate.trim() : null,
           certificate_id: (customStatus === 'certified' || customStatus === 'completed') && customCertificateId?.trim() ? customCertificateId.trim() : null,
-          grade: customGrade?.trim() ? customGrade.trim() : null
+          grade: customGrade?.trim() ? customGrade.trim().slice(0, 10) : null
         };
 
         const { error: enrErr } = await mutateDb({

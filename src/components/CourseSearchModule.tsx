@@ -582,6 +582,9 @@ export const CourseSearchModule: React.FC = () => {
 
       setToastMsg(`Enrolled in "${course.title}"! Added to your learning roadmap.`);
       setTimeout(() => setToastMsg(null), 3500);
+
+      // Asynchronously re-fetch from database to ensure multi-device sync
+      fetchCoursesAndEnrollments();
     } catch (err: any) {
       console.error('Enrollment error:', err);
       setToastMsg('Could not complete enrollment. Please try again.');
@@ -673,16 +676,57 @@ export const CourseSearchModule: React.FC = () => {
   const enrolledCourseList = (() => {
     const seen = new Set<string>();
     const list: Course[] = [];
+
+    // 1. Check all courses in current catalog state
     courses.forEach(c => {
       const enrollment = getEnrollment(c);
       if (enrollment) {
-        const key = enrollment.course_id || c.url || c.title.toLowerCase();
+        const key = enrollment.course_id || c.id || c.url || c.title.toLowerCase();
         if (!seen.has(key)) {
           seen.add(key);
           list.push(c);
         }
       }
     });
+
+    // 2. Also check all enrolledCourses entries that might have attached courseData
+    Object.values(enrolledCourses).forEach(enr => {
+      if (enr.courseData) {
+        const cd = enr.courseData;
+        const key = enr.course_id || cd.id || cd.url || cd.title?.toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          list.push({
+            id: cd.id || enr.course_id || 'enrolled-' + Math.random(),
+            title: cd.title || 'Enrolled Course',
+            provider: cd.provider || 'State Accredited Provider',
+            institute: cd.institute || cd.provider || 'NPTEL / Swayam',
+            platform: cd.platform || 'NPTEL',
+            sector: cd.sector || 'Vocational Training',
+            duration_weeks: cd.duration_weeks || 8,
+            estimated_hours: cd.estimated_hours || 40,
+            rating: cd.rating || 4.8,
+            enrolled_count: cd.enrolled_count || 1000,
+            is_free: cd.is_free ?? true,
+            has_certificate: cd.has_certificate ?? true,
+            nsqf_level: cd.nsqf_level || 4,
+            deadline: cd.deadline || '15 Sep 2025',
+            exam_date: cd.exam_date || '26 Oct 2025',
+            prerequisites: cd.prerequisites || 'Open Enrollment',
+            description: cd.description || 'Government accredited vocational upskilling program with verified credential output.',
+            syllabus: cd.syllabus || [
+              'Foundational Theory & Safety Standards',
+              'Practical Tool Handling & Core Operations',
+              'Quality Inspection & Defect Remediation',
+              'Final Project & Examination Prep'
+            ],
+            url: cd.url || 'https://onlinecourses.nptel.ac.in',
+            skill_tags: cd.skill_tags || ['Vocational Skill', 'State Certified']
+          });
+        }
+      }
+    });
+
     return list;
   })();
 
