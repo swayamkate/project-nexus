@@ -22,6 +22,7 @@ import { createClient } from '@/lib/supabaseBrowser';
 import { EmptyState } from '@/components/EmptyState';
 import { DestructiveConfirmModal } from '@/components/DestructiveConfirmModal';
 import { formatHumanError } from '@/lib/errorUtils';
+import { mutateDb } from '@/lib/traineeApi';
 
 export const DocumentsPage: React.FC = () => {
   const { profile, t } = useUser();
@@ -80,24 +81,25 @@ export const DocumentsPage: React.FC = () => {
     setUploading(true);
     setErrorMsg(null);
     try {
-      const vaultUrl = `https://vault.nexus.in/enclave/${profile.id}/${encodeURIComponent(file.name)}`;
+      const vaultUrl = `https://vault.careerloop.in/enclave/${profile.id}/${encodeURIComponent(file.name)}`;
       
-      const { data, error } = await supabase
-        .from('verifications')
-        .insert({
+      const { data, error } = await mutateDb({
+        action: 'insert',
+        table: 'verifications',
+        payload: {
           trainee_id: profile.id,
           document_type: docType.toLowerCase().replace(/\s+/g, '_'),
           document_name: file.name,
           document_url: vaultUrl,
           status: 'pending'
-        })
-        .select()
-        .single();
+        }
+      });
 
       if (error) throw error;
+      const createdRecord = (data && data[0]) || { id: 'v-' + Date.now() };
 
       const newDoc = {
-        id: data.id,
+        id: createdRecord.id,
         name: file.name,
         type: docType.toUpperCase(),
         status: 'pending',
@@ -106,7 +108,7 @@ export const DocumentsPage: React.FC = () => {
       };
 
       setDocuments(prev => [newDoc, ...prev]);
-      setToastMsg(`"${file.name}" uploaded to Nexus Vault and queued for verification.`);
+      setToastMsg(`"${file.name}" uploaded to CareerLoop Vault and queued for verification.`);
       setTimeout(() => setToastMsg(null), 4000);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
@@ -119,10 +121,14 @@ export const DocumentsPage: React.FC = () => {
   const handleDeleteConfirmed = async () => {
     if (!deleteDoc) return;
     try {
-      if (deleteDoc.id.startsWith('doc-')) {
+      if (deleteDoc.id.startsWith('doc-') || deleteDoc.id.startsWith('v-')) {
         setDocuments(prev => prev.filter(d => d.id !== deleteDoc.id));
       } else {
-        await supabase.from('verifications').delete().eq('id', deleteDoc.id);
+        await mutateDb({
+          action: 'delete',
+          table: 'verifications',
+          match: { id: deleteDoc.id }
+        });
         setDocuments(prev => prev.filter(d => d.id !== deleteDoc.id));
       }
       setToastMsg(`"${deleteDoc.name}" has been permanently removed.`);

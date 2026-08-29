@@ -28,7 +28,7 @@ export function useTraineeProfile(): UseTraineeProfileReturn {
         ...profile,
         ...input,
         full_name: input.full_name || profile?.full_name || 'Trainee',
-        email: input.email || profile?.email || 'trainee@nexus.in'
+        email: input.email || profile?.email || 'trainee@careerloop.in'
       };
 
       const validated = TraineeProfileSchema.partial().safeParse(mergedData);

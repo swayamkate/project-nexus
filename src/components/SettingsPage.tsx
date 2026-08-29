@@ -110,7 +110,7 @@ export const SettingsPage: React.FC = () => {
       setNotifPerm(perm);
       if (perm === 'granted') {
         setToastMsg('Browser notifications enabled! You will receive longitudinal & survey alerts.');
-        new Notification('Nexus Notification Enclave', {
+        new Notification('CareerLoop Notification Enclave', {
           body: 'Notifications are active for longitudinal milestones and state survey alerts.',
         });
       } else if (perm === 'denied') {
@@ -166,7 +166,7 @@ export const SettingsPage: React.FC = () => {
   const handleExportDossier = () => {
     const dossierData = {
       export_date: new Date().toISOString(),
-      system: 'Nexus Platform',
+      system: 'CareerLoop Platform',
       privacy_enclave_hash: profile?.privacy_hash || null,
       trainee_profile: {
         trainee_id: profile?.trainee_id,

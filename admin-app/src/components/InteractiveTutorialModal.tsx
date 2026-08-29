@@ -124,7 +124,7 @@ export const InteractiveTutorialModal: React.FC<InteractiveTutorialModalProps> =
               <PlayCircle className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">Nexus Control Room Interactive Walkthrough</h3>
+              <h3 className="font-extrabold text-white text-base">CareerLoop Control Room Interactive Walkthrough</h3>
               <p className="text-xs text-slate-400">Step-by-step administrator guide</p>
             </div>
           </div>

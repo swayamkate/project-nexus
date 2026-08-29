@@ -3,8 +3,8 @@ import { FileQuestion, ArrowLeft, Home, HelpCircle, ShieldCheck } from 'lucide-r
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '404 - Page Not Found | Nexus',
-  description: 'The requested resource could not be found on Nexus.',
+  title: '404 - Page Not Found | CareerLoop',
+  description: 'The requested resource could not be found on CareerLoop.',
 };
 
 export default function NotFound() {
@@ -20,7 +20,7 @@ export default function NotFound() {
             <span className="font-black text-lg">N</span>
           </div>
           <div>
-            <span className="font-black text-lg tracking-tight text-white block leading-none">Nexus</span>
+            <span className="font-black text-lg tracking-tight text-white block leading-none">CareerLoop</span>
             <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mt-0.5">Platform</span>
           </div>
         </Link>
@@ -65,7 +65,7 @@ export default function NotFound() {
 
       {/* Footer */}
       <footer className="w-full text-center py-6 text-[11px] text-slate-500 z-10 border-t border-slate-900">
-        &copy; {new Date().getFullYear()} Nexus. All rights reserved.
+        &copy; {new Date().getFullYear()} CareerLoop. All rights reserved.
       </footer>
     </div>
   );

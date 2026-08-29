@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareerLoop - Master Presentation Script & Demo Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #070b14;
+      --bg-card: #0d1527;
+      --bg-card-alt: #131d35;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Header Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(79, 70, 229, 0.3), rgba(15, 23, 42, 0.9));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .badge-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 9999px;
+      color: #93c5fd;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #93c5fd, #67e8f9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 750px;
+      margin-bottom: 1.5rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .meta-item {
+      font-size: 0.8rem;
+    }
+    .meta-label {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+    .meta-val {
+      color: #ffffff;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* Print Button */
+    .action-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      border: 1px solid #3b82f6;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .speaker-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .speaker-1 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .speaker-2 { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .speaker-3 { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .speaker-4 { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    .time-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .speech-box {
+      background: rgba(15, 23, 42, 0.7);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 0 16px 16px 0;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: #e2e8f0;
+    }
+
+    .speech-box p {
+      margin-bottom: 1rem;
+    }
+    .speech-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .emphasis {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .highlight-yellow {
+      color: #fde047;
+      font-weight: 700;
+    }
+
+    /* Live Action Cue Box */
+    .cue-box {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .cue-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #38bdf8;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .cue-steps {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cue-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+    }
+
+    .step-num {
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Key Metrics Table */
+    .funnel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin: 1.5rem 0;
+    }
+
+    .funnel-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1rem;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+    .funnel-card:hover {
+      transform: translateY(-2px);
+      border-color: #3b82f6;
+    }
+
+    .funnel-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #60a5fa;
+      margin-bottom: 2px;
+    }
+    .funnel-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+
+    /* Q&A Section */
+    .qa-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .qa-q {
+      color: #f8fafc;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      gap: 8px;
+    }
+    .qa-q-badge {
+      color: #f59e0b;
+      font-weight: 900;
+    }
+    .qa-a {
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      padding-left: 1.5rem;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0;
+      }
+      .hero-banner, .section-card, .cue-box, .speech-box, .funnel-card, .qa-card {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+      h1, .speech-box, .emphasis, .highlight-yellow, .funnel-num, .qa-q {
+        color: #0f172a !important;
+        -webkit-text-fill-color: initial !important;
+      }
+      .action-bar {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Hero Banner -->
+    <header class="hero-banner">
+      <div class="badge-capsule">
+        <span>🏆 SIH 2026 / Smart India Hackathon</span>
+        <span>•</span>
+        <span>Problem Statement PS-135</span>
+      </div>
+      <h1>CareerLoop: Longitudinal Skilling Outcome & Impact Platform</h1>
+      <p class="subtitle">
+        Official master presentation script, stage choreography, live software demonstration cues, and judge Q&amp;A defense matrix for Team CareerLoop Innovators.
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">Team Lead &amp; Speaker 1</div>
+          <div class="meta-val">Avishkar Kedar</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Candidate Portal</div>
+          <div class="meta-val">https://avishkark.in</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Executive Admin Command</div>
+          <div class="meta-val">https://administrator.avishkark.in</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Architecture</div>
+          <div class="meta-val">Next.js 16 + React 19 + Supabase</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="window.print()">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+        Print / Save as PDF
+      </button>
+    </div>
+
+    <!-- SPEAKER 1 -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="speaker-tag speaker-1">Speaker 1 • Avishkar Kedar (Lead)</div>
+        <div class="time-badge">0:00 – 2:00 (2 Mins)</div>
+      </div>
+
+      <div class="speech-box">
+        <p>
+          "Good morning, respected judges and everyone present here. We are Team <span class="emphasis">CareerLoop Innovators</span>, and my name is <span class="emphasis">Avishkar</span>. Today, our team is going to present a solution to one of the biggest blind spots in our country's skill development ecosystem: <span class="emphasis">the complete lack of long-term tracking after a student finishes a vocational course</span>.
+        </p>
+        <p>
+          Let us understand this problem through a scenario that happens every single day right inside our training institutes and colleges. Imagine a vocational computer science trainee named <span class="highlight-yellow">Rahul</span>. Rahul enrolls in a specialized government-sponsored training program to learn modern web development. Right now, the existing government portals are very good at capturing his initial data: they record the day Rahul registers, they track his daily biometric attendance, they store his marks in internal assessments, and finally, they record the day he receives his completion certificate. At this exact moment, the traditional system logs a green tick and declares, <em>'Mission accomplished, Rahul is successfully trained.'</em>
+        </p>
+        <p>
+          <span class="emphasis">But let us pause right there and ask the real question:</span> does this piece of paper guarantee that Rahul actually secured a job? Does it tell us if he is using those web development skills in a real company, or if he is stuck doing something completely unrelated? Does it tell us if his salary is growing, or if he was laid off after just two months? The hard truth is that right now, <span class="emphasis">this critical post-graduation data is completely missing</span>.
+        </p>
+        <p>
+          Why does this data disappear? Because the moment students graduate, reality sets in: candidates change their phone numbers, relocate to different cities for job hunting, or update their emails. At the same time, busy employers do not have the time to constantly log into multiple government portals to report whether Rahul is still working there or how he is performing. Furthermore, different skilling schemes operate in complete silos with incompatible IDs and disconnected databases.
+        </p>
+        <p>
+          Because of this massive data gap, <span class="emphasis">policymakers and government authorities are flying blind</span>. They cannot determine which training centers are actually building great software engineers and which ones are just printing empty certificates. They cannot see the actual skill gaps between what is taught and what industry demands, making it almost impossible to allocate public funds with accountability.
+        </p>
+        <p>
+          To fix this, we don't just need another database; <span class="emphasis">we need a continuous tracking ecosystem that is credible, respects student privacy, and works automatically without burning out administrative staff</span>. To show you how we engineered this, I will now hand over the mic to my teammate."
+        </p>
+      </div>
+
+      <div class="cue-box">
+        <div class="cue-title">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Live Screen Demonstration Cues (Speaker 1)
+        </div>
+        <ul class="cue-steps">
+          <li class="cue-step">
+            <span class="step-num">1</span>
+            <span><strong>Screen 1 (Home Page):</strong> Open <a href="https://avishkark.in" target="_blank" style="color: #38bdf8;">https://avishkark.in</a>. Show the interactive hero metric cards (94.2% placement index, 36 Maharashtra districts connected).</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">2</span>
+            <span><strong>Screen 2 (The Dilemma):</strong> Point out that standard government tracking stops at the certificate issuance stage, missing the 24-month wage and career lifecycle entirely.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SPEAKER 2 -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="speaker-tag speaker-2">Speaker 2 • The Solution &amp; Student Journey</div>
+        <div class="time-badge">2:00 – 4:30 (2.5 Mins)</div>
+      </div>
+
+      <div class="speech-box">
+        <p>
+          "Thank you, Avishkar. My name is <span class="emphasis">[Teammate Name]</span>, and I am going to walk you through our proposed solution. To solve the exact problem Rahul faces, our team has designed the <span class="emphasis">CareerLoop Longitudinal Skilling Outcome and Impact Platform</span>. When we use the word 'longitudinal,' it simply means we don't just stop tracking on graduation day; we follow the student's career journey across months and years.
+        </p>
+        <p>
+          Our core model completely shifts the focus away from just counting how many certificates were printed, and instead measures <span class="highlight-yellow">actual, real-world employment and wage outcomes</span>.
+        </p>
+        <p>
+          Let us trace Rahul's journey step-by-step through our platform to see how this works in practice:
+        </p>
+        <p>
+          • <span class="emphasis">Step 1: Trainee Registration.</span> When Rahul joins, our system creates a secure, unique trainee profile. Crucially, this is completely consent-based with masked Aadhaar safeguards, giving Rahul full ownership of his privacy.
+        </p>
+        <p>
+          • <span class="emphasis">Step 2: Training and Assessment.</span> As Rahul completes his technical modules—like web development, databases, or cloud infrastructure—his course progress and regular assessment scores are automatically mapped to his profile.
+        </p>
+        <p>
+          • <span class="emphasis">Step 3: Certification.</span> Once he finishes, his final state-certified credential is attached to his digital profile with an immutable, cryptographically signed QR code.
+        </p>
+        <p>
+          • <span class="emphasis">Step 4: Placement or Self-Employment.</span> When Rahul is hired by a tech startup or registers a freelancing micro-enterprise under Udyam, CareerLoop captures those wage or business turnover details right away.
+        </p>
+        <p>
+          • <span class="emphasis">Step 5: Employer &amp; Admin Verification.</span> To prevent fake entries, district evaluators and partner employers verify Rahul's role, salary, and PF/ESIC UAN numbers with one click.
+        </p>
+        <p>
+          • <span class="emphasis">Step 6: Longitudinal Follow-ups.</span> This is where our platform shines. Instead of forgetting Rahul, our system automatically triggers check-ins at the 3-month, 6-month, 12-month, and 24-month marks. We verify job retention, wage trajectory, and whether his training actually matched the skills he needs on the job.
+        </p>
+        <p>
+          • <span class="emphasis">Steps 7 &amp; 8: Analytics and Decision Making.</span> All this verified data feeds directly into high-level dashboards, empowering authorities to pinpoint course effectiveness and demographic trends.
+        </p>
+        <p>
+          Now, my teammate will explain the modern engineering and smart automation that powers this entire loop."
+        </p>
+      </div>
+
+      <div class="cue-box">
+        <div class="cue-title">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Live Screen Demonstration Cues (Speaker 2)
+        </div>
+        <ul class="cue-steps">
+          <li class="cue-step">
+            <span class="step-num">1</span>
+            <span><strong>Click: Sidebar ➔ My Profile:</strong> Show masked Aadhaar (`XXXX-XXXX-1234`), district selector, and DPDP consent toggle.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">2</span>
+            <span><strong>Click: Sidebar ➔ Trade Skill Quizzes:</strong> Show interactive quiz with real-time score grading & badge issuance.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">3</span>
+            <span><strong>Click: Sidebar ➔ Certifications &amp; QR:</strong> Show official state certificate card, click the QR code to open the public verification registry at `/verify/[certId]`.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">4</span>
+            <span><strong>Click: Sidebar ➔ Udyam MSME Grants:</strong> Show clean digital invoice generator with line items, GST calculations, and WhatsApp quote dispatch.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">5</span>
+            <span><strong>Click: Sidebar ➔ 24M Follow-ups:</strong> Show the milestone survey cards (3M, 6M, 12M, 24M) with wage retention questionnaires.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SPEAKER 3 -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="speaker-tag speaker-3">Speaker 3 • Tech Stack &amp; Smart Automation</div>
+        <div class="time-badge">4:30 – 6:30 (2 Mins)</div>
+      </div>
+
+      <div class="speech-box">
+        <p>
+          "Thank you, [Teammate Name]. My name is <span class="emphasis">[Teammate Name]</span>, and I am going to talk about the engineering and technology behind CareerLoop. When we designed this system, we knew that if we relied on manual phone calls or paper forms, the platform would collapse under scale. <span class="emphasis">We needed smart, frictionless automation</span>.
+        </p>
+        <p>
+          Let’s look at how our tech stack is divided:
+        </p>
+        <p>
+          • <span class="emphasis">The Frontend Interface:</span> Built with <span class="highlight-yellow">Next.js 16 and React 19</span> for lightning-fast sub-second transitions. We created distinct, role-based interfaces with multi-lingual support (English, Marathi, Hindi) and system-wide dark/light theme switching.
+        </p>
+        <p>
+          • <span class="emphasis">The Data and Security Layer:</span> User profiles, course catalogs, and longitudinal wage records are securely stored in a <span class="highlight-yellow">Supabase PostgreSQL 17 database</span>. We implemented <span class="emphasis">Row Level Security (RLS)</span> and cryptographic JWT sessions, ensuring a trainee can only access their own dossier while administrators govern aggregated district statistics.
+        </p>
+        <p>
+          • <span class="emphasis">The Automation Engine:</span> How do we conduct 3, 6, 12, and 24-month check-ins without calling thousands of candidates manually? We engineered automated webhook cron routes (<span class="highlight-yellow">/api/cron/milestones</span>) integrated with the <span class="emphasis">Telegram Bot API &amp; SMS Gateway</span>. When Rahul hits his 6-month employment milestone, our worker fires an interactive survey right to his Telegram app. He taps two buttons to report his job retention and wage progression in under ten seconds without downloading extra apps.
+        </p>
+        <p>
+          • <span class="emphasis">Data Telemetry:</span> Using <span class="highlight-yellow">Recharts</span>, raw milestone submissions are instantly converted into interactive wage growth curves, district employment heatmaps, and retention funnel charts for executive decision makers.
+        </p>
+        <p>
+          Our architecture is deployed on Cloudflare and Oracle Cloud Infrastructure. I will now invite our final teammate to discuss our outcome loop and national impact."
+        </p>
+      </div>
+
+      <div class="cue-box">
+        <div class="cue-title">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Live Screen Demonstration Cues (Speaker 3)
+        </div>
+        <ul class="cue-steps">
+          <li class="cue-step">
+            <span class="step-num">1</span>
+            <span><strong>Header:</strong> Click the ☀️ / 🌙 theme switch and 🌐 language selector (EN / मराठी / हिन्दी) to show instant UI reactivity.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">2</span>
+            <span><strong>Switch Window:</strong> Open <a href="https://administrator.avishkark.in" target="_blank" style="color: #38bdf8;">Admin Console</a> ➔ <strong>SMS &amp; WhatsApp Hub</strong> (`/broadcasts`) &amp; <strong>Follow-ups &amp; Milestones</strong> (`/followups`) showing the batch dispatch worker.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">3</span>
+            <span><strong>Admin Console:</strong> Show <strong>Analytics Evidence</strong> (`/analytics`) highlighting interactive Recharts salary trajectory curves.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SPEAKER 4 -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="speaker-tag speaker-4">Speaker 4 • Strategy, The Outcome Loop &amp; Final Impact</div>
+        <div class="time-badge">6:30 – 8:30 (2 Mins)</div>
+      </div>
+
+      <div class="speech-box">
+        <p>
+          "Thank you, [Teammate Name]. My name is <span class="emphasis">[Teammate Name]</span>, and I will take you through our continuous operational cycle, anticipated real-world challenges, and the ultimate policy impact of our platform.
+        </p>
+        <p>
+          Building a national-scale tracking platform comes with real hurdles: candidate contact details get outdated, manual verification takes time, and trainees sometimes ignore emails. To systematically overcome every single hurdle, we designed the <span class="emphasis">CareerLoop Outcome Loop</span>—a continuous 5-step operational engine:
+        </p>
+        <p>
+          1. <span class="emphasis">Assess:</span> Continuously diagnose student skills via quizzes and coding challenges.<br>
+          2. <span class="emphasis">Compare:</span> Benchmark those student skills directly against current IT industry job roles using our AI skill engine.<br>
+          3. <span class="emphasis">Verify:</span> Authenticate reported employment records through admin and employer validations.<br>
+          4. <span class="emphasis">Follow-up:</span> Collect longitudinal retention and wage data via automated Telegram check-ins.<br>
+          5. <span class="emphasis">Improve:</span> Feed those outcomes straight back to training centers so they can update outdated curricula and eliminate skill gaps.
+        </p>
+        <p>
+          To understand the power of this model in real numbers, look at this comparison:
+        </p>
+      </div>
+
+      <!-- Funnel Numbers -->
+      <div class="funnel-grid">
+        <div class="funnel-card">
+          <div class="funnel-num">1,000</div>
+          <div class="funnel-label">Enrolled Trainees</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">850</div>
+          <div class="funnel-label">Certified (Old 85% Metric)</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">650</div>
+          <div class="funnel-label">Placed in Jobs</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">600</div>
+          <div class="funnel-label">Verified Employment</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">540</div>
+          <div class="funnel-label">3M Retained</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">510</div>
+          <div class="funnel-label">6M Retained</div>
+        </div>
+        <div class="funnel-card">
+          <div class="funnel-num">450</div>
+          <div class="funnel-label">12M Retained</div>
+        </div>
+        <div class="funnel-card" style="border-color: #10b981;">
+          <div class="funnel-num" style="color: #34d399;">390</div>
+          <div class="funnel-label">Sustainable Careers</div>
+        </div>
+      </div>
+
+      <div class="speech-box">
+        <p>
+          "Traditionally, the government report stops at the 850 number, claiming an 85% success rate. But with CareerLoop's longitudinal intelligence, we see the true pipeline: 650 placed, 600 verified, 510 retained at 6 months, and 390 thriving in sustainable, skill-relevant careers.
+        </p>
+        <p>
+          Instead of celebrating 850 pieces of paper, <span class="emphasis">the government can now identify the exact drop-off points, hold underperforming training institutes accountable, and invest public funds into courses that actually generate long-term employment</span>.
+        </p>
+        <p>
+          We integrated guidelines from the Ministry of Skill Development, NSDC, and the International Labour Organization to make this framework production-ready. We are Team <span class="emphasis">CareerLoop Innovators</span>, and we thank you for your time. We are now open for your questions."
+        </p>
+      </div>
+
+      <div class="cue-box">
+        <div class="cue-title">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Live Screen Demonstration Cues (Speaker 4)
+        </div>
+        <ul class="cue-steps">
+          <li class="cue-step">
+            <span class="step-num">1</span>
+            <span><strong>Admin Console ➔ Analytics Evidence:</strong> Point directly to the <strong>Longitudinal Retention Funnel</strong> chart on the screen showing the 1000 ➔ 390 drop-off breakdown.</span>
+          </li>
+          <li class="cue-step">
+            <span class="step-num">2</span>
+            <span><strong>Admin Console ➔ DBT &amp; Stipends Ledger:</strong> Show DBT disbursements tied to milestone verification.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- JUDGE DEFENSE MATRIX -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="speaker-tag" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+          Judge Defense Matrix • Top Tough Questions &amp; Answers
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-q"><span class="qa-q-badge">Q1:</span> How do you prevent candidates from entering fake salary or job details?</div>
+        <div class="qa-a">
+          <strong>Answer:</strong> CareerLoop employs a 3-tier validation mechanism: (1) Mandatory PF/ESIC UAN or Udyam number validation, (2) Direct salary slip/offer letter document upload to our encrypted vault, and (3) 1-click administrative verification where district evaluators cross-check and stamp the record as verified. Unverified records are clearly flagged and excluded from official DBT disbursements.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-q"><span class="qa-q-badge">Q2:</span> What if a trainee changes their phone number or ignores follow-up surveys?</div>
+        <div class="qa-a">
+          <strong>Answer:</strong> We solve this via multi-channel fallback: automated Telegram bot interactive buttons, secondary WhatsApp messages, and email magic links. Furthermore, trainees are incentivized to keep their profile active through access to accredited NPTEL courses, government credit schemes (CMEGP/Mudra), and free micro-enterprise digital invoicing tools.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-q"><span class="qa-q-badge">Q3:</span> How does CareerLoop comply with the Digital Personal Data Protection (DPDP) Act 2023?</div>
+        <div class="qa-a">
+          <strong>Answer:</strong> CareerLoop implements Zero-PII masking: Aadhaar numbers are cryptographically masked (`XXXX-XXXX-1234`), all follow-up data collection is strictly consent-driven, and candidate data is isolated using PostgreSQL Row Level Security (RLS). Trainees have full rights to export or request data purging anytime.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-q"><span class="qa-q-badge">Q4:</span> How does this system scale to handle 500,000 trainees across Maharashtra?</div>
+        <div class="qa-a">
+          <strong>Answer:</strong> The architecture uses serverless Next.js edge handlers combined with Supabase PostgreSQL connection pooling and Redis-compatible asynchronous webhook workers for batch survey dispatching, capable of handling 50,000+ survey dispatches per minute without database lock contention.
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+</body>
+</html>

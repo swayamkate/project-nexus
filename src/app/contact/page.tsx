@@ -60,7 +60,7 @@ export default function ContactPage() {
       <div className="max-w-5xl mx-auto z-10 relative">
         <Link href="/" className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-semibold mb-8 text-sm transition">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Nexus</span>
+          <span>Back to CareerLoop</span>
         </Link>
         
         <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-start">
@@ -69,7 +69,7 @@ export default function ContactPage() {
               <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <span className="text-xs text-blue-400 font-bold uppercase tracking-widest">Nexus Platform</span>
+              <span className="text-xs text-blue-400 font-bold uppercase tracking-widest">CareerLoop Platform</span>
             </div>
 
             <h1 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
@@ -77,7 +77,7 @@ export default function ContactPage() {
             </h1>
             
             <p className="text-xs sm:text-sm text-slate-400 mb-8 leading-relaxed">
-              Have questions about your certificate verification, longitudinal surveys, or self-employment analytics? The Nexus technical support team is here to assist you.
+              Have questions about your certificate verification, longitudinal surveys, or self-employment analytics? The CareerLoop technical support team is here to assist you.
             </p>
 
             <div className="space-y-5">
@@ -86,7 +86,7 @@ export default function ContactPage() {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-xs">Nexus Operations Center</h3>
+                  <h3 className="text-white font-bold text-xs">CareerLoop Operations Center</h3>
                   <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
                     Technology Operations & Verification Center<br />
                     Mumbai, Maharashtra
@@ -101,8 +101,8 @@ export default function ContactPage() {
                 <div>
                   <h3 className="text-white font-bold text-xs">Support Inboxes</h3>
                   <p className="text-xs text-slate-400 mt-0.5 space-y-0.5">
-                    <span className="block">Support: <a href="mailto:support@nexus.in" className="text-emerald-400 hover:underline">support@nexus.in</a></span>
-                    <span className="block">Helpdesk: <a href="mailto:help@nexus.in" className="text-emerald-400 hover:underline">help@nexus.in</a></span>
+                    <span className="block">Support: <a href="mailto:support@careerloop.in" className="text-emerald-400 hover:underline">support@careerloop.in</a></span>
+                    <span className="block">Helpdesk: <a href="mailto:help@careerloop.in" className="text-emerald-400 hover:underline">help@careerloop.in</a></span>
                   </p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full bg-slate-900/80 text-white text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="e.g. user@nexus.in"
+                    placeholder="e.g. user@careerloop.in"
                   />
                 </div>
 

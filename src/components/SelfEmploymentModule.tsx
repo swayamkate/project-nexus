@@ -23,11 +23,20 @@ import {
   Printer,
   Sparkles,
   Check,
+  Trash2,
   X
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
 import { validateUdyam, validateGSTIN, validateIFSC, calculateSchemeEligibility } from '@/lib/validators';
+import { mutateDb } from '@/lib/traineeApi';
+
+interface InvoiceItem {
+  id: string;
+  desc: string;
+  qty: number;
+  rate: number;
+}
 
 export const SelfEmploymentModule: React.FC = () => {
   const { profile, employment, updateEmployment } = useUser();
@@ -67,7 +76,10 @@ export const SelfEmploymentModule: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     customerName: '',
     customerPhone: '',
-    items: [{ desc: 'Custom Tailored Garments & Alterations', qty: 2, rate: 1200 }]
+    gstRate: 18,
+    items: [
+      { id: '1', desc: '', qty: 1, rate: 0 }
+    ] as InvoiceItem[]
   });
 
   const supabase = createClient();
@@ -183,15 +195,19 @@ export const SelfEmploymentModule: React.FC = () => {
 
     setSubmittingApp(true);
     try {
-      const { error } = await supabase.from('scheme_applications').insert({
-        trainee_id: profile.id,
-        scheme_id: selectedScheme.id,
-        business_name: formData.business_name || `${profile.full_name}'s Enterprise`,
-        requested_amount: Number(appForm.requested_amount),
-        bank_account_no: appForm.bank_account_no,
-        ifsc_code: appForm.ifsc_code.toUpperCase(),
-        remarks: appForm.remarks,
-        status: 'submitted'
+      const { error } = await mutateDb({
+        action: 'insert',
+        table: 'scheme_applications',
+        payload: {
+          trainee_id: profile.id,
+          scheme_id: selectedScheme.id,
+          business_name: formData.business_name || `${profile.full_name}'s Enterprise`,
+          requested_amount: Number(appForm.requested_amount),
+          bank_account_no: appForm.bank_account_no,
+          ifsc_code: appForm.ifsc_code.toUpperCase(),
+          remarks: appForm.remarks,
+          status: 'submitted'
+        }
       });
 
       if (error) throw error;
@@ -218,13 +234,17 @@ export const SelfEmploymentModule: React.FC = () => {
 
     setSavingLedger(true);
     try {
-      const { error } = await supabase.from('enterprise_ledger').insert({
-        trainee_id: profile.id,
-        entry_month: ledgerForm.entry_month,
-        revenue_amount: rev,
-        expense_amount: exp,
-        net_profit: net,
-        notes: ledgerForm.notes
+      const { error } = await mutateDb({
+        action: 'insert',
+        table: 'enterprise_ledger',
+        payload: {
+          trainee_id: profile.id,
+          entry_month: ledgerForm.entry_month,
+          revenue_amount: rev,
+          expense_amount: exp,
+          net_profit: net,
+          notes: ledgerForm.notes
+        }
       });
 
       if (error) throw error;
@@ -246,6 +266,31 @@ export const SelfEmploymentModule: React.FC = () => {
     }
   };
 
+  const handleAddInvoiceItem = () => {
+    setInvoice(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { id: Date.now().toString(), desc: '', qty: 1, rate: 500 }
+      ]
+    }));
+  };
+
+  const handleRemoveInvoiceItem = (id: string) => {
+    if (invoice.items.length <= 1) return;
+    setInvoice(prev => ({
+      ...prev,
+      items: prev.items.filter(item => item.id !== id)
+    }));
+  };
+
+  const handleUpdateInvoiceItem = (id: string, field: keyof InvoiceItem, value: any) => {
+    setInvoice(prev => ({
+      ...prev,
+      items: prev.items.map(item => item.id === id ? { ...item, [field]: value } : item)
+    }));
+  };
+
   const eligibility = calculateSchemeEligibility({
     trade: formData.business_type || 'Tailoring',
     monthlyRevenue: Number(formData.monthly_revenue || 0),
@@ -253,8 +298,8 @@ export const SelfEmploymentModule: React.FC = () => {
     monthsActive: 8
   });
 
-  const invoiceSubtotal = invoice.items.reduce((sum, item) => sum + (item.qty * item.rate), 0);
-  const invoiceGst = Math.round(invoiceSubtotal * 0.18);
+  const invoiceSubtotal = invoice.items.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.rate || 0)), 0);
+  const invoiceGst = Math.round(invoiceSubtotal * (invoice.gstRate / 100));
   const invoiceTotal = invoiceSubtotal + invoiceGst;
 
   return (
@@ -603,57 +648,228 @@ export const SelfEmploymentModule: React.FC = () => {
 
       {/* TAB 4: DIGITAL INVOICE GENERATOR */}
       {activeTab === 'invoice' && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">Customer Quotation & Tax Invoice</h3>
-              <p className="text-xs text-slate-400">Generate professional GST bills for your boutique or trade customers.</p>
+              <div className="flex items-center space-x-2">
+                <Receipt className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-slate-900 text-base">Customer Quotation & Tax Invoice</h3>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Generate professional, printable customer bills with customizable GST or 0% Composition exemptions.
+              </p>
             </div>
 
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print Invoice</span>
-            </button>
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const lineItemsText = invoice.items
+                    .map((item, idx) => `${idx + 1}. ${item.desc} (Qty: ${item.qty}) = ₹${(item.qty * item.rate).toLocaleString('en-IN')}`)
+                    .join('\n');
+
+                  const text = `*TAX INVOICE / CASH RECEIPT*\n` +
+                    `*Invoice No:* ${invoice.invoiceNumber}\n` +
+                    `*Date:* ${invoice.date}\n` +
+                    `*Biller:* ${formData.business_name || profile?.full_name || 'Micro-Enterprise Unit'}\n` +
+                    (formData.udyam_number ? `*MSME Udyam:* ${formData.udyam_number}\n` : '') +
+                    `*Customer:* ${invoice.customerName || 'Customer'}\n\n` +
+                    `*Line Items:*\n${lineItemsText}\n\n` +
+                    `*Subtotal:* ₹${invoiceSubtotal.toLocaleString('en-IN')}\n` +
+                    `*GST (${invoice.gstRate}%):* ₹${invoiceGst.toLocaleString('en-IN')}\n` +
+                    `*Total Amount Payable:* ₹${invoiceTotal.toLocaleString('en-IN')}\n\n` +
+                    `_Digitally Generated via CareerLoop State Skilling & Enterprise Enclave_`;
+
+                  const phoneQuery = invoice.customerPhone ? invoice.customerPhone.replace(/[^0-9]/g, '') : '';
+                  const url = phoneQuery 
+                    ? `https://api.whatsapp.com/send?phone=${phoneQuery}&text=${encodeURIComponent(text)}`
+                    : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                    
+                  window.open(url, '_blank');
+                }}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-sm shadow-emerald-600/20"
+              >
+                <span>Share on WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-sm"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print / PDF</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          {/* Business & Invoice Header Info */}
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="text-slate-500 font-bold block mb-1">Customer Full Name</label>
+              <span className="text-slate-400 font-semibold block">Issuer / Enterprise</span>
+              <p className="font-bold text-slate-900 text-sm mt-0.5">
+                {formData.business_name || profile?.full_name || 'My Registered Enterprise'}
+              </p>
+              <p className="text-slate-500 text-[11px]">
+                {formData.business_address || (profile?.district ? `${profile.district}, Maharashtra` : 'Maharashtra')}
+              </p>
+              {formData.udyam_number && (
+                <span className="inline-block mt-1 font-mono text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold">
+                  {formData.udyam_number}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <label className="text-slate-500 font-bold block mb-1">Invoice Number</label>
+              <input
+                type="text"
+                value={invoice.invoiceNumber}
+                onChange={e => setInvoice({ ...invoice, invoiceNumber: e.target.value })}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-500 font-bold block mb-1">Invoice Date</label>
+              <input
+                type="date"
+                value={invoice.date}
+                onChange={e => setInvoice({ ...invoice, date: e.target.value })}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-medium"
+              />
+            </div>
+          </div>
+
+          {/* Customer Details & GST Rate Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label className="text-slate-600 font-bold block mb-1">Customer Full Name</label>
               <input
                 type="text"
                 value={invoice.customerName}
                 onChange={e => setInvoice({ ...invoice, customerName: e.target.value })}
                 placeholder="e.g. Ramesh Kulkarni"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium"
               />
             </div>
+
             <div>
-              <label className="text-slate-500 font-bold block mb-1">Customer Contact Number</label>
+              <label className="text-slate-600 font-bold block mb-1">Customer Contact Number</label>
               <input
                 type="text"
                 value={invoice.customerPhone}
                 onChange={e => setInvoice({ ...invoice, customerPhone: e.target.value })}
                 placeholder="+91 98XXX XXXXX"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium"
               />
+            </div>
+
+            <div>
+              <label className="text-slate-600 font-bold block mb-1">GST Tax Rate</label>
+              <select
+                value={invoice.gstRate}
+                onChange={e => setInvoice({ ...invoice, gstRate: Number(e.target.value) })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold"
+              >
+                <option value={0}>0% (Exempt / Composition Scheme / Non-GST)</option>
+                <option value={5}>5% (Essential Goods / Services)</option>
+                <option value={12}>12% (Standard Job Work)</option>
+                <option value={18}>18% (Standard Services & Custom Orders)</option>
+                <option value={28}>28% (Specialized Fabrications)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dynamic Line Items Table */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Billed Line Items</h4>
+              <button
+                type="button"
+                onClick={handleAddInvoiceItem}
+                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Item</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-400 uppercase font-semibold text-[10px]">
+                    <th className="py-2 px-3">Item Description</th>
+                    <th className="py-2 px-3 w-24">Qty</th>
+                    <th className="py-2 px-3 w-32">Rate (₹)</th>
+                    <th className="py-2 px-3 w-32 text-right">Amount (₹)</th>
+                    <th className="py-2 px-2 w-10 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {invoice.items.map((item, idx) => (
+                    <tr key={item.id || idx}>
+                      <td className="py-2.5 px-3">
+                        <input
+                          type="text"
+                          value={item.desc}
+                          onChange={e => handleUpdateInvoiceItem(item.id, 'desc', e.target.value)}
+                          placeholder="e.g. Alterations / Service"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-medium"
+                        />
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.qty}
+                          onChange={e => handleUpdateInvoiceItem(item.id, 'qty', Number(e.target.value))}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold"
+                        />
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <input
+                          type="number"
+                          min={0}
+                          value={item.rate}
+                          onChange={e => handleUpdateInvoiceItem(item.id, 'rate', Number(e.target.value))}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold"
+                        />
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                        ₹{(Number(item.qty || 0) * Number(item.rate || 0)).toLocaleString()}
+                      </td>
+                      <td className="py-2.5 px-2 text-center">
+                        {invoice.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveInvoiceItem(item.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition cursor-pointer"
+                            title="Remove line item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
           {/* Invoice Summary Box */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Item: {invoice.items[0].desc}</span>
-              <span className="font-bold">₹{(invoice.items[0].qty * invoice.items[0].rate).toLocaleString()}</span>
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs max-w-sm ml-auto">
+            <div className="flex justify-between text-slate-600">
+              <span>Subtotal:</span>
+              <span className="font-bold text-slate-800 font-mono">₹{invoiceSubtotal.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">GST (18% SGST + CGST)</span>
-              <span className="font-bold text-slate-700">₹{invoiceGst.toLocaleString()}</span>
+            <div className="flex justify-between text-slate-600">
+              <span>GST ({invoice.gstRate}%):</span>
+              <span className="font-bold text-slate-800 font-mono">₹{invoiceGst.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-2 text-sm font-black text-slate-900">
-              <span>Total Invoice Payable</span>
+            <div className="flex justify-between border-t border-slate-200 pt-2.5 text-base font-black text-slate-900">
+              <span>Total Payable:</span>
               <span className="text-blue-600 font-mono">₹{invoiceTotal.toLocaleString()}</span>
             </div>
           </div>

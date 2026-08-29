@@ -1,4 +1,4 @@
-// Nexus Enterprise Progressive Web App (PWA) Service Worker
+// CareerLoop Enterprise Progressive Web App (PWA) Service Worker
 // Offline Resilience & Low-Bandwidth Network Caching Engine
 
 const CACHE_NAME = 'nexus-cache-v2.1.0';

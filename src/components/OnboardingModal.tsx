@@ -46,7 +46,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ forceOpen, onC
       icon: Award,
       badge: 'Step 1 of 3: Verified Registry',
       title: 'Your Verified Skilling Dossier',
-      description: 'Nexus preserves your certified vocational credentials with cryptographic QR verification. Share your verified CV directly with employers.',
+      description: 'CareerLoop preserves your certified vocational credentials with cryptographic QR verification. Share your verified CV directly with employers.',
       highlights: [
         'Course certificates with anti-counterfeit QR code verification',
         'Privacy safeguards protecting your sensitive contact details',

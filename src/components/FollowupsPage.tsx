@@ -28,6 +28,7 @@ export const FollowupsPage: React.FC = () => {
   const [viewDetailsItem, setViewDetailsItem] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isListening, setIsListening] = useState(false);
 
   // Form State
@@ -43,6 +44,7 @@ export const FollowupsPage: React.FC = () => {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
+      setToastType('error');
       setToastMsg('Speech-to-Text not supported in this browser.');
       setTimeout(() => setToastMsg(null), 3000);
       return;
@@ -87,7 +89,7 @@ export const FollowupsPage: React.FC = () => {
       status: existing?.status || 'upcoming',
       scheduledDate: existing?.due_date || `M+${m.defaultMonths} Post-Training`,
       submittedDate: existing?.completed_date || (existing?.status === 'completed' ? existing.due_date : '-'),
-      businessStatus: existing?.current_status ? existing.current_status.replace('_', ' ') : (existing?.status === 'completed' ? 'Reported' : 'Pending'),
+      businessStatus: existing?.current_status ? existing.current_status.replace(/_/g, ' ') : (existing?.status === 'completed' ? 'Reported' : 'Pending'),
       incomeRange: existing?.current_income_range || (existing?.status === 'completed' ? 'Reported' : '-'),
       remarks: existing?.remarks || (existing?.status === 'completed' ? 'Submitted' : 'Pending submission'),
       satisfactionScore: existing?.job_satisfaction_score ?? null,
@@ -99,12 +101,38 @@ export const FollowupsPage: React.FC = () => {
     e.preventDefault();
     if (!selectedMilestone) return;
 
+    if (!surveyState.current_status) {
+      setToastType('error');
+      setToastMsg('Please select your current operating or employment status.');
+      setTimeout(() => setToastMsg(null), 3500);
+      return;
+    }
+
     setSubmitting(true);
-    const success = await submitFollowup(selectedMilestone, surveyState);
+    const success = await submitFollowup(selectedMilestone, {
+      current_status: surveyState.current_status,
+      current_income_range: surveyState.current_income_range || '₹0 (Unemployed / In Training)',
+      remarks: surveyState.remarks,
+      job_satisfaction_score: surveyState.job_satisfaction_score || 5,
+      skill_utilization_score: surveyState.skill_utilization_score || 5
+    });
     setSubmitting(false);
+
     if (success) {
+      setToastType('success');
       setToastMsg(`Follow-up survey for ${selectedMilestone.replace('_', ' ')} recorded successfully!`);
       setSelectedMilestone(null);
+      setSurveyState({
+        current_status: '',
+        current_income_range: '',
+        job_satisfaction_score: null,
+        skill_utilization_score: null,
+        remarks: ''
+      });
+      setTimeout(() => setToastMsg(null), 4000);
+    } else {
+      setToastType('error');
+      setToastMsg('Failed to save survey. Please check your connection and try again.');
       setTimeout(() => setToastMsg(null), 4000);
     }
   };
@@ -114,8 +142,10 @@ export const FollowupsPage: React.FC = () => {
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+        <div className={`fixed top-20 right-6 z-50 ${
+          toastType === 'error' ? 'bg-rose-600' : 'bg-emerald-600'
+        } text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top duration-300`}>
+          {toastType === 'error' ? <AlertCircle className="w-5 h-5 flex-shrink-0" /> : <CheckCircle2 className="w-5 h-5 flex-shrink-0" />}
           <span className="text-xs font-bold">{toastMsg}</span>
         </div>
       )}
@@ -138,8 +168,8 @@ export const FollowupsPage: React.FC = () => {
           </div>
           <div>
             <span className="text-xs font-semibold text-slate-500 block">Total Follow-ups</span>
-            <p className="text-xl font-black text-slate-900 mt-0.5">3</p>
-            <span className="text-[11px] text-slate-400 font-medium">Scheduled</span>
+            <p className="text-xl font-black text-slate-900 mt-0.5">{schedules.length}</p>
+            <span className="text-[11px] text-slate-400 font-medium">Scheduled Milestones</span>
           </div>
         </div>
 
@@ -150,8 +180,10 @@ export const FollowupsPage: React.FC = () => {
           </div>
           <div>
             <span className="text-xs font-semibold text-slate-500 block">Completed</span>
-            <p className="text-xl font-black text-slate-900 mt-0.5">2</p>
-            <span className="text-[11px] text-slate-400 font-medium">Follow-ups</span>
+            <p className="text-xl font-black text-slate-900 mt-0.5">
+              {followups.filter(f => f.status === 'completed').length}
+            </p>
+            <span className="text-[11px] text-slate-400 font-medium">Verified Surveys</span>
           </div>
         </div>
 
@@ -161,9 +193,11 @@ export const FollowupsPage: React.FC = () => {
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Upcoming</span>
-            <p className="text-xl font-black text-slate-900 mt-0.5">1</p>
-            <span className="text-[11px] text-slate-400 font-medium">Follow-up</span>
+            <span className="text-xs font-semibold text-slate-500 block">Pending Check-in</span>
+            <p className="text-xl font-black text-slate-900 mt-0.5">
+              {schedules.filter(s => s.status !== 'completed').length}
+            </p>
+            <span className="text-[11px] text-slate-400 font-medium">Surveys Remaining</span>
           </div>
         </div>
 
@@ -173,9 +207,13 @@ export const FollowupsPage: React.FC = () => {
             <Calendar className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Next Follow-up Due On</span>
-            <p className="text-base font-black text-slate-900 mt-0.5">20 Jun 2025</p>
-            <span className="text-[11px] text-slate-400 font-medium">6 Months Follow-up</span>
+            <span className="text-xs font-semibold text-slate-500 block">Next Follow-up Due</span>
+            <p className="text-sm font-black text-slate-900 mt-0.5">
+              {schedules.find(s => s.status !== 'completed')?.scheduledDate || 'All Completed'}
+            </p>
+            <span className="text-[11px] text-slate-400 font-medium">
+              {schedules.find(s => s.status !== 'completed')?.title || 'Longitudinal Enclave'}
+            </span>
           </div>
         </div>
 
@@ -224,7 +262,7 @@ export const FollowupsPage: React.FC = () => {
                 {/* Middle: Business Status + Income + Remarks */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs flex-1 px-0 lg:px-4">
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Business Status</span>
+                    <span className="text-slate-400 block mb-0.5">Business / Work Status</span>
                     <span className={`font-bold ${isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {item.businessStatus}
                     </span>
@@ -349,8 +387,9 @@ export const FollowupsPage: React.FC = () => {
 
             <form onSubmit={handleSurveySubmit} className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-500 block mb-1">Current Operating Status</label>
+                <label className="text-slate-500 block mb-1">Current Operating Status *</label>
                 <select
+                  required
                   value={surveyState.current_status}
                   onChange={e => setSurveyState({ ...surveyState, current_status: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
@@ -358,7 +397,8 @@ export const FollowupsPage: React.FC = () => {
                   <option value="">Select status</option>
                   <option value="Active">Active (Generating steady income)</option>
                   <option value="Scaling">Scaling (Expanding customer base)</option>
-                  <option value="Needs Support">Struggling / Needs Training Support</option>
+                  <option value="Employed">Employed / Wage Worker</option>
+                  <option value="Needs Support">Struggling / In Training / Needs Support</option>
                 </select>
               </div>
 
@@ -370,6 +410,7 @@ export const FollowupsPage: React.FC = () => {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800"
                 >
                   <option value="">Select income range</option>
+                  <option value="₹0 (Unemployed / In Training)">₹0 (Unemployed / In Training / Seeking Work)</option>
                   <option value="₹5,000 – ₹10,000">₹5,000 – ₹10,000</option>
                   <option value="₹10,000 – ₹20,000">₹10,000 – ₹20,000</option>
                   <option value="₹20,000 – ₹35,000">₹20,000 – ₹35,000</option>
@@ -402,21 +443,37 @@ export const FollowupsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setSelectedMilestone(null)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold"
+                  onClick={() => setSurveyState({
+                    current_status: '',
+                    current_income_range: '',
+                    job_satisfaction_score: null,
+                    skill_utilization_score: null,
+                    remarks: ''
+                  })}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-xs transition cursor-pointer"
                 >
-                  Cancel
+                  Reset Form
                 </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700"
-                >
-                  {submitting ? 'Saving...' : 'Submit Survey'}
-                </button>
+
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMilestone(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition disabled:opacity-50 cursor-pointer shadow-sm shadow-blue-600/20"
+                  >
+                    {submitting ? 'Saving...' : 'Submit Survey'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

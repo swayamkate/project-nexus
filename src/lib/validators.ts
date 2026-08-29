@@ -1,5 +1,5 @@
 /**
- * Nexus Enterprise Verification & Calculation Utilities
+ * CareerLoop Enterprise Verification & Calculation Utilities
  * 100% Real-World Formats, Checksum Algorithms & Mathematical Metrics
  */
 

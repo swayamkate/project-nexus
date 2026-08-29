@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "notion-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "NOTION_TOKEN": "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"
+      }
+    },
+    "postgres-supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:Avishkar%40443322@api.avishkark.in:5432/postgres"
+      ]
+    }
+  }
+}

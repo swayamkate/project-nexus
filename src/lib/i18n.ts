@@ -3,7 +3,7 @@ export type Language = 'en' | 'mr' | 'hi';
 export const translations: Record<Language, Record<string, string>> = {
   en: {
     // Brand & Top Header
-    'brand.name': 'Nexus',
+    'brand.name': 'CareerLoop',
     'brand.subtitle': 'Unified Skilling Registry',
     'nav.dashboard': 'Overview',
     'nav.profile': 'My Profile',

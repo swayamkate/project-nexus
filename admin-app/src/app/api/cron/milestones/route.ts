@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     await supabase
       .from('audit_logs')
       .insert({
-        admin_email: 'cron@nexus.internal',
+        admin_email: 'cron@careerloop.internal',
         action: 'CRON_LONGITUDINAL_EVALUATION',
         target_entity: 'trainee_followups',
         details: `Processed ${dueList.length} due milestone records, dispatched ${dispatchedCount} in-app alerts.`,

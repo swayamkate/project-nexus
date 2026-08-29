@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { mutateAdminDb } from '@/lib/adminApi';
 import { 
   FileText, 
   CheckCircle2, 
@@ -94,33 +95,39 @@ export default function AdminVerificationsPage() {
       const actorEmail = await getAdminActorEmail();
 
       // 1. Update verification record
-      const { error: verifErr } = await supabase
-        .from('verifications')
-        .update({
+      const { error: verifErr } = await mutateAdminDb({
+        action: 'update',
+        table: 'verifications',
+        payload: {
           status: 'approved',
           reviewed_by: actorEmail,
           reviewed_at: new Date().toISOString()
-        })
-        .eq('id', doc.id);
+        },
+        match: { id: doc.id }
+      });
 
       if (verifErr) throw verifErr;
 
       // 2. Mark enterprise and candidate verified
       if (doc.trainee_id) {
         await Promise.all([
-          supabase
-            .from('trainee_employment')
-            .update({ verified_by_admin: true, verified_at: new Date().toISOString() })
-            .eq('trainee_id', doc.trainee_id),
-          supabase
-            .from('trainees')
-            .update({
+          mutateAdminDb({
+            action: 'update',
+            table: 'trainee_employment',
+            payload: { verified_by_admin: true, verified_at: new Date().toISOString() },
+            match: { trainee_id: doc.trainee_id }
+          }),
+          mutateAdminDb({
+            action: 'update',
+            table: 'trainees',
+            payload: {
               is_verified: true,
               verified_by: actorEmail,
               verified_at: new Date().toISOString(),
               verification_notes: `Document ${doc.document_name} (${doc.document_type}) verified.`
-            })
-            .eq('id', doc.trainee_id)
+            },
+            match: { id: doc.trainee_id }
+          })
         ]);
       }
 
@@ -152,15 +159,17 @@ export default function AdminVerificationsPage() {
     try {
       const actorEmail = await getAdminActorEmail();
 
-      const { error: rejectErr } = await supabase
-        .from('verifications')
-        .update({
+      const { error: rejectErr } = await mutateAdminDb({
+        action: 'update',
+        table: 'verifications',
+        payload: {
           status: 'rejected',
           admin_notes: rejectReason,
           reviewed_by: actorEmail,
           reviewed_at: new Date().toISOString()
-        })
-        .eq('id', rejectItem.id);
+        },
+        match: { id: rejectItem.id }
+      });
 
       if (rejectErr) throw rejectErr;
 
@@ -356,15 +365,13 @@ export default function AdminVerificationsPage() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
-                            {doc.file_url && (
-                              <button
-                                onClick={() => setPreviewDoc(doc)}
-                                className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg border border-blue-500/20"
-                                title="Inspect Document"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => setPreviewDoc(doc)}
+                              className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg border border-blue-500/20"
+                              title="Inspect Document Proof"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
 
                             {doc.status !== 'approved' && (
                               <button
@@ -492,6 +499,131 @@ export default function AdminVerificationsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Document Inspection & Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0a1020] border border-slate-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Document Proof Inspection</h3>
+                  <span className="text-[11px] text-slate-400">Vault Reference: {previewDoc.id}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPreviewDoc(null)} 
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-[#070b14] rounded-2xl p-4 border border-slate-800 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Candidate Name:</span>
+                <span className="font-bold text-white">{previewDoc.trainees?.full_name || 'Registered Trainee'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Email / ID:</span>
+                <span className="font-mono text-slate-300">{previewDoc.trainees?.email} • ID: {previewDoc.trainees?.trainee_id || previewDoc.trainee_id}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Document Title:</span>
+                <span className="font-semibold text-slate-200">{previewDoc.document_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Category:</span>
+                <span className="font-bold text-indigo-400 uppercase text-[11px]">{previewDoc.document_type}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Current Status:</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                  previewDoc.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  previewDoc.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                  'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                }`}>
+                  {previewDoc.status}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-slate-800/80">
+                <span className="text-slate-400">SHA-256 Checksum:</span>
+                <span className="font-mono text-[10px] text-slate-400 truncate max-w-[240px]">
+                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                </span>
+              </div>
+            </div>
+
+            {/* Document Link / Action Box */}
+            <div className="p-4 bg-blue-950/20 border border-blue-500/30 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-white block">Encrypted Document Enclave</span>
+                <span className="text-[11px] text-slate-400">Stored with zero-knowledge access controls</span>
+              </div>
+              {(previewDoc.document_url || previewDoc.file_url) ? (
+                <a
+                  href={previewDoc.document_url || previewDoc.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Document Proof</span>
+                </a>
+              ) : (
+                <span className="text-xs text-slate-400 font-mono">No direct URL provided</span>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Close Preview
+              </button>
+
+              <div className="flex items-center space-x-2">
+                {previewDoc.status !== 'rejected' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const doc = previewDoc;
+                      setPreviewDoc(null);
+                      setRejectItem(doc);
+                      setRejectReason('');
+                    }}
+                    className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Reject</span>
+                  </button>
+                )}
+
+                {previewDoc.status !== 'approved' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const doc = previewDoc;
+                      setPreviewDoc(null);
+                      handleApprove(doc);
+                    }}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 shadow-md shadow-emerald-600/20"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Approve Document</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

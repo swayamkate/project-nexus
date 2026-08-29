@@ -14,13 +14,10 @@ import {
   Eye, 
   EyeOff, 
   User, 
-  AtSign,
-  KeyRound,
-  RotateCcw,
-  ChevronLeft,
-  GraduationCap,
-  Shield,
-  HelpCircle
+  AtSign, 
+  KeyRound, 
+  RotateCcw, 
+  ChevronLeft 
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatHumanError } from '@/lib/errorUtils';
@@ -149,8 +146,6 @@ export default function LoginPage() {
           p_username: cleanUsername
         });
       } catch {
-        // A failed availability check is an infrastructure/configuration
-        // error, not evidence that the requested username exists.
         throw new Error('We could not check username availability right now. Please try again in a moment.');
       }
 
@@ -158,7 +153,7 @@ export default function LoginPage() {
         throw new Error(`Username "${cleanUsername}" is already taken. Please choose another username.`);
       }
 
-      // 2. Call Supabase SignUp (dispatches confirmation email via Resend SMTP)
+      // 2. Call Supabase SignUp (dispatches confirmation email)
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
@@ -340,10 +335,10 @@ export default function LoginPage() {
       <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between z-10 border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0">
         <Link href="/" className="flex items-center space-x-3 group">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition flex-shrink-0">
-            <span className="text-white font-black text-xl tracking-tighter">N</span>
+            <span className="text-white font-black text-xl tracking-tighter">C</span>
           </div>
           <div>
-            <span className="font-extrabold text-slate-900 text-lg tracking-tight block leading-tight">Nexus</span>
+            <span className="font-extrabold text-slate-900 text-lg tracking-tight block leading-tight">CareerLoop</span>
             <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block">Skilling & Career Intelligence</span>
           </div>
         </Link>
@@ -365,7 +360,7 @@ export default function LoginPage() {
           <div className="text-center mb-6">
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold mb-3">
               <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Nexus Candidate Portal</span>
+              <span>CareerLoop Candidate Portal</span>
             </div>
             
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -440,7 +435,7 @@ export default function LoginPage() {
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full bg-slate-50 text-slate-900 text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder:text-slate-400 font-medium"
-                    placeholder="user@nexus.in or username"
+                    placeholder="user@careerloop.in or username"
                   />
                 </div>
               </div>
@@ -535,7 +530,7 @@ export default function LoginPage() {
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full bg-slate-50 text-slate-900 text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder:text-slate-400"
-                    placeholder="yourname@nexus.in"
+                    placeholder="yourname@careerloop.in"
                   />
                 </div>
               </div>
@@ -557,6 +552,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -580,6 +576,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -685,7 +682,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="text-center py-5 text-xs text-slate-400 z-10 border-t border-slate-200/60 bg-white/60">
-        © {new Date().getFullYear()} Nexus. All rights reserved.
+        © {new Date().getFullYear()} CareerLoop. All rights reserved.
       </footer>
     </div>
   );

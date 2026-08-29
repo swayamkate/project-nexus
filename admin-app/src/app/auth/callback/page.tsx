@@ -37,7 +37,7 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen bg-[#070b14] flex flex-col items-center justify-center text-white">
       <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
       <h2 className="text-xl font-bold">Verifying Authentication...</h2>
-      <p className="text-slate-400 mt-2">Please wait while we log you into Nexus.</p>
+      <p className="text-slate-400 mt-2">Please wait while we log you into CareerLoop.</p>
     </div>
   );
 }

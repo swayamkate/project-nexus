@@ -208,7 +208,7 @@ export function CertificateValidationClient({ certId }: Props) {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 Nexus Public Verification Service • Maharashtra State Skill Development Mission</p>
+        <p>© 2026 CareerLoop Public Verification Service • Maharashtra State Skill Development Mission</p>
       </footer>
     </div>
   );

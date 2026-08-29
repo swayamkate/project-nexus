@@ -18,7 +18,7 @@ export async function GET() {
 
   return NextResponse.json({
     success: true,
-    engine: 'Nexus Longitudinal AI Survey Worker',
+    engine: 'CareerLoop Longitudinal AI Survey Worker',
     endpoint: 'https://administrator.avishkark.in/api/cron/milestones',
     status: 'Operational',
     registeredPendingSurveys: count || 0,

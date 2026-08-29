@@ -184,7 +184,7 @@ export const ResumeDossierModal: React.FC<ResumeDossierModalProps> = ({
 
           {/* Footer Security Notice */}
           <div className="border-t border-slate-200 pt-4 text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Cryptographically Verified on Nexus Outcome Registry</span>
+            <span>Cryptographically Verified on CareerLoop Outcome Registry</span>
             {verifyUrl && <span className="font-mono">{verifyUrl}</span>}
           </div>
 

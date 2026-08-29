@@ -63,9 +63,9 @@ export interface PublicPlatformSettings {
 }
 
 export const DEFAULT_PUBLIC_SETTINGS: PublicPlatformSettings = {
-  'general.app_name': 'Nexus',
+  'general.app_name': 'CareerLoop',
   'general.tagline': 'Empowering Vocational Futures through Zero-PII Longitudinal Tracking',
-  'general.support_email': 'support@nexus.gov.in',
+  'general.support_email': 'support@careerloop.gov.in',
   'branding.primary_color': '#2563eb',
   'branding.accent_color': '#0ea5e9',
   'branding.login_headline': 'Skilling Outcomes & Longitudinal Tracking',

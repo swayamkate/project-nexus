@@ -4,8 +4,8 @@ import { ArrowLeft, ShieldCheck, Scale, FileText, CheckCircle2 } from 'lucide-re
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Nexus',
-  description: 'Terms of service, statutory compliance, and verification rules for the Nexus Platform.',
+  title: 'Terms of Service | CareerLoop',
+  description: 'Terms of service, statutory compliance, and verification rules for the CareerLoop Platform.',
 };
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-semibold mb-8 text-sm transition">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Nexus</span>
+          <span>Back to CareerLoop</span>
         </Link>
         
         <div className="flex items-center space-x-3 mb-4">
@@ -23,7 +23,7 @@ export default function TermsPage() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Terms of Service & Usage Governance</h1>
-            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Nexus Platform</p>
+            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">CareerLoop Platform</p>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ export default function TermsPage() {
               <span>1. Acceptance & Usage Terms</span>
             </h2>
             <p className="text-slate-400 leading-relaxed">
-              By registering on or accessing Nexus, you agree to comply with these terms, standard vocational training guidelines, and verification rules. If you do not agree, you may not use the services.
+              By registering on or accessing CareerLoop, you agree to comply with these terms, standard vocational training guidelines, and verification rules. If you do not agree, you may not use the services.
             </p>
           </section>
 

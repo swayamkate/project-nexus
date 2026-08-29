@@ -4,8 +4,8 @@ import { ArrowLeft, ShieldCheck, Download, Trash2, Mail, Lock } from 'lucide-rea
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy & Data Rights | Nexus',
-  description: 'Official Privacy Policy and Data Rights for the Nexus Platform.',
+  title: 'Privacy Policy & Data Rights | CareerLoop',
+  description: 'Official Privacy Policy and Data Rights for the CareerLoop Platform.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-semibold mb-8 text-sm transition">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Nexus</span>
+          <span>Back to CareerLoop</span>
         </Link>
         
         <div className="flex items-center space-x-3 mb-4">
@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Privacy Policy & Data Rights</h1>
-            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">Nexus Platform • Secure Data Architecture</p>
+            <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-0.5">CareerLoop Platform • Secure Data Architecture</p>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
               <span>1. Security Architecture & Cryptographic Tokenization</span>
             </h2>
             <p className="text-slate-400 leading-relaxed">
-              Nexus operates under strict privacy safeguards. Sensitive user attributes and contact identifiers are cryptographically hashed and isolated. Platform dashboards and district evaluators only interact with masked representations and verified records.
+              CareerLoop operates under strict privacy safeguards. Sensitive user attributes and contact identifiers are cryptographically hashed and isolated. Platform dashboards and district evaluators only interact with masked representations and verified records.
             </p>
           </section>
 
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
                   <span>Right to Be Forgotten (Purge)</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  To request complete deletion of your profile, email <strong className="text-slate-200">privacy@nexus.in</strong> or use the in-app support widget with subject <em>"Data Purge Request"</em>. Requests are executed within 48 hours.
+                  To request complete deletion of your profile, email <strong className="text-slate-200">privacy@careerloop.in</strong> or use the in-app support widget with subject <em>"Data Purge Request"</em>. Requests are executed within 48 hours.
                 </p>
               </div>
             </div>
@@ -100,8 +100,8 @@ export default function PrivacyPolicyPage() {
               For any privacy inquiries or grievance redressals:
             </p>
             <div className="mt-2 text-xs text-slate-300 font-mono bg-slate-900 p-3 rounded-xl border border-slate-800">
-              Privacy Team: Office of Data Governance, Nexus<br />
-              Email: privacy@nexus.in | Helpdesk: support@nexus.in
+              Privacy Team: Office of Data Governance, CareerLoop<br />
+              Email: privacy@careerloop.in | Helpdesk: support@careerloop.in
             </div>
           </section>
         </div>

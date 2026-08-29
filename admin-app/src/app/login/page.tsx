@@ -72,7 +72,7 @@ export default function AdminLoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 shadow-xl shadow-blue-500/20 mb-4 border border-blue-400/30">
             <ShieldCheck className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Nexus Executive Control</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">CareerLoop Executive Control</h1>
           <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
             State Skilling & Outcome Administration Portal
           </p>
@@ -160,7 +160,7 @@ export default function AdminLoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-600 mt-6">
-          © 2026 Maharashtra State Skill Development Mission • Nexus
+          © 2026 Maharashtra State Skill Development Mission • CareerLoop
         </p>
       </div>
     </div>

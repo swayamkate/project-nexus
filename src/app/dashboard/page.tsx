@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
@@ -23,7 +23,7 @@ import { SkillAssessmentModule } from '@/components/SkillAssessmentModule';
 import { InterviewPrepModule } from '@/components/InterviewPrepModule';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
-import { MessageSquarePlus, Sparkles, ShieldCheck } from 'lucide-react';
+import { MessageSquarePlus, Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
 
@@ -36,6 +36,13 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  const handleNavigate = useCallback((section: string, pushHistory = true) => {
+    setActiveSection(section);
+    if (pushHistory && typeof window !== 'undefined') {
+      window.history.pushState({ section }, '', section === 'dashboard' ? window.location.pathname : `#${section}`);
+    }
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -50,12 +57,34 @@ export default function DashboardPage() {
     checkUser();
   }, [router, supabase]);
 
+  // Handle URL hash and browser/hardware back button
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const initialHash = window.location.hash.replace('#', '');
+    if (initialHash) {
+      setActiveSection(initialHash);
+    }
+
+    const onPopState = (event: PopStateEvent) => {
+      if (event.state && event.state.section) {
+        setActiveSection(event.state.section);
+      } else {
+        const hash = window.location.hash.replace('#', '');
+        setActiveSection(hash || 'dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-slate-700">
         <div className="flex items-center space-x-3 bg-white p-6 rounded-3xl border border-slate-200 shadow-xl">
           <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="font-bold text-sm text-slate-800">Loading Nexus...</span>
+          <span className="font-bold text-sm text-slate-800">Loading CareerLoop...</span>
         </div>
       </div>
     );
@@ -70,7 +99,7 @@ export default function DashboardPage() {
           <Sidebar 
             viewMode="trainee"
             activeSection={activeSection}
-            setActiveSection={setActiveSection}
+            setActiveSection={(s) => handleNavigate(s)}
           />
         </div>
 
@@ -83,7 +112,7 @@ export default function DashboardPage() {
                 viewMode="trainee"
                 activeSection={activeSection}
                 setActiveSection={(s) => {
-                  setActiveSection(s);
+                  handleNavigate(s);
                   setIsMobileMenuOpen(false);
                 }}
               />
@@ -98,15 +127,32 @@ export default function DashboardPage() {
               viewMode="trainee"
               setViewMode={() => {}}
               activeSection={activeSection}
-              onNavigate={setActiveSection}
+              onNavigate={(s) => handleNavigate(s)}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-              {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
-              {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={setActiveSection} />}
-              {activeSection === 'career-goal' && <CareerGoalModule onNavigate={setActiveSection} />}
-              {activeSection === 'career-roadmap' && <CareerRoadmapModule onNavigate={setActiveSection} />}
+              {/* Back to Overview Bar when inside any sub-module */}
+              {activeSection !== 'dashboard' && (
+                <div className="mb-5 flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl px-4 py-2.5 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('dashboard')}
+                    className="inline-flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-blue-600 transition cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span>Back to Overview</span>
+                  </button>
+                  <span className="text-[11px] font-semibold text-slate-400 capitalize hidden sm:inline">
+                    {activeSection.replace(/-/g, ' ')}
+                  </span>
+                </div>
+              )}
+
+              {activeSection === 'dashboard' && <TraineeHomeDashboard onNavigate={(s) => handleNavigate(s)} />}
+              {activeSection === 'my-profile' && <TraineeProfilePage onNavigate={(s) => handleNavigate(s)} />}
+              {activeSection === 'career-goal' && <CareerGoalModule onNavigate={(s) => handleNavigate(s)} />}
+              {activeSection === 'career-roadmap' && <CareerRoadmapModule onNavigate={(s) => handleNavigate(s)} />}
               {activeSection === 'courses' && <CourseSearchModule />}
               {activeSection === 'skill-assessments' && <SkillAssessmentModule />}
               {activeSection === 'interview-prep' && <InterviewPrepModule />}
@@ -118,7 +164,7 @@ export default function DashboardPage() {
               {activeSection === 'self-employment' && <SelfEmploymentModule />}
               {activeSection === 'skill-development' && <TraineePortal />}
               {activeSection === 'documents' && <DocumentsPage />}
-              {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={setActiveSection} />}
+              {activeSection === 'notifications' && <TraineeHomeDashboard onNavigate={(s) => handleNavigate(s)} />}
               {activeSection === 'settings' && <SettingsPage />}
               {activeSection === 'help-support' && <HelpSupportPage />}
             </main>
@@ -129,7 +175,7 @@ export default function DashboardPage() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span className="font-semibold text-slate-700">Nexus</span>
+                <span className="font-semibold text-slate-700">CareerLoop</span>
                 <span>•</span>
                 <span>Longitudinal Skilling & Career Registry</span>
               </div>

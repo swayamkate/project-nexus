@@ -48,8 +48,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     setError(null);
 
     try {
-      const email = userEmail || 'user@nexus.in';
-      const name = userName || 'Nexus Trainee';
+      const email = userEmail || 'user@careerloop.in';
+      const name = userName || 'CareerLoop Trainee';
       
       const { error: dbError } = await supabase
         .from('platform_feedback')
@@ -97,7 +97,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 Platform Feedback & Bug Report
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Direct channel to the Nexus Product & Engineering Team
+                Direct channel to the CareerLoop Product & Engineering Team
               </p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             </div>
             <h4 className="text-base font-bold text-slate-900">Feedback Submitted Successfully!</h4>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Thank you for helping improve Nexus. Our development team reviews every report.
+              Thank you for helping improve CareerLoop. Our development team reviews every report.
             </p>
           </div>
         ) : (

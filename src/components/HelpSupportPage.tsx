@@ -19,6 +19,7 @@ import {
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
 import { fetchPublicSettings } from '@/lib/platformSettings';
+import { mutateDb } from '@/lib/traineeApi';
 
 export const HelpSupportPage: React.FC = () => {
   const { user, profile, t } = useUser();
@@ -33,7 +34,7 @@ export const HelpSupportPage: React.FC = () => {
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [showChatBot, setShowChatBot] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
-    { sender: 'bot', text: 'Hello! I am the Nexus AI Assistant. How can I help you with your training, certificate, or business support today?' }
+    { sender: 'bot', text: 'Hello! I am the CareerLoop AI Assistant. How can I help you with your training, certificate, or business support today?' }
   ]);
   const [userInput, setUserInput] = useState('');
 
@@ -67,9 +68,10 @@ export const HelpSupportPage: React.FC = () => {
     setCreatedTicketId(null);
 
     try {
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .insert({
+      const { data, error } = await mutateDb({
+        action: 'insert',
+        table: 'support_tickets',
+        payload: {
           trainee_id: profile?.id || null,
           trainee_name: profile?.full_name || '',
           trainee_email: profile?.email || user?.email || '',
@@ -78,13 +80,13 @@ export const HelpSupportPage: React.FC = () => {
           message: ticketMessage.trim(),
           status: 'open',
           assigned_to: profile?.district ? `District Officer ${profile.district}` : null
-        })
-        .select()
-        .single();
+        }
+      });
 
       if (error) throw error;
 
-      const ticketRef = `TK-${(data?.id || '').slice(0, 8).toUpperCase()}`;
+      const created = data && data[0] ? data[0] : null;
+      const ticketRef = `TK-${(created?.id || '').slice(0, 8).toUpperCase() || Date.now().toString().slice(-6)}`;
       setCreatedTicketId(ticketRef);
       setTicketSubject('');
       setTicketMessage('');
@@ -99,237 +101,286 @@ export const HelpSupportPage: React.FC = () => {
     e.preventDefault();
     if (!userInput.trim()) return;
 
-    const newMsgs = [...chatMessages, { sender: 'user' as const, text: userInput }];
-    setChatMessages(newMsgs);
+    const userText = userInput.trim();
     setUserInput('');
+    setChatMessages(prev => [...prev, { sender: 'user', text: userText }]);
 
+    // Simulated Intelligent Trainee Assistant responses
     setTimeout(() => {
-      let reply = 'Thank you for your question. Your inquiry has been routed to the District Skill Coordinator. You can also submit an official support ticket below!';
-      if (userInput.toLowerCase().includes('certificate')) {
-        reply = 'You can download your verified Certificate of Competency directly from the "Certifications" section on your sidebar!';
-      } else if (userInput.toLowerCase().includes('loan') || userInput.toLowerCase().includes('money')) {
-        reply = 'Under the PMEGP / Mudra scheme, certified trainees are eligible for up to ₹5,00,000 collateral-free loans with 35% subsidy. Check the Opportunities tab!';
+      let botResponse = 'Thank you for reaching out. Our District Skill Officer will review your query. You can also file an official ticket above for expedited tracking.';
+      const lower = userText.toLowerCase();
+
+      if (lower.includes('certif') || lower.includes('download')) {
+        botResponse = 'You can download your NSQF certificate from the "Certifications" tab on the left sidebar once your final evaluation is approved.';
+      } else if (lower.includes('loan') || lower.includes('mudra') || lower.includes('pmegp') || lower.includes('money')) {
+        botResponse = 'Government financial assistance programs like PMEGP and Mudra are available under the "Recommended Opportunities" and "Self-Employment" desks.';
+      } else if (lower.includes('follow') || lower.includes('survey')) {
+        botResponse = 'Longitudinal surveys occur at 3, 6, 12, 18, and 24 months. You can fill out your milestone directly under the "Follow-ups" tab.';
+      } else if (lower.includes('profile') || lower.includes('edit') || lower.includes('phone')) {
+        botResponse = 'To update your phone number, address, or education details, head to the "My Profile" tab and click the "Edit" button.';
       }
-      setChatMessages([...newMsgs, { sender: 'bot', text: reply }]);
+
+      setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
     }, 600);
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+    <div className="space-y-8 max-w-6xl mx-auto pb-16 text-slate-800 animate-in fade-in-50">
       
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t('help.title', 'Help & Trainee Support Center')}</h1>
-        <p className="text-xs text-slate-500 mt-0.5">{t('help.subtitle', 'Direct coordinator channels, query tracking, and AI guidance.')}</p>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold mb-3 border border-white/15 text-blue-200">
+            <Headphones className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Candidate Grievance & Technical Enclave</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Help, Support & District Desk
+          </h1>
+          <p className="text-sm text-blue-100/80 mt-1 max-w-2xl">
+            Get instant guidance, connect with your designated District Skill Development Officer, or raise formal support tickets.
+          </p>
+        </div>
+
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 text-center">
+            <span className="text-xs text-cyan-200 block font-semibold">Toll-Free Helpline</span>
+            <span className="text-sm font-black text-white font-mono">1800-123-4567</span>
+          </div>
+        </div>
       </div>
 
-      {/* 3 Contact Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <a 
-          href="tel:+918432884424" 
-          className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center space-x-3.5 hover:border-blue-500 transition group cursor-pointer"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
-            <Phone className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-slate-400 font-semibold block">{t('help.helpline', 'Toll-Free Helpline')}</span>
-            <p className="text-sm font-black text-slate-900 mt-0.5 group-hover:text-blue-600 transition">+91 8432884424</p>
-            <span className="text-[11px] text-emerald-600 font-semibold">Mon–Sat, 9AM to 6PM</span>
-          </div>
-        </a>
-
-        <a 
-          href="https://wa.me/918432884424" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center space-x-3.5 hover:border-emerald-500 transition group cursor-pointer"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
-            <MessageCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-slate-400 font-semibold block">{t('help.whatsapp', 'WhatsApp Helpline')}</span>
-            <p className="text-sm font-black text-slate-900 mt-0.5 group-hover:text-emerald-600 transition">+91 8432884424</p>
-            <span className="text-[11px] text-blue-600 font-bold">24/7 Chat Available</span>
-          </div>
-        </a>
-
-        <a 
-          href={supportEmail ? `mailto:${supportEmail}` : undefined}
-          aria-disabled={!supportEmail}
-          onClick={event => { if (!supportEmail) event.preventDefault(); }}
-          className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center space-x-3.5 hover:border-purple-500 transition group cursor-pointer"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
-            <Mail className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-slate-400 font-semibold block">{t('help.email', 'Official Support Email')}</span>
-            <p className="text-xs font-bold text-slate-900 mt-0.5 group-hover:text-purple-600 transition">{supportEmail || 'Support email not configured'}</p>
-            <span className="text-[11px] text-slate-400">{supportEmail ? 'Response within 24 hours' : 'Configure this in the admin console'}</span>
-          </div>
-        </a>
-
-      </div>
-
-      {/* Ticket Submission & FAQ 2-Column Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Submit Ticket Box */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">
-            {t('help.submitTicket', 'Submit a Support Request')}
-          </h3>
+        {/* Left: Raise a Ticket & Contact Methods (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
           
-          {createdTicketId && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center space-x-2 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <div>
-                <span className="font-bold block">Support Request Registered Successfully!</span>
-                <span className="text-[11px]">Ticket ID: <strong className="font-mono">{createdTicketId}</strong>. {profile?.district ? `Assigned to ${profile.district} District Officer.` : 'Your request is queued for assignment.'}</span>
-              </div>
-            </div>
-          )}
-
-          {ticketError && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <span>{ticketError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleTicketSubmit} className="space-y-3 text-xs">
-            <div>
-              <label className="text-slate-500 block mb-1">{t('help.issueCategory', 'Issue Category')}</label>
-              <select
-                value={ticketCategory}
-                onChange={e => setTicketCategory(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:bg-white focus:border-blue-500 outline-none"
-              >
-                <option value="Certificate Verification">Certificate Verification</option>
-                <option value="Follow-up Survey Assistance">Follow-up Survey Assistance</option>
-                <option value="Udyam / MSME Registration Guidance">Udyam / MSME Registration Guidance</option>
-                <option value="Course Syllabus / Training Query">Course Syllabus / Training Query</option>
-                <option value="Other">Other Query</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-slate-500 block mb-1">{t('help.subject', 'Subject')}</label>
-              <input
-                type="text"
-                required
-                value={ticketSubject}
-                onChange={e => setTicketSubject(e.target.value)}
-                placeholder="Brief summary of your query..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:bg-white focus:border-blue-500 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-slate-500 block mb-1">{t('help.message', 'Description & Details')}</label>
-              <textarea
-                rows={4}
-                required
-                value={ticketMessage}
-                onChange={e => setTicketMessage(e.target.value)}
-                placeholder="Describe your question or issue in detail..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:bg-white focus:border-blue-500 outline-none resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={ticketSubmitting}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center justify-center space-x-1.5 shadow-sm shadow-blue-600/20 disabled:opacity-60 cursor-pointer"
-            >
-              {ticketSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>{ticketSubmitting ? 'Registering...' : t('help.sendTicket', 'Submit Support Request')}</span>
-            </button>
-          </form>
-        </div>
-
-        {/* FAQs Box */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">Frequently Asked Questions</h3>
-
-          <div className="space-y-2">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div key={idx} className="border border-slate-200/80 rounded-xl overflow-hidden text-xs">
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-3.5 flex items-center justify-between font-bold text-slate-800 hover:bg-slate-50 text-left transition"
-                  >
-                    <span>{faq.q}</span>
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-blue-600 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
-                  </button>
-                  {isOpen && (
-                    <div className="p-3.5 bg-slate-50 text-slate-600 border-t border-slate-100 leading-relaxed">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-      </div>
-
-      {/* Live AI Chatbot Modal */}
-      {showChatBot && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col h-[500px]">
-            
-            {/* Bot Header */}
-            <div className="bg-blue-600 p-4 text-white flex items-center justify-between">
+          {/* Submit Support Ticket Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Send className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm leading-none">Nexus AI Assistant</h4>
-                  <span className="text-[10px] text-blue-100">Online • AI Support Assistant</span>
+                  <h3 className="font-bold text-slate-900 text-base">Raise Formal Support Ticket</h3>
+                  <p className="text-xs text-slate-400">Direct escalation to District Skill Officer</p>
                 </div>
               </div>
-              <button onClick={() => setShowChatBot(false)} className="text-white/80 hover:text-white">
-                ✕
-              </button>
+              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-200">
+                24h Response SLA
+              </span>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 text-xs">
+            {createdTicketId ? (
+              <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <h4 className="text-base font-bold text-slate-900">Support Ticket Created Successfully!</h4>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Your ticket reference number is <strong className="font-mono text-emerald-700">{createdTicketId}</strong>. Our designated District Skill Officer has been notified and will review your request.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCreatedTicketId(null)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer mt-2"
+                >
+                  Submit Another Request
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleTicketSubmit} className="space-y-4 text-xs">
+                {ticketError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{ticketError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1.5">Category</label>
+                    <select
+                      value={ticketCategory}
+                      onChange={e => setTicketCategory(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-800"
+                    >
+                      <option value="Certificate Verification">Certificate Verification</option>
+                      <option value="Longitudinal Survey Query">Longitudinal Survey Query</option>
+                      <option value="PMEGP / Mudra Loan Assistance">PMEGP / Mudra Loan Assistance</option>
+                      <option value="Profile / Identity Correction">Profile / Identity Correction</option>
+                      <option value="Other Technical Issues">Other Technical Issues</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1.5">Assigned District Desk</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={profile?.district ? `District Officer (${profile.district})` : 'State Central Grievance Desk'}
+                      className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-500 font-medium cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1.5">Subject</label>
+                  <input
+                    type="text"
+                    required
+                    value={ticketSubject}
+                    onChange={e => setTicketSubject(e.target.value)}
+                    placeholder="e.g. Request for correction in registered trade certificate"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1.5">Detailed Description</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={ticketMessage}
+                    onChange={e => setTicketMessage(e.target.value)}
+                    placeholder="Provide relevant details, dates, or error messages..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-medium text-slate-800 resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={ticketSubmitting}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition flex items-center justify-center space-x-2 cursor-pointer shadow-md shadow-blue-500/20"
+                >
+                  {ticketSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting Request...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Submit Grievance / Ticket</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Interactive AI Chat Assistant */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">CareerLoop AI Copilot Assistant</h4>
+                  <p className="text-[11px] text-slate-400">Instant answers for skilling & enterprise questions</p>
+                </div>
+              </div>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+            </div>
+
+            {/* Chat Box */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 h-52 overflow-y-auto space-y-3 text-xs">
               {chatMessages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-2xl leading-relaxed ${
-                    msg.sender === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'
-                  }`}>
+                <div
+                  key={idx}
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
+                      msg.sender === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : 'bg-white border border-slate-200 text-slate-800 shadow-xs rounded-bl-none'
+                    }`}
+                  >
                     {msg.text}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Input Form */}
-            <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex gap-2">
+            {/* Input Bar */}
+            <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
               <input
                 type="text"
                 value={userInput}
                 onChange={e => setUserInput(e.target.value)}
-                placeholder="Ask about certificates, loans, follow-ups..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-800 outline-none"
+                placeholder="Ask about certificates, loans, or survey dates..."
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800"
               />
-              <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold">
-                Send
+              <button
+                type="submit"
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+              >
+                <span>Send</span>
+                <Send className="w-3 h-3" />
               </button>
             </form>
           </div>
+
         </div>
-      )}
+
+        {/* Right: Frequently Asked Questions (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-base">Frequently Asked Questions</h3>
+            </div>
+
+            <div className="space-y-3">
+              {faqs.map((faq, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div
+                    key={idx}
+                    className="border border-slate-200/80 rounded-2xl overflow-hidden transition"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="w-full p-3.5 text-left text-xs font-bold text-slate-800 bg-slate-50/50 hover:bg-slate-100 flex items-center justify-between transition cursor-pointer"
+                    >
+                      <span>{faq.q}</span>
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-slate-500 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />}
+                    </button>
+                    {isOpen && (
+                      <div className="p-3.5 text-xs text-slate-600 bg-white leading-relaxed border-t border-slate-100">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Contact Details Card */}
+          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-md space-y-3.5 text-xs">
+            <h4 className="font-bold text-white text-sm">State Skill Development Society</h4>
+            <div className="space-y-2 text-slate-300">
+              <div className="flex items-center space-x-2">
+                <Mail className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>{supportEmail || 'support@mahaskill.in'}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>+91 22 2202 5488 / +91 22 2202 5489</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-white/10">
+              Working Hours: Mon–Fri, 9:30 AM – 6:00 PM IST (Excluding Public Holidays)
+            </p>
+          </div>
+        </div>
+
+      </div>
 
     </div>
   );

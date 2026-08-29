@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { mutateAdminDb } from '@/lib/adminApi';
 import { 
   BookOpen, 
   Plus, 
@@ -139,10 +140,12 @@ export default function AdminCoursesPage() {
 
     try {
       if (editingCourse) {
-        const { error } = await supabase
-          .from('external_courses')
-          .update(payload)
-          .eq('id', editingCourse.id);
+        const { error } = await mutateAdminDb({
+          action: 'update',
+          table: 'external_courses',
+          payload,
+          match: { id: editingCourse.id }
+        });
         if (error) throw error;
         await logAdminAction(
           'UPDATE_COURSE',
@@ -152,16 +155,17 @@ export default function AdminCoursesPage() {
         );
         setToastMsg({ type: 'success', text: 'Course catalog record updated successfully.' });
       } else {
-        const { data: inserted, error } = await supabase
-          .from('external_courses')
-          .insert(payload)
-          .select()
-          .single();
+        const { data: inserted, error } = await mutateAdminDb({
+          action: 'insert',
+          table: 'external_courses',
+          payload
+        });
         if (error) throw error;
+        const insertedId = inserted && inserted[0] ? inserted[0].id : null;
         await logAdminAction(
           'CREATE_COURSE',
           'EXTERNAL_COURSES',
-          inserted?.id || null,
+          insertedId,
           `Added new accredited course ${payload.title} (${payload.platform})`
         );
         setToastMsg({ type: 'success', text: 'New accredited course added to registry.' });
@@ -180,16 +184,17 @@ export default function AdminCoursesPage() {
   const handleDeleteCourse = async () => {
     if (!courseToDelete) return;
     try {
-      const { error } = await supabase
-        .from('external_courses')
-        .delete()
-        .eq('id', courseToDelete.id);
+      const { error } = await mutateAdminDb({
+        action: 'delete',
+        table: 'external_courses',
+        match: { id: courseToDelete.id }
+      });
       if (error) throw error;
       await logAdminAction(
         'DELETE_COURSE',
         'EXTERNAL_COURSES',
         courseToDelete.id,
-        `Deleted course ${courseToDelete.title}`
+        `Removed course ${courseToDelete.title} from catalog`
       );
       setToastMsg({ type: 'success', text: 'Course deleted from catalog.' });
       setCourseToDelete(null);

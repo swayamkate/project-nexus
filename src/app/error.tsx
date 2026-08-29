@@ -13,7 +13,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Nexus Application Runtime Error:', error);
+    console.error('CareerLoop Application Runtime Error:', error);
   }, [error]);
 
   const humanFriendlyMsg = formatHumanError(error);
@@ -60,7 +60,7 @@ export default function Error({
       </div>
 
       <footer className="w-full text-center py-6 text-[11px] text-slate-500 z-10 border-t border-slate-900">
-        &copy; {new Date().getFullYear()} Nexus. All rights reserved.
+        &copy; {new Date().getFullYear()} CareerLoop. All rights reserved.
       </footer>
     </div>
   );

@@ -24,6 +24,7 @@ import {
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
 import { evaluateMockInterviewAnswer, MockInterviewEvaluation } from '@/lib/aiCareerEngine';
+import { mutateDb } from '@/lib/traineeApi';
 
 export const InterviewPrepModule: React.FC = () => {
   const { profile } = useUser();
@@ -96,10 +97,12 @@ export const InterviewPrepModule: React.FC = () => {
   const handleUpvote = async (id: string, currentUpvotes: number) => {
     setQuestions(prev => prev.map(q => q.id === id ? { ...q, upvotes: currentUpvotes + 1 } : q));
     try {
-      await supabase
-        .from('interview_questions')
-        .update({ upvotes: currentUpvotes + 1 })
-        .eq('id', id);
+      await mutateDb({
+        action: 'update',
+        table: 'interview_questions',
+        payload: { upvotes: currentUpvotes + 1 },
+        match: { id }
+      });
     } catch (e) {
       console.error('Error upvoting:', e);
     }
@@ -118,9 +121,10 @@ export const InterviewPrepModule: React.FC = () => {
         ? submitForm.key_points.split(',').map(p => p.trim()).filter(Boolean)
         : [];
 
-      const { error } = await supabase
-        .from('interview_questions')
-        .insert({
+      const { error } = await mutateDb({
+        action: 'insert',
+        table: 'interview_questions',
+        payload: {
           trade_sector: submitForm.trade_sector,
           target_role: submitForm.target_role || `${submitForm.trade_sector} Specialist`,
           company_name: submitForm.company_name || 'Industry Candidate Experienced',
@@ -133,7 +137,8 @@ export const InterviewPrepModule: React.FC = () => {
           submitted_by_name: profile?.full_name || 'Community Candidate',
           is_approved: true,
           upvotes: 1
-        });
+        }
+      });
 
       if (error) throw error;
       setShowSubmitModal(false);
@@ -161,7 +166,7 @@ export const InterviewPrepModule: React.FC = () => {
     if (!userMockAnswer.trim()) return;
     setEvaluating(true);
     setTimeout(() => {
-      const result = evaluateMockInterviewAnswer(mockRole, mockQuestion, userMockAnswer, mockKeyPoints);
+      const result = evaluateMockInterviewAnswer(mockQuestion, userMockAnswer, mockKeyPoints);
       setMockEvaluation(result);
       setEvaluating(false);
     }, 600);
@@ -424,7 +429,7 @@ export const InterviewPrepModule: React.FC = () => {
                 <Bot className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900 text-base">Nexus AI Mock Interview Coach</h3>
+                <h3 className="font-extrabold text-slate-900 text-base">CareerLoop AI Mock Interview Coach</h3>
                 <p className="text-xs text-slate-400">Real-time technical response scoring and concept evaluation</p>
               </div>
             </div>

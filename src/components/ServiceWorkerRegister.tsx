@@ -9,7 +9,7 @@ export function ServiceWorkerRegister() {
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
-            console.log('Nexus PWA ServiceWorker active with scope:', registration.scope);
+            console.log('CareerLoop PWA ServiceWorker active with scope:', registration.scope);
           })
           .catch((error) => {
             console.error('ServiceWorker registration error:', error);

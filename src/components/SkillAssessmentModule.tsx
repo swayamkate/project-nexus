@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
+import { mutateDb } from '@/lib/traineeApi';
 
 export const SkillAssessmentModule: React.FC = () => {
   const { profile } = useUser();
@@ -109,9 +110,10 @@ export const SkillAssessmentModule: React.FC = () => {
     // Save to database if trainee logged in
     if (profile?.id) {
       try {
-        await supabase
-          .from('assessment_submissions')
-          .insert({
+        await mutateDb({
+          action: 'insert',
+          table: 'assessment_submissions',
+          payload: {
             trainee_id: profile.id,
             assessment_id: activeQuiz.id,
             score_pct: scorePct,
@@ -119,7 +121,8 @@ export const SkillAssessmentModule: React.FC = () => {
             answers_json: userAnswers,
             time_taken_seconds: resultPayload.time_taken_seconds,
             badge_earned: badgeEarned
-          });
+          }
+        });
 
         await fetchAssessmentsAndSubmissions();
       } catch (err) {

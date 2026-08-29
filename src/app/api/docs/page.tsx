@@ -36,7 +36,7 @@ export default function ApiDocumentationPage() {
           method: 'GET',
           path: '/api/health',
           desc: 'System health, database latency, and zero-PII enclave diagnostics',
-          response: `{\n  "status": "healthy",\n  "app": "Nexus",\n  "version": "2.0.0",\n  "services": {\n    "database": { "status": "operational", "provider": "Supabase PostgreSQL 17" },\n    "zero_pii_enclave": { "status": "operational", "algorithm": "SHA-256" }\n  }\n}`
+          response: `{\n  "status": "healthy",\n  "app": "CareerLoop",\n  "version": "2.0.0",\n  "services": {\n    "database": { "status": "operational", "provider": "Supabase PostgreSQL 17" },\n    "zero_pii_enclave": { "status": "operational", "algorithm": "SHA-256" }\n  }\n}`
         },
         {
           method: 'GET',
@@ -81,7 +81,7 @@ export default function ApiDocumentationPage() {
             <Code2 className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-base font-black text-white tracking-tight">Nexus API</span>
+            <span className="text-base font-black text-white tracking-tight">CareerLoop API</span>
             <span className="text-[10px] text-blue-400 font-bold block uppercase tracking-wider">OpenAPI 3.0 Specification</span>
           </div>
         </Link>
@@ -182,7 +182,7 @@ export default function ApiDocumentationPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 Nexus Open API Gateway • Maharashtra State Skill Development Mission</p>
+        <p>© 2026 CareerLoop Open API Gateway • Maharashtra State Skill Development Mission</p>
       </footer>
     </div>
   );

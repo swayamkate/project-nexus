@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
+import { mutateAdminDb } from '@/lib/adminApi';
 import { 
   Search, 
   Trash2, 
@@ -39,6 +40,7 @@ import {
   Eye,
   UserCheck,
   UserX,
+  Users,
   Crown
 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
@@ -61,6 +63,17 @@ export default function AdminUsersPage() {
   const [traineeGoal, setTraineeGoal] = useState<any | null>(null);
   const [traineeSubmissions, setTraineeSubmissions] = useState<any[]>([]);
   const [traineeEnrollments, setTraineeEnrollments] = useState<any[]>([]);
+  const [traineeCertifications, setTraineeCertifications] = useState<any[]>([]);
+  const [trainingProgramsList, setTrainingProgramsList] = useState<any[]>([]);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [certFormData, setCertFormData] = useState({
+    program_id: '',
+    grade: 'A+',
+    certified_date: new Date().toISOString().split('T')[0],
+    completed_date: new Date().toISOString().split('T')[0],
+    custom_cert_id: ''
+  });
+  const [issuingCert, setIssuingCert] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   // Edit Trainee Modal State
@@ -94,6 +107,7 @@ export default function AdminUsersPage() {
   const [notifTitle, setNotifTitle] = useState('');
   const [notifMessage, setNotifMessage] = useState('');
   const [notifType, setNotifType] = useState('info');
+  const [notifExpiryDays, setNotifExpiryDays] = useState<number>(3);
   const [sendingNotif, setSendingNotif] = useState(false);
 
   const supabase = createClient();
@@ -113,6 +127,10 @@ export default function AdminUsersPage() {
         .order('created_at', { ascending: false })
         .limit(100);
       if (traineeData) setUsers(traineeData);
+
+      // 3. Fetch training programs for certification
+      const { data: progList } = await supabase.from('training_programs').select('*').order('title');
+      if (progList) setTrainingProgramsList(progList);
 
       // 2. Fetch real staff and admins
       const staffRes = await fetch('/api/admin/staff');
@@ -144,21 +162,89 @@ export default function AdminUsersPage() {
     setTraineeGoal(null);
     setTraineeSubmissions([]);
     setTraineeEnrollments([]);
+    setTraineeCertifications([]);
 
     try {
-      const [empRes, goalRes, subRes, enrollRes] = await Promise.all([
+      const [empRes, goalRes, subRes, enrollRes, certRes] = await Promise.all([
         supabase.from('trainee_employment').select('*').eq('trainee_id', trainee.id).maybeSingle(),
         supabase.from('trainee_career_goals').select('*').eq('trainee_id', trainee.id).maybeSingle(),
         supabase.from('assessment_submissions').select('*, skill_assessments(title, badge_name)').eq('trainee_id', trainee.id),
-        supabase.from('trainee_course_enrollments').select('*, external_courses(title, platform, provider)').eq('trainee_id', trainee.id)
+        supabase.from('trainee_course_enrollments').select('*, external_courses(title, platform, provider)').eq('trainee_id', trainee.id),
+        supabase.from('trainee_enrollments').select('*, training_programs(title, sector, provider_name)').eq('trainee_id', trainee.id)
       ]);
 
       if (empRes.data) setTraineeEmployment(empRes.data);
       if (goalRes.data) setTraineeGoal(goalRes.data);
       if (subRes.data) setTraineeSubmissions(subRes.data);
       if (enrollRes.data) setTraineeEnrollments(enrollRes.data);
+      if (certRes.data) setTraineeCertifications(certRes.data);
     } catch (err) {
       console.error('Error loading trainee details:', err);
+    }
+  };
+
+  const handleIssueCertificate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTrainee || !certFormData.program_id) return;
+    setIssuingCert(true);
+    try {
+      const certId = certFormData.custom_cert_id.trim() || `MS-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const { error: enrollErr } = await mutateAdminDb({
+        action: 'insert',
+        table: 'trainee_enrollments',
+        payload: {
+          trainee_id: selectedTrainee.id,
+          program_id: certFormData.program_id,
+          enrolled_date: certFormData.completed_date,
+          completed_date: certFormData.completed_date,
+          certified_date: certFormData.certified_date,
+          certificate_id: certId,
+          grade: certFormData.grade,
+          status: 'certified'
+        }
+      });
+
+      if (enrollErr) throw enrollErr;
+
+      await mutateAdminDb({
+        action: 'update',
+        table: 'trainees',
+        payload: {
+          is_verified: true,
+          verified_by: 'State Skill Development Officer',
+          verified_at: new Date().toISOString()
+        },
+        match: { id: selectedTrainee.id }
+      });
+
+      await logAdminAction(
+        'ISSUE_VERIFIED_CERTIFICATE',
+        'TRAINEE_ENROLLMENTS',
+        selectedTrainee.id,
+        `Issued State Certificate ${certId} (${certFormData.grade}) to ${selectedTrainee.full_name}`
+      );
+
+      await mutateAdminDb({
+        action: 'insert',
+        table: 'trainee_notifications',
+        payload: {
+          trainee_id: selectedTrainee.id,
+          title: '🎓 Official Vocational Certificate Issued!',
+          message: `Congratulations! Your official state skill credential (${certId}) has been certified with Grade ${certFormData.grade}. View and download your certificate in the portal.`,
+          type: 'certificate',
+          is_read: false
+        }
+      });
+
+      showToast('success', `Certificate ${certId} issued to ${selectedTrainee.full_name}!`);
+      setIsCertModalOpen(false);
+      await openTraineeDrawer(selectedTrainee);
+      await fetchUsers();
+    } catch (err: any) {
+      showToast('error', 'Failed to issue certificate: ' + err.message);
+    } finally {
+      setIssuingCert(false);
     }
   };
 
@@ -376,7 +462,7 @@ export default function AdminUsersPage() {
   };
 
   const handleDeleteStaff = async (staff: any) => {
-    if (staff.email === 'admin@nexus.com' || staff.email === 'superadmin@nexus.gov.in') {
+    if (staff.email === 'admin@nexus.com' || staff.email === 'superadmin@careerloop.gov.in') {
       showToast('error', 'Cannot delete primary root superadmin account.');
       return;
     }
@@ -513,18 +599,26 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setSendingNotif(true);
     try {
+      const finalMessage = notifExpiryDays > 0 
+        ? `${notifMessage.trim()} [Expires in ${notifExpiryDays} days]`
+        : notifMessage.trim();
+
       const payload = {
         trainee_id: notifTarget === 'single' ? targetTrainee?.id : null,
         title: notifTitle.trim(),
-        message: notifMessage.trim(),
+        message: finalMessage,
         type: notifType,
         is_read: false
       };
 
-      const { error } = await supabase.from('trainee_notifications').insert(payload);
+      const { error } = await mutateAdminDb({
+        action: 'insert',
+        table: 'trainee_notifications',
+        payload
+      });
       if (error) throw error;
 
-      showToast('success', `Notification "${notifTitle}" dispatched successfully!`);
+      showToast('success', `Notification "${notifTitle}" dispatched successfully (${notifExpiryDays > 0 ? `Auto-expires in ${notifExpiryDays} days` : 'Permanent'})!`);
       setIsNotifModalOpen(false);
       setNotifTitle('');
       setNotifMessage('');
@@ -773,7 +867,44 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
 
-                        {/* Action Buttons */}
+                        {/* State Skill Certifications */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center">
+                  <Award className="w-3.5 h-3.5 text-amber-400 mr-1.5" />
+                  <span>State Skill Certifications</span>
+                </h4>
+                <span className="text-[10px] font-mono text-amber-400">
+                  {traineeCertifications.length} Issued
+                </span>
+              </div>
+
+              {traineeCertifications.length === 0 ? (
+                <div className="p-3 bg-slate-900/40 border border-slate-800 rounded-xl text-center text-slate-500 text-[11px]">
+                  No certified state credentials issued yet.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {traineeCertifications.map((c) => (
+                    <div key={c.id} className="p-3 bg-amber-950/20 border border-amber-900/40 rounded-xl text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">{c.training_programs?.title || 'Vocational Skill Credential'}</span>
+                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                          {c.grade || 'Certified'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-mono text-amber-400">ID: {c.certificate_id}</p>
+                      <div className="flex justify-between text-[10px] text-slate-400 pt-1 border-t border-amber-900/20">
+                        <span>Issued: {c.certified_date || 'Recent'}</span>
+                        <span className="text-slate-300">{c.training_programs?.provider_name || 'State Mission'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
                         <td className="py-3.5 px-4 text-right" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-end space-x-1.5">
                             <button
@@ -878,9 +1009,11 @@ export default function AdminUsersPage() {
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
                             : staff.role === 'admin' 
                             ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                            : staff.role === 'employer'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                             : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                         }`}>
-                          {staff.role}
+                          {staff.role === 'employer' ? '🏢 employer' : staff.role}
                         </span>
                       </td>
 
@@ -940,7 +1073,7 @@ export default function AdminUsersPage() {
                             <Ban className="w-3.5 h-3.5" />
                           </button>
 
-                          {staff.email !== 'admin@nexus.com' && staff.email !== 'superadmin@nexus.gov.in' && (
+                          {staff.email !== 'admin@nexus.com' && staff.email !== 'superadmin@careerloop.gov.in' && (
                             <button
                               onClick={() => handleDeleteStaff(staff)}
                               className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
@@ -1035,6 +1168,7 @@ export default function AdminUsersPage() {
                   >
                     <option value="admin">District Administrator</option>
                     <option value="evaluator">Skill Evaluator</option>
+                    <option value="employer">🏢 Industry Employer (Recruiter)</option>
                     <option value="superadmin">State Superadmin</option>
                   </select>
                 </div>
@@ -1721,6 +1855,23 @@ export default function AdminUsersPage() {
             <div className="pt-4 border-t border-slate-800 space-y-2">
               
               <button
+                onClick={() => {
+                  setCertFormData({
+                    program_id: trainingProgramsList[0]?.id || '',
+                    grade: 'A+',
+                    certified_date: new Date().toISOString().split('T')[0],
+                    completed_date: new Date().toISOString().split('T')[0],
+                    custom_cert_id: `MS-CERT-${Math.floor(100000 + Math.random() * 900000)}`
+                  });
+                  setIsCertModalOpen(true);
+                }}
+                className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-amber-600/20 cursor-pointer"
+              >
+                <Award className="w-4 h-4 text-amber-200" />
+                <span>🏅 Issue State Skill Certification</span>
+              </button>
+              
+              <button
                 onClick={() => openEditModal(selectedTrainee, traineeEmployment)}
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20 cursor-pointer"
               >
@@ -1782,6 +1933,284 @@ export default function AdminUsersPage() {
         onConfirm={confirmDeleteTrainee}
         onClose={() => setUserToDelete(null)}
       />
+
+      {/* Notification & Broadcast Dispatch Modal */}
+      {isNotifModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">
+                    {notifTarget === 'broadcast' ? 'Broadcast Announcement' : 'Send Direct Notification'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {notifTarget === 'broadcast' ? 'Dispatch notice to all candidates statewide' : `Target: ${targetTrainee?.full_name || targetTrainee?.email}`}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsNotifModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendNotification} className="space-y-4 text-xs">
+              
+              {/* Target Switcher */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/80 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setNotifTarget('broadcast')}
+                  className={`py-2 rounded-lg font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                    notifTarget === 'broadcast' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Broadcast (All)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNotifTarget('single')}
+                  className={`py-2 rounded-lg font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                    notifTarget === 'single' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Individual Candidate</span>
+                </button>
+              </div>
+
+              {/* If Single Target, Candidate Selector */}
+              {notifTarget === 'single' && (
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Select Target Trainee *</label>
+                  <select
+                    required
+                    value={targetTrainee?.id || ''}
+                    onChange={(e) => {
+                      const selected = users.find(u => u.id === e.target.value);
+                      setTargetTrainee(selected || null);
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none"
+                  >
+                    <option value="">Choose a candidate from registry</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name} ({u.trainee_id || u.email}) — {u.district || 'Maharashtra'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Notification Category & Priority */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Notification Type</label>
+                  <select
+                    value={notifType}
+                    onChange={(e) => setNotifType(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  >
+                    <option value="info">General Information</option>
+                    <option value="milestone">Milestone Survey Action</option>
+                    <option value="scheme">State Scheme / Financial Grant</option>
+                    <option value="course">Accredited Course Recommendation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Auto-Delete / Expiry</label>
+                  <select
+                    value={notifExpiryDays}
+                    onChange={(e) => setNotifExpiryDays(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-bold focus:outline-none"
+                  >
+                    <option value={3}>3 Days (Default - Auto-Expires)</option>
+                    <option value={7}>7 Days Expiry</option>
+                    <option value={30}>30 Days Expiry</option>
+                    <option value={0}>Permanent (Until Read)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={notifTitle}
+                  onChange={(e) => setNotifTitle(e.target.value)}
+                  placeholder="e.g., Mandatory 3-Month Longitudinal Survey Open"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:outline-none"
+                />
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Message Content *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={notifMessage}
+                  onChange={(e) => setNotifMessage(e.target.value)}
+                  placeholder="Enter details, action required, deadlines, or subsidy grant instructions..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white focus:outline-none"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsNotifModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingNotif || !notifTitle.trim() || !notifMessage.trim() || (notifTarget === 'single' && !targetTrainee)}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition flex items-center space-x-1.5 shadow-lg shadow-blue-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {sendingNotif ? (
+                    <span>Dispatching...</span>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Dispatch Notification</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+
+      {/* Issue Official Certification Modal */}
+      {isCertModalOpen && selectedTrainee && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Issue Verified State Certificate</h3>
+                  <p className="text-[11px] text-slate-400">Award credential to {selectedTrainee.full_name}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsCertModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleIssueCertificate} className="space-y-4 text-xs">
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Select Training Program *</label>
+                <select
+                  required
+                  value={certFormData.program_id}
+                  onChange={(e) => setCertFormData({ ...certFormData, program_id: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none"
+                >
+                  <option value="">Select an accredited program</option>
+                  {trainingProgramsList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} ({p.sector}) — {p.provider_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Awarded Grade</label>
+                  <select
+                    value={certFormData.grade}
+                    onChange={(e) => setCertFormData({ ...certFormData, grade: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-bold focus:outline-none"
+                  >
+                    <option value="A+">Grade A+ (Distinction - 90%+)</option>
+                    <option value="A">Grade A (First Class - 75%+)</option>
+                    <option value="B">Grade B (Pass - 60%+)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Certificate ID (Auto/Custom)</label>
+                  <input
+                    type="text"
+                    required
+                    value={certFormData.custom_cert_id}
+                    onChange={(e) => setCertFormData({ ...certFormData, custom_cert_id: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Completion Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={certFormData.completed_date}
+                    onChange={(e) => setCertFormData({ ...certFormData, completed_date: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1 font-semibold">Certification Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={certFormData.certified_date}
+                    onChange={(e) => setCertFormData({ ...certFormData, certified_date: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCertModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={issuingCert || !certFormData.program_id}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl font-bold transition flex items-center space-x-1.5 shadow-lg shadow-amber-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {issuingCert ? (
+                    <span>Issuing Certificate...</span>
+                  ) : (
+                    <>
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Issue Official State Certificate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

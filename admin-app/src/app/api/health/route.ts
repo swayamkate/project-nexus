@@ -26,7 +26,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: dbStatus === 'unreachable' ? 'unhealthy' : 'healthy',
-    app: 'Nexus Administrator Control Room',
+    app: 'CareerLoop Administrator Control Room',
     version: '2.0.0',
     timestamp: new Date().toISOString(),
     response_time_ms: responseTimeMs,

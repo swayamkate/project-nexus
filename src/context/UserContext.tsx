@@ -3,9 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabaseBrowser';
 import { useRouter } from 'next/navigation';
-
 import { Language, getTranslation } from '@/lib/i18n';
 import { fetchPublicSettings } from '@/lib/platformSettings';
+import { mutateDb } from '@/lib/traineeApi';
 
 export interface TraineeProfile {
   id: string;
@@ -33,14 +33,14 @@ export interface TraineeProfile {
   state?: string;
   pincode?: string;
   avatar_url?: string;
-  profile_completion_pct: number;
+  profile_completion_pct?: number;
+  is_active?: boolean;
   highest_education?: string;
   board_university?: string;
   year_of_passing?: number | null;
   education_percentage?: number | null;
   skills?: string[];
   about_me?: string;
-  notification_preferences?: any;
   privacy_hash?: string;
   is_verified?: boolean;
   verified_by?: string;
@@ -51,19 +51,26 @@ export interface TraineeProfile {
 }
 
 export interface TraineeEmployment {
-  id?: string;
-  trainee_id?: string;
-  status: string;
-  training_relevance?: string;
-  contract_type?: string;
-  employer_gstin?: string;
-  is_employer_verified?: boolean;
+  id: string;
+  trainee_id: string;
+  status: 'wage_employed' | 'self_employed' | 'unemployed' | 'higher_studies' | 'employed' | 'not_employed' | 'apprenticeship' | string;
+  
+  // Wage Employment Attributes
   company_name?: string;
   designation?: string;
   joining_date?: string;
   monthly_salary?: number;
-  pf_esic_number?: string;
+  offer_letter_url?: string;
   work_location?: string;
+  training_relevance?: string;
+  contract_type?: string;
+  employer_gstin?: string;
+  is_employer_verified?: boolean;
+  pf_esic_number?: string;
+  appreciation_details?: string;
+  monthly_income_range?: string;
+  
+  // Self-Employment Attributes
   business_name?: string;
   business_type?: string;
   business_category?: string;
@@ -71,18 +78,23 @@ export interface TraineeEmployment {
   establishment_date?: string;
   monthly_revenue?: number;
   monthly_profit?: number;
-  monthly_income_range?: string;
   udyam_number?: string;
   gst_number?: string;
   business_address?: string;
   employees_count?: number;
+  employee_count?: number;
+  udyam_reg_number?: string;
+  
+  // Unemployed Reason Attributes
   unemployed_reason?: string;
   unemployed_perspective?: string;
   target_workforce_timeline?: string;
   support_needed?: string;
-  appreciation_details?: string;
+  
   verified_by_admin?: boolean;
   verified_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TraineeEnrollment {
@@ -93,7 +105,7 @@ export interface TraineeEnrollment {
   completed_date?: string;
   certified_date?: string;
   certificate_id?: string;
-  status: string;
+  status: 'enrolled' | 'in_progress' | 'completed' | 'certified' | 'dropped';
   grade?: string;
   training_programs?: {
     id: string;
@@ -149,6 +161,7 @@ interface UserContextType {
   updateProfile: (data: Partial<TraineeProfile>) => Promise<boolean>;
   updateEmployment: (data: Partial<TraineeEmployment>) => Promise<boolean>;
   submitFollowup: (milestone: string, surveyData: any) => Promise<boolean>;
+  mutateDb: typeof mutateDb;
   signOut: () => Promise<void>;
 }
 
@@ -178,8 +191,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       const settings = await fetchPublicSettings();
-      const configured = settings['localization.default_language'] as Language;
-      if (active && ['en', 'mr', 'hi'].includes(configured)) setLanguageState(configured);
+      const defaultLang = settings['localization.default_language'] || 'en';
+      if (active && ['en', 'mr', 'hi'].includes(defaultLang)) {
+        setLanguageState(defaultLang as Language);
+      }
     };
     loadLanguage();
     return () => { active = false; };
@@ -192,7 +207,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const t = (key: string, fallback?: string) => {
+  const t = (key: string, fallback?: string): string => {
     return getTranslation(language, key, fallback);
   };
 
@@ -221,13 +236,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', userEmail)
         .maybeSingle();
 
-      // If not yet in table, provision clean new record from auth metadata
+      // If not yet in table, provision clean new record from auth metadata via mutateDb
       if (!traineeData) {
         const username = session.user.user_metadata?.username || userEmail?.split('@')[0];
         const fullName = session.user.user_metadata?.full_name || username?.replace(/[._]/g, ' ');
-        const { data: createdTrainee, error: createErr } = await supabase
-          .from('trainees')
-          .insert({
+        const { data: createdTrainee, error: createErr } = await mutateDb({
+          action: 'insert',
+          table: 'trainees',
+          payload: {
             user_id: session.user.id,
             email: userEmail,
             username: username,
@@ -244,12 +260,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             about_me: '',
             is_active: true,
             profile_completion_pct: 35
-          })
-          .select()
-          .single();
+          }
+        });
 
-        if (!createErr && createdTrainee) {
-          traineeData = createdTrainee;
+        if (!createErr && createdTrainee && createdTrainee[0]) {
+          traineeData = createdTrainee[0];
         }
       }
 
@@ -282,14 +297,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setFollowups(folData || []);
 
-        // 5. Fetch Real Notifications for Trainee or Global
+        // 5. Fetch Real Notifications for Trainee or Global (Filtering out expired notifications)
         const { data: notifData } = await supabase
           .from('trainee_notifications')
           .select('*')
           .or(`trainee_id.eq.${traineeData.id},trainee_id.is.null`)
           .order('created_at', { ascending: false });
 
-        setNotifications(notifData || []);
+        const activeNotifs = (notifData || []).filter((n: any) => {
+          if (!n.expires_at) return true;
+          return new Date(n.expires_at).getTime() > Date.now();
+        });
+
+        setNotifications(activeNotifs);
 
         // 6. Fetch Real Recommended Opportunities
         const { data: oppData } = await supabase
@@ -368,13 +388,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const completionPct = Math.min(100, Math.max(35, Math.round((filledCount / (keyFields.length + 2)) * 100)));
       data.profile_completion_pct = completionPct;
 
-      const { error } = await supabase
-        .from('trainees')
-        .update({
+      const { error } = await mutateDb({
+        action: 'update',
+        table: 'trainees',
+        payload: {
           ...data,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id);
+        },
+        match: { id: profile.id }
+      });
 
       if (error) throw error;
       setProfile(prev => prev ? { ...prev, ...data } : null);
@@ -395,20 +417,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       if (employment?.id) {
-        const { error } = await supabase
-          .from('trainee_employment')
-          .update(payload)
-          .eq('id', employment.id);
+        const { error } = await mutateDb({
+          action: 'update',
+          table: 'trainee_employment',
+          payload,
+          match: { id: employment.id }
+        });
         if (error) throw error;
         setEmployment(prev => prev ? { ...prev, ...payload } : null);
       } else {
-        const { data: inserted, error } = await supabase
-          .from('trainee_employment')
-          .insert([payload])
-          .select()
-          .single();
+        const { data: inserted, error } = await mutateDb({
+          action: 'insert',
+          table: 'trainee_employment',
+          payload
+        });
         if (error) throw error;
-        setEmployment(inserted);
+        if (inserted && inserted[0]) {
+          setEmployment(inserted[0]);
+        }
       }
       return true;
     } catch (err) {
@@ -426,25 +452,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         milestone,
         status: 'completed',
         completed_date: new Date().toISOString().split('T')[0],
-        current_status: surveyData.status || 'employed',
-        current_income_range: surveyData.income_range || '15000_25000',
-        job_satisfaction_score: surveyData.satisfaction || 5,
-        skill_utilization_score: surveyData.utilization || 5,
-        remarks: surveyData.remarks || '',
+        current_status: surveyData.current_status || surveyData.status || 'Active',
+        current_income_range: surveyData.current_income_range || surveyData.income_range || '₹0 (Unemployed / In Training)',
+        job_satisfaction_score: Number(surveyData.job_satisfaction_score ?? surveyData.satisfaction ?? 5),
+        additional_support_needed: surveyData.remarks || surveyData.additional_support_needed || '',
         survey_data_json: surveyData,
         updated_at: new Date().toISOString(),
       };
 
       if (existing) {
-        const { error } = await supabase
-          .from('trainee_followups')
-          .update(payload)
-          .eq('id', existing.id);
+        const { error } = await mutateDb({
+          action: 'update',
+          table: 'trainee_followups',
+          payload,
+          match: { id: existing.id }
+        });
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('trainee_followups')
-          .insert([payload]);
+        const { error } = await mutateDb({
+          action: 'insert',
+          table: 'trainee_followups',
+          payload
+        });
         if (error) throw error;
       }
 
@@ -458,10 +487,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const markNotificationAsRead = async (id: string) => {
     try {
-      await supabase
-        .from('trainee_notifications')
-        .update({ is_read: true })
-        .eq('id', id);
+      await mutateDb({
+        action: 'update',
+        table: 'trainee_notifications',
+        payload: { is_read: true },
+        match: { id }
+      });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
@@ -471,10 +502,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const markAllNotificationsAsRead = async () => {
     if (!profile) return;
     try {
-      await supabase
-        .from('trainee_notifications')
-        .update({ is_read: true })
-        .or(`trainee_id.eq.${profile.id},trainee_id.is.null`);
+      await mutateDb({
+        action: 'update',
+        table: 'trainee_notifications',
+        payload: { is_read: true },
+        match: { trainee_id: profile.id }
+      });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
       console.error('Failed to mark all notifications as read:', err);
@@ -517,6 +550,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProfile,
         updateEmployment,
         submitFollowup,
+        mutateDb,
         signOut,
       }}
     >

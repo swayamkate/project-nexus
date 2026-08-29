@@ -21,6 +21,7 @@ import {
 import { useUser } from '@/context/UserContext';
 import { createClient } from '@/lib/supabaseBrowser';
 import { generateDynamicRoadmap, RoadmapPhase } from '@/lib/aiCareerEngine';
+import { mutateDb } from '@/lib/traineeApi';
 
 interface CareerRoadmapModuleProps {
   onNavigate?: (section: string) => void;
@@ -55,9 +56,10 @@ export const CareerRoadmapModule: React.FC<CareerRoadmapModuleProps> = ({ onNavi
   const saveRoadmapToDB = async (role: string, days: number, currentPhases: RoadmapPhase[], pct: number) => {
     if (!profile?.id) return;
     try {
-      await supabase
-        .from('career_roadmaps')
-        .upsert({
+      await mutateDb({
+        action: 'upsert',
+        table: 'career_roadmaps',
+        payload: {
           trainee_id: profile.id,
           target_role: role,
           target_days: days,
@@ -65,7 +67,9 @@ export const CareerRoadmapModule: React.FC<CareerRoadmapModuleProps> = ({ onNavi
           overall_progress_pct: pct,
           is_ai_generated: true,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'trainee_id' });
+        },
+        onConflict: 'trainee_id'
+      });
     } catch (err) {
       console.error('Failed to sync roadmap:', err);
     }
@@ -102,7 +106,7 @@ export const CareerRoadmapModule: React.FC<CareerRoadmapModuleProps> = ({ onNavi
         setProgressPct(roadmapData.overall_progress_pct || calculateProgress(roadmapData.phases_json));
       } else {
         // Generate initial roadmap
-        const initial = generateDynamicRoadmap(userRole, userDays, profile?.skills || [], goalData?.weekly_hours || 10);
+        const initial = generateDynamicRoadmap(userRole, userDays, profile?.skills || []);
         setPhases(initial);
         const pct = calculateProgress(initial);
         setProgressPct(pct);

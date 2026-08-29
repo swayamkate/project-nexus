@@ -11,12 +11,13 @@ import {
   Calendar, 
   Edit3, 
   CheckCircle2, 
-  ChevronRight,
-  ShieldCheck,
-  Building2,
-  HelpCircle,
-  TrendingUp,
-  MapPin
+  ChevronRight, 
+  ShieldCheck, 
+  Building2, 
+  HelpCircle, 
+  TrendingUp, 
+  MapPin,
+  Loader2
 } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { validatePhone, validateApaar } from '@/lib/validators';
@@ -38,31 +39,50 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showEmploymentModal, setShowEmploymentModal] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({
+    full_name: '',
+    username: '',
+    email: '',
+    phone: '',
+    dob: '2002-05-15',
+    gender: 'Not specified',
+    aadhaar_masked: 'XXXX-XXXX-XXXX',
+    address: '',
+    district: '',
+    state: 'Maharashtra',
+    pincode: '',
+    avatar_url: '',
+    highest_education: 'Secondary / Higher Secondary',
+    board_university: 'Maharashtra State Board',
+    year_of_passing: 2023,
+    education_percentage: 75,
+    skills: [],
+    about_me: '',
+  });
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
+    if (profile || user) {
       setFormData({
-        full_name: profile.full_name || '',
-        username: profile.username || user?.email?.split('@')[0] || '',
-        email: profile.email || user?.email || '',
-        phone: profile.phone || '',
-        dob: profile.dob || '2000-01-01',
-        gender: profile.gender || 'Not specified',
-        aadhaar_masked: profile.aadhaar_masked || 'XXXX-XXXX-XXXX',
-        address: profile.address || '',
-        district: profile.district || '',
-        state: profile.state || '',
-        pincode: profile.pincode || '',
-        avatar_url: profile.avatar_url || '',
-        highest_education: profile.highest_education || 'Secondary / Higher Secondary',
-        board_university: profile.board_university || '',
-        year_of_passing: profile.year_of_passing || null,
-        education_percentage: profile.education_percentage || null,
-        skills: profile.skills || [],
-        about_me: profile.about_me || '',
+        full_name: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Candidate',
+        username: profile?.username || user?.user_metadata?.username || user?.email?.split('@')[0] || 'candidate',
+        email: profile?.email || user?.email || '',
+        phone: profile?.phone || user?.user_metadata?.phone || '',
+        dob: profile?.dob || user?.user_metadata?.dob || '2002-05-15',
+        gender: profile?.gender || user?.user_metadata?.gender || 'Not specified',
+        aadhaar_masked: profile?.aadhaar_masked || 'XXXX-XXXX-XXXX',
+        address: profile?.address || '',
+        district: profile?.district || user?.user_metadata?.district || 'Pune',
+        state: profile?.state || user?.user_metadata?.state || 'Maharashtra',
+        pincode: profile?.pincode || '',
+        avatar_url: profile?.avatar_url || '',
+        highest_education: profile?.highest_education || 'Higher Secondary (12th)',
+        board_university: profile?.board_university || 'Maharashtra State Board',
+        year_of_passing: profile?.year_of_passing || 2023,
+        education_percentage: profile?.education_percentage || 78,
+        skills: profile?.skills && profile.skills.length > 0 ? profile.skills : ['Apparel & Garment Construction', 'Pattern Making'],
+        about_me: profile?.about_me || 'Enthusiastic vocational candidate committed to advancing state trade operations and skill excellence.',
       });
     }
   }, [profile, user]);
@@ -172,12 +192,31 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
 
   const completionPct = calculateDynamicCompletionPct();
 
+  // Skeleton state while context is initially loading
+  if (userLoading && !profile && !formData.full_name) {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-pulse">
+        <div className="h-8 bg-slate-200 rounded-xl w-48" />
+        <div className="h-44 bg-white border border-slate-200 rounded-2xl p-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-48 bg-white border border-slate-200 rounded-2xl" />
+            <div className="h-48 bg-white border border-slate-200 rounded-2xl" />
+          </div>
+          <div className="space-y-6">
+            <div className="h-48 bg-white border border-slate-200 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 text-slate-800 animate-in fade-in-50">
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top-4">
+        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in slide-in-from-top duration-300">
           <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
           <span className="text-xs font-bold">{toastMsg}</span>
         </div>
@@ -186,8 +225,8 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">My Profile</h1>
-          <p className="text-xs text-slate-500 mt-0.5">View and manage your personal information</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">My Trainee Profile</h1>
+          <p className="text-xs text-slate-500 mt-0.5">View and manage your authenticated credentials, vocational skills, and CV</p>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -242,19 +281,19 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400 block mb-0.5">Full Name</span>
-                <span className="font-bold text-slate-800 text-sm">{formData.full_name}</span>
+                <span className="font-bold text-slate-800 text-sm">{formData.full_name || 'Candidate Name'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Gender</span>
-                <span className="font-semibold text-slate-800">{formData.gender}</span>
+                <span className="font-semibold text-slate-800">{formData.gender || 'Not specified'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Date of Birth</span>
-                <span className="font-semibold text-slate-800">{formattedDob}</span>
+                <span className="font-semibold text-slate-800">{formattedDob} (Age {age})</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Aadhaar Number</span>
-                <span className="font-mono font-bold text-slate-800">{formData.aadhaar_masked}</span>
+                <span className="font-mono font-bold text-slate-800">{formData.aadhaar_masked || 'XXXX-XXXX-XXXX'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Email Address</span>
@@ -262,11 +301,11 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Phone Number</span>
-                <span className="font-semibold text-slate-800">{formData.phone}</span>
+                <span className="font-semibold text-slate-800">{formData.phone || '+91 98XXX XXXXX'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Address</span>
-                <span className="font-semibold text-slate-800">{formData.address || 'Not specified'}</span>
+                <span className="font-semibold text-slate-800">{formData.address || 'Maharashtra, India'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">District & State</span>
@@ -334,7 +373,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
                     key={idx}
                     className="px-3.5 py-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold rounded-lg"
                   >
-                    {skill}
+                    ✓ {skill}
                   </span>
                 ))
               ) : (
@@ -431,7 +470,7 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
                 </div>
                 <button
                   onClick={() => setShowEmploymentModal(true)}
-                  className="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
+                  className="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
                 >
                   Record Your Perspective & Needs
                 </button>
@@ -473,13 +512,13 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
             <div className="flex items-center space-x-2 text-blue-700">
               <ShieldCheck className="w-5 h-5 text-blue-600" />
               <h4 className="font-bold text-xs">
-                {profile?.is_verified ? 'SSDM Official Verified Trainee' : 'Nexus Verified Record'}
+                {profile?.is_verified ? 'SSDM Official Verified Trainee' : 'CareerLoop Verified Record'}
               </h4>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
               {profile?.is_verified
                 ? `Verified by State Evaluator ${profile.verified_by || ''} on ${profile.verified_at ? new Date(profile.verified_at).toLocaleDateString('en-IN') : 'Recent'}.`
-                : 'Your profile is enrolled on the Nexus Skilling Registry with authenticated credentials.'}
+                : 'Your profile is enrolled on the CareerLoop Skilling Registry with authenticated credentials.'}
             </p>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { ShieldAlert, ArrowLeft, LayoutDashboard, HelpCircle } from 'lucide-reac
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '404 - Console Route Not Found | Nexus Admin',
+  title: '404 - Console Route Not Found | CareerLoop Admin',
 };
 
 export default function AdminNotFound() {
@@ -16,7 +16,7 @@ export default function AdminNotFound() {
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
             <ShieldAlert className="w-5 h-5" />
           </div>
-          <span className="font-black text-lg text-white">NEXUS ADMIN</span>
+          <span className="font-black text-lg text-white">CAREERLOOP ADMIN</span>
         </div>
       </header>
 
@@ -43,7 +43,7 @@ export default function AdminNotFound() {
       </main>
 
       <footer className="w-full text-center py-4 text-[11px] text-slate-500 z-10 border-t border-slate-900">
-        Nexus Administrative Command Center • Encrypted Session
+        CareerLoop Administrative Command Center • Encrypted Session
       </footer>
     </div>
   );

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://administrator.avishkark.in'),
-  title: "Nexus | Executive Admin Control Center",
+  title: "CareerLoop | Executive Admin Control Center",
   description: "Enterprise Executive Control Center for Skilling Outcomes, Longitudinal Surveys & Verification.",
-  applicationName: "Nexus Admin",
+  applicationName: "CareerLoop Admin",
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -27,16 +27,16 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   openGraph: {
-    title: "Nexus | Executive Admin Control Center",
+    title: "CareerLoop | Executive Admin Control Center",
     description: "Command Center for Longitudinal Skilling Surveys, MSME Verification and Scheme Governance.",
     url: 'https://administrator.avishkark.in',
-    siteName: 'Nexus Admin',
+    siteName: 'CareerLoop Admin',
     images: [
       {
         url: '/icon.svg',
         width: 512,
         height: 512,
-        alt: 'Nexus Executive Admin Control Center',
+        alt: 'CareerLoop Executive Admin Control Center',
       },
     ],
     locale: 'en_IN',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Nexus | Executive Admin Control Center",
+    title: "CareerLoop | Executive Admin Control Center",
     description: "Skilling Longitudinal Survey & Administration Portal.",
     images: ['/icon.svg'],
   },

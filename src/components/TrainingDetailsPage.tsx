@@ -17,6 +17,7 @@ import {
 import { createClient } from '@/lib/supabaseBrowser';
 import { useUser } from '@/context/UserContext';
 import { EmptyState } from '@/components/EmptyState';
+import { mutateDb } from '@/lib/traineeApi';
 
 export const TrainingDetailsPage: React.FC = () => {
   const { profile, enrollments, refreshData, t } = useUser();
@@ -39,11 +40,15 @@ export const TrainingDetailsPage: React.FC = () => {
     if (!profile?.id) return;
     setEnrollingId(programId);
     try {
-      const { error } = await supabase.from('trainee_enrollments').insert({
-        trainee_id: profile.id,
-        program_id: programId,
-        enrolled_date: new Date().toISOString().split('T')[0],
-        status: 'enrolled'
+      const { error } = await mutateDb({
+        action: 'insert',
+        table: 'trainee_enrollments',
+        payload: {
+          trainee_id: profile.id,
+          program_id: programId,
+          enrolled_date: new Date().toISOString().split('T')[0],
+          status: 'enrolled'
+        }
       });
       if (error) throw error;
       await refreshData();

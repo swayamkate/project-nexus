@@ -9,7 +9,7 @@ export interface VerifiedAdminUser {
   userId: string;
   email: string;
   username?: string;
-  role: 'superadmin' | 'admin' | 'evaluator';
+  role: 'superadmin' | 'admin' | 'evaluator' | 'employer';
 }
 
 export async function verifyAdminSession(request?: NextRequest): Promise<VerifiedAdminUser | null> {
@@ -49,19 +49,19 @@ export async function verifyAdminSession(request?: NextRequest): Promise<Verifie
           .select('role, username, email')
           .eq('email', user.email)
           .maybeSingle();
-        if (emailRole && ['superadmin', 'admin', 'evaluator'].includes(emailRole.role)) {
+        if (emailRole && ['superadmin', 'admin', 'evaluator', 'employer'].includes(emailRole.role)) {
           return {
             userId: user.id,
             email: user.email,
             username: emailRole.username,
-            role: emailRole.role as 'superadmin' | 'admin' | 'evaluator'
+            role: emailRole.role as 'superadmin' | 'admin' | 'evaluator' | 'employer'
           };
         }
       }
       return null;
     }
 
-    if (!['superadmin', 'admin', 'evaluator'].includes(userRole.role)) {
+    if (!['superadmin', 'admin', 'evaluator', 'employer'].includes(userRole.role)) {
       return null;
     }
 
@@ -69,7 +69,7 @@ export async function verifyAdminSession(request?: NextRequest): Promise<Verifie
       userId: user.id,
       email: user.email || userRole.email,
       username: userRole.username,
-      role: userRole.role as 'superadmin' | 'admin' | 'evaluator'
+      role: userRole.role as 'superadmin' | 'admin' | 'evaluator' | 'employer'
     };
   } catch (err) {
     console.error('verifyAdminSession error:', err);

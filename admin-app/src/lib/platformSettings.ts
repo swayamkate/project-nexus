@@ -59,9 +59,9 @@ export type SettingKey = keyof typeof SETTING_TYPES;
 export type SettingsMap = { [K in SettingKey]: z.infer<(typeof SETTING_TYPES)[K]> };
 
 export const DEFAULT_SETTINGS: SettingsMap = {
-  'general.app_name': 'Nexus',
+  'general.app_name': 'CareerLoop',
   'general.tagline': 'Empowering Vocational Futures through Zero-PII Longitudinal Tracking',
-  'general.support_email': 'support@nexus.gov.in',
+  'general.support_email': 'support@careerloop.gov.in',
 
   'branding.primary_color': '#2563eb',
   'branding.accent_color': '#0ea5e9',

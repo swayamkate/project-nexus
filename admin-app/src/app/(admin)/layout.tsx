@@ -129,108 +129,167 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  const navItems = [
-    { name: 'Dashboard Overview', href: '/', icon: Activity },
-    { name: 'Trainees & Governance', href: '/users', icon: Users },
-    { name: 'AI Workforce Suite', href: '/workforce', icon: Sparkles },
-    { name: 'SMS & WhatsApp Hub', href: '/broadcasts', icon: MessageSquare },
-    { name: 'Rozgar Melawas & Fairs', href: '/melawas', icon: Building2 },
-    { name: 'ITI & Centers Auditor', href: '/centers', icon: Landmark },
-    { name: 'DBT & Stipends Ledger', href: '/dbt', icon: CreditCard },
-    { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
-    { name: 'Accredited Courses (NPTEL)', href: '/courses', icon: BookOpen },
-    { name: 'Skill Assessments & Badges', href: '/assessments', icon: Award },
-    { name: 'Interview Questions Desk', href: '/interviews', icon: Briefcase },
-    { name: 'Training Programs', href: '/programs', icon: GraduationCap },
-    { name: 'Follow-ups & Milestones', href: '/followups', icon: CalendarClock },
-    { name: 'Government Schemes', href: '/schemes', icon: Landmark },
-    { name: 'Analytics Evidence', href: '/analytics', icon: BarChart3 },
-    { name: 'Support & Feedback', href: '/support', icon: Headphones },
-    { name: 'Billing & Subsidies', href: '/billing', icon: Tag },
-    { name: 'Audit Logs & Pipeline', href: '/audit', icon: Database },
-    { name: 'System Settings & Brand', href: '/settings', icon: Sliders },
+  const navCategories = adminUser?.role === 'employer' ? [
+    {
+      title: 'Recruitment & Talent',
+      items: [
+        { name: 'Candidate Evaluation Desk', href: '/employer-desk', icon: Users },
+        { name: 'AI Workforce Matching', href: '/workforce', icon: Sparkles },
+        { name: 'Document & QR Verifier', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
+      ]
+    },
+    {
+      title: 'Placements & Events',
+      items: [
+        { name: 'Rozgar Melawas & Job Fairs', href: '/melawas', icon: Building2 },
+        { name: 'Accredited NPTEL Courses', href: '/courses', icon: BookOpen },
+        { name: 'Skill Assessments Explorer', href: '/assessments', icon: Award },
+      ]
+    },
+    {
+      title: 'Communication & Help',
+      items: [
+        { name: 'SMS & WhatsApp Broadcasts', href: '/broadcasts', icon: MessageSquare },
+        { name: 'Support & Helpdesk', href: '/support', icon: Headphones },
+      ]
+    }
+  ] : [
+    {
+      title: 'Command & Directory',
+      items: [
+        { name: 'Dashboard Overview', href: '/', icon: Activity },
+        { name: 'Trainees & Governance', href: '/users', icon: Users },
+        { name: 'Document Verifications', href: '/verifications', icon: FileText, badge: pendingVerifsCount },
+        { name: 'Employer Evaluation Desk', href: '/employer-desk', icon: Building2 },
+      ]
+    },
+    {
+      title: 'Skilling & Curriculum',
+      items: [
+        { name: 'Accredited Courses (NPTEL)', href: '/courses', icon: BookOpen },
+        { name: 'Skill Assessments & Badges', href: '/assessments', icon: Award },
+        { name: 'Interview Questions Desk', href: '/interviews', icon: Briefcase },
+        { name: 'Training Programs', href: '/programs', icon: GraduationCap },
+        { name: 'ITI & Centers Auditor', href: '/centers', icon: Landmark },
+      ]
+    },
+    {
+      title: 'Placements & Grants',
+      items: [
+        { name: 'AI Workforce Suite', href: '/workforce', icon: Sparkles },
+        { name: 'Rozgar Melawas & Fairs', href: '/melawas', icon: Building2 },
+        { name: 'Government Schemes', href: '/schemes', icon: Landmark },
+        { name: 'DBT & Stipends Ledger', href: '/dbt', icon: CreditCard },
+        { name: 'Follow-ups & Milestones', href: '/followups', icon: CalendarClock },
+      ]
+    },
+    {
+      title: 'Governance & Telemetry',
+      items: [
+        { name: 'Analytics Evidence', href: '/analytics', icon: BarChart3 },
+        { name: 'SMS & WhatsApp Hub', href: '/broadcasts', icon: MessageSquare },
+        { name: 'Support & Feedback', href: '/support', icon: Headphones },
+        { name: 'Billing & Subsidies', href: '/billing', icon: Tag },
+        { name: 'Audit Logs & Pipeline', href: '/audit', icon: Database },
+        { name: 'System Settings & Brand', href: '/settings', icon: Sliders },
+      ]
+    }
   ];
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col md:flex-row selection:bg-blue-600 selection:text-white">
       <PlatformSettingsSync />
 
-      {/* Desktop Sidebar */}
-      <aside className="w-68 bg-[#0a1020] border-r border-slate-800/80 hidden md:flex flex-col justify-between shrink-0 min-h-screen">
-        <div>
+      {/* Desktop Sticky Sidebar */}
+      <aside className="w-72 bg-[#0a1020] border-r border-slate-800/80 hidden md:flex flex-col justify-between shrink-0 h-screen sticky top-0 select-none">
+        <div className="flex flex-col h-full overflow-hidden">
+          
           {/* Brand Header */}
-          <div className="h-18 flex items-center px-6 border-b border-slate-800/80 space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
-              <ShieldAlert className="w-5 h-5 text-white" />
+          <div className="h-16 flex items-center px-5 border-b border-slate-800/80 space-x-3 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
+              <ShieldAlert className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="text-white font-black tracking-tight text-sm block leading-none">Nexus Admin</span>
-              <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider block mt-1">Executive Control Center</span>
+              <span className="text-white font-black tracking-tight text-sm block leading-none">CareerLoop Admin</span>
+              <span className="text-[9px] text-blue-400 font-bold uppercase tracking-wider block mt-0.5">
+                {adminUser?.role === 'employer' ? 'Industry Recruiter Console' : 'Executive Control Center'}
+              </span>
             </div>
           </div>
           
-          {/* Navigation Links */}
-          <div className="p-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link 
-                  key={item.name} 
-                  href={item.href} 
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive 
-                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30' 
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                    <span>{item.name}</span>
-                  </div>
+          {/* Navigation Links Scrollable Container */}
+          <div className="p-3 space-y-4 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-slate-800">
+            {navCategories.map((cat, cIdx) => (
+              <div key={cIdx} className="space-y-1">
+                <div className="px-3 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500">
+                  {cat.title}
+                </div>
 
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black">
-                      {item.badge}
+                {cat.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link 
+                      key={item.name} 
+                      href={item.href} 
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        isActive 
+                          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30' 
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 truncate">
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                        <span className="truncate">{item.name}</span>
+                      </div>
+
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="px-2 py-0.2 rounded-full bg-amber-500 text-black text-[9px] font-black flex-shrink-0">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* User Profile & Logout Bottom Bar */}
+          <div className="p-3 border-t border-slate-800/80 bg-slate-950/40 shrink-0 space-y-2">
+            <div className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl bg-slate-900/60 border border-slate-800/60">
+              <div className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                {(adminUser?.email || 'A').charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold text-white truncate">{adminUser?.email || 'admin@careerloop.gov.in'}</p>
+                <div className="flex items-center space-x-1">
+                  {adminUser?.role === 'superadmin' ? (
+                    <span className="text-[8px] font-black text-amber-300 uppercase tracking-wider">
+                      👑 SUPERADMIN
+                    </span>
+                  ) : adminUser?.role === 'employer' ? (
+                    <span className="text-[8px] font-black text-purple-300 uppercase tracking-wider">
+                      🏢 INDUSTRY EMPLOYER
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-blue-400 font-semibold uppercase tracking-wider">
+                      🛡️ {adminUser?.role || 'Admin'}
                     </span>
                   )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Profile Capsule & Logout */}
-        <div className="p-4 border-t border-slate-800/80 space-y-3">
-          <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center space-x-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-              adminUser?.role === 'superadmin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-blue-600 text-white'
-            }`}>
-              {adminUser?.email?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-xs font-bold text-white truncate">{adminUser?.email || 'admin@nexus.gov.in'}</p>
-              <div className="flex items-center space-x-1 mt-0.5">
-                {adminUser?.role === 'superadmin' ? (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider">
-                    👑 STATE SUPERADMIN
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">
-                    🛡️ {adminUser?.role || 'Admin'}
-                  </span>
-                )}
+                </div>
               </div>
-            </div>
+            </div>  
+            
+            <button 
+              onClick={handleLogout} 
+              className="w-full flex items-center justify-center space-x-1.5 p-2 text-rose-400 hover:text-rose-300 rounded-xl hover:bg-rose-500/10 text-xs font-bold transition cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
           </div>
 
-          <button 
-            onClick={handleLogout} 
-            className="w-full flex items-center justify-center space-x-2 p-2.5 text-rose-400 hover:text-rose-300 rounded-xl hover:bg-rose-500/10 text-xs font-bold transition cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </aside>
 
@@ -238,112 +297,119 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         
         {/* Top Header Bar */}
-        <header className="h-18 bg-[#0a1020]/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-30">
-          
+        <header className="h-16 bg-[#080d1a]/95 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-              className="md:hidden p-2 rounded-xl text-slate-400 hover:bg-slate-800"
+              className="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
             <div className="hidden sm:flex items-center space-x-2 text-xs">
-              <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg font-bold flex items-center">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5" /> PostgreSQL Connected
+              <span className="font-extrabold text-white tracking-tight">CareerLoop State Command</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400 capitalize">
+                {pathname === '/' ? 'Dashboard Overview' : pathname.replace('/', '').replace(/-/g, ' ')}
               </span>
-              <span className="text-slate-500">•</span>
-              <span className="text-slate-400 font-medium">State Skill Registry Node #129</span>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* Interactive Platform Guide */}
             <button
               onClick={() => setIsTutorialOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 rounded-xl text-xs font-bold transition cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-950/60 border border-indigo-800/80 text-indigo-300 hover:bg-indigo-900/60 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>System Guide</span>
+              <span>Admin Guide</span>
             </button>
 
+            {/* Candidate Portal Quick Link */}
+            {/* Industry Employer Portal Link */}
             <a
-              href="https://sih2026.avishkark.in"
+              href="https://avishkark.in/employers"
               target="_blank"
-              rel="noreferrer"
-              className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-blue-950/60 border border-blue-800 hover:border-blue-700 text-blue-300 hover:text-white rounded-xl text-xs font-semibold transition"
             >
-              <span>View Public Portal</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <Building2 className="w-3.5 h-3.5 text-blue-400" />
+              <span>Employers Portal</span>
+              <ExternalLink className="w-3 h-3 text-blue-400" />
             </a>
 
+            {/* Candidate Portal Quick Link */}
             <a
-              href="https://studio.avishkark.in"
+              href="https://avishkark.in/dashboard"
               target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600/10 border border-blue-500/30 text-blue-400 hover:bg-blue-600/20 rounded-xl text-xs font-bold transition"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Supabase Studio</span>
+              <span>Candidate Portal</span>
+              <ExternalLink className="w-3 h-3 text-slate-500" />
             </a>
           </div>
         </header>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-[#0a1020] border-b border-slate-800 p-4 space-y-1 z-40 animate-in slide-in-from-top">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-xl text-xs font-semibold ${
-                  pathname === item.href ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800'
-                }`}
-              >
-                <span>{item.name}</span>
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
-            <button
-              onClick={handleLogout}
-              className="w-full text-left p-3 text-rose-400 hover:bg-rose-500/10 rounded-xl text-xs font-bold"
-            >
-              Sign Out
-            </button>
+          <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex">
+            <div className="w-72 bg-[#0a1020] h-full p-4 overflow-y-auto space-y-4 border-r border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span className="font-bold text-white text-sm">Navigation Menu</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {navCategories.map((cat, cIdx) => (
+                  <div key={cIdx} className="space-y-1">
+                    <div className="px-3 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500">
+                      {cat.title}
+                    </div>
+                    {cat.items.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold ${
+                          pathname === item.href ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.name}</span>
+                        </div>
+                        {item.badge !== undefined && item.badge > 0 && (
+                          <span className="px-2 py-0.2 rounded-full bg-amber-500 text-black text-[9px] font-black">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1" onClick={() => setIsMobileMenuOpen(false)} />
           </div>
         )}
 
-        {/* Main View Body */}
-        <main className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto">
+        {/* Dynamic Page Content Viewport */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
         </main>
 
-        {/* Executive Footer Attribution */}
-        <footer className="border-t border-slate-800/80 bg-[#0a1020]/60 px-6 py-4 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            &copy; {new Date().getFullYear()} Maharashtra State Skill Development Mission (SSDM) • Nexus Admin Control Center
-          </div>
-          <div className="flex items-center space-x-2 text-slate-400">
-            <span>Built with precision by</span>
-            <a 
-              href="https://github.com/avishkarkedar-org/SIH2026" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 font-bold hover:underline inline-flex items-center space-x-1"
-            >
-              <span>avishkarkedar-org</span>
-              <span className="text-[10px]">↗</span>
-            </a>
-          </div>
-        </footer>
-
-        <InteractiveTutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} roleMode="admin" />
+        {/* Global Tutorial Modal */}
+        {isTutorialOpen && (
+          <InteractiveTutorialModal 
+            isOpen={isTutorialOpen} 
+            onClose={() => setIsTutorialOpen(false)} 
+          />
+        )}
 
       </div>
     </div>
