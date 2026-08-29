@@ -241,12 +241,20 @@ const AUTHENTIC_COURSES: Course[] = [
   }
 ];
 
+interface EnrolledCourseInfo {
+  id: string;
+  course_id?: string;
+  status: string;
+  progress_pct: number;
+  courseData?: any;
+}
+
 export const CourseSearchModule: React.FC = () => {
   const { profile } = useUser();
   const supabase = createClient();
 
   const [courses, setCourses] = useState<Course[]>(AUTHENTIC_COURSES);
-  const [enrolledCourses, setEnrolledCourses] = useState<Record<string, { id: string; status: string; progress_pct: number }>>({});
+  const [enrolledCourses, setEnrolledCourses] = useState<Record<string, EnrolledCourseInfo>>({});
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -264,6 +272,21 @@ export const CourseSearchModule: React.FC = () => {
   const platforms = ['All', 'NPTEL', 'Swayam', 'Coursera', 'Skill India', 'MSSDS'];
   const sectors = ['All', 'Apparel & Fashion', 'Automotive & EV', 'Renewable Energy', 'IT & Digital', 'Retail & Commerce', 'Healthcare & Caregiving'];
 
+  const normalizeStr = (s?: string) => (s ? s.toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+  const getEnrollment = (course: Course | null | undefined): EnrolledCourseInfo | undefined => {
+    if (!course) return undefined;
+    if (enrolledCourses[course.id]) return enrolledCourses[course.id];
+    if (course.url && enrolledCourses[course.url]) return enrolledCourses[course.url];
+    if (course.title) {
+      const rawLower = course.title.toLowerCase().trim();
+      if (enrolledCourses[rawLower]) return enrolledCourses[rawLower];
+      const norm = normalizeStr(course.title);
+      if (enrolledCourses[`title-norm:${norm}`]) return enrolledCourses[`title-norm:${norm}`];
+    }
+    return undefined;
+  };
+
   const fetchCoursesAndEnrollments = async () => {
     try {
       // 1. Fetch DB courses if populated, otherwise use authentic NPTEL catalog
@@ -272,57 +295,137 @@ export const CourseSearchModule: React.FC = () => {
         .select('*')
         .order('rating', { ascending: false });
 
+      const mergedMap = new Map<string, Course>();
+      AUTHENTIC_COURSES.forEach(c => mergedMap.set(c.id, { ...c }));
+
       if (dbCourses && dbCourses.length > 0) {
-        // Merge DB courses with authentic NPTEL courses to guarantee complete information
-        const mergedMap = new Map<string, Course>();
-        AUTHENTIC_COURSES.forEach(c => mergedMap.set(c.id, c));
         dbCourses.forEach((dbc: any) => {
-          mergedMap.set(dbc.id, {
+          const matchingStatic = AUTHENTIC_COURSES.find(ac => {
+            const urlMatch = dbc.url && ac.url && (dbc.url === ac.url || dbc.url.includes(ac.url) || ac.url.includes(dbc.url));
+            const titleMatch = dbc.title && ac.title && (
+              normalizeStr(dbc.title) === normalizeStr(ac.title) ||
+              normalizeStr(dbc.title).includes(normalizeStr(ac.title)) ||
+              normalizeStr(ac.title).includes(normalizeStr(dbc.title))
+            );
+            return urlMatch || titleMatch;
+          });
+
+          const courseObj: Course = {
             id: dbc.id,
-            title: dbc.title,
-            provider: dbc.provider,
-            institute: dbc.institute || dbc.provider,
-            platform: dbc.platform || 'NPTEL',
-            sector: dbc.sector || 'Apparel & Fashion',
-            duration_weeks: dbc.duration_weeks || 8,
-            estimated_hours: dbc.estimated_hours || 40,
-            rating: dbc.rating || 4.8,
-            enrolled_count: dbc.enrolled_count || 5000,
-            is_free: dbc.is_free ?? true,
-            has_certificate: dbc.has_certificate ?? true,
-            nsqf_level: dbc.nsqf_level || 4,
-            deadline: dbc.deadline || '15 Sep 2025',
-            exam_date: dbc.exam_date || '26 Oct 2025',
-            prerequisites: dbc.prerequisites || '10th Standard or Vocational Certificate',
-            description: dbc.description || 'Government accredited vocational upskilling program with verified credential output.',
-            syllabus: dbc.syllabus || [
+            title: dbc.title || matchingStatic?.title || 'Accredited Course',
+            provider: dbc.provider || matchingStatic?.provider || 'State Accredited Provider',
+            institute: dbc.institute || matchingStatic?.institute || dbc.provider || matchingStatic?.provider || 'NPTEL / Swayam',
+            platform: (dbc.platform as Course['platform']) || matchingStatic?.platform || 'NPTEL',
+            sector: dbc.sector || matchingStatic?.sector || 'Vocational Training',
+            duration_weeks: dbc.duration_weeks || matchingStatic?.duration_weeks || 8,
+            estimated_hours: dbc.estimated_hours || matchingStatic?.estimated_hours || 40,
+            rating: dbc.rating || matchingStatic?.rating || 4.8,
+            enrolled_count: dbc.enrolled_count || matchingStatic?.enrolled_count || 5000,
+            is_free: dbc.is_free ?? matchingStatic?.is_free ?? true,
+            has_certificate: dbc.has_certificate ?? matchingStatic?.has_certificate ?? true,
+            nsqf_level: dbc.nsqf_level || matchingStatic?.nsqf_level || 4,
+            deadline: dbc.deadline || matchingStatic?.deadline || '15 Sep 2025',
+            exam_date: dbc.exam_date || matchingStatic?.exam_date || '26 Oct 2025',
+            prerequisites: dbc.prerequisites || matchingStatic?.prerequisites || '10th Standard or Vocational Certificate',
+            description: dbc.description || matchingStatic?.description || 'Government accredited vocational upskilling program with verified credential output.',
+            syllabus: dbc.syllabus || matchingStatic?.syllabus || [
               'Foundational Theory & Safety Standards',
               'Practical Tool Handling & Core Operations',
               'Quality Inspection & Defect Remediation',
               'Final Project & Examination Prep'
             ],
-            url: dbc.url || 'https://onlinecourses.nptel.ac.in',
-            skill_tags: dbc.skill_tags || ['Vocational Skill', 'State Certified']
-          });
+            url: dbc.url || matchingStatic?.url || 'https://onlinecourses.nptel.ac.in',
+            skill_tags: (dbc.skill_tags && dbc.skill_tags.length > 0) ? dbc.skill_tags : (matchingStatic?.skill_tags || ['Vocational Skill', 'State Certified'])
+          };
+
+          if (matchingStatic) {
+            mergedMap.delete(matchingStatic.id);
+          }
+          mergedMap.set(dbc.id, courseObj);
         });
-        setCourses(Array.from(mergedMap.values()));
       }
 
-      // 2. Fetch trainee's enrollments if logged in
+      // 2. Fetch trainee's enrollments with joined external_courses
       if (profile?.id) {
-        const { data: enrollData } = await supabase
+        const { data: enrollData, error: enrollErr } = await supabase
           .from('trainee_course_enrollments')
-          .select('*')
+          .select('*, external_courses(*)')
           .eq('trainee_id', profile.id);
 
-        if (enrollData) {
-          const map: Record<string, { id: string; status: string; progress_pct: number }> = {};
-          enrollData.forEach(e => {
-            map[e.course_id] = { id: e.id, status: e.status, progress_pct: e.progress_pct };
+        if (enrollErr) {
+          console.error('Error fetching course enrollments:', enrollErr);
+        }
+
+        if (enrollData && enrollData.length > 0) {
+          const map: Record<string, EnrolledCourseInfo> = {};
+          enrollData.forEach((e: any) => {
+            const ext = e.external_courses;
+            const enrollmentObj: EnrolledCourseInfo = {
+              id: e.id,
+              course_id: e.course_id,
+              status: e.status || 'in_progress',
+              progress_pct: e.progress_pct ?? 0,
+              courseData: ext || undefined
+            };
+
+            // 1. Index by database UUIDs
+            if (e.course_id) map[e.course_id] = enrollmentObj;
+            if (e.id) map[e.id] = enrollmentObj;
+
+            // 2. Index by course URL
+            if (ext?.url) map[ext.url] = enrollmentObj;
+
+            // 3. Index by title
+            if (ext?.title) {
+              map[ext.title] = enrollmentObj;
+              map[ext.title.toLowerCase().trim()] = enrollmentObj;
+              map[`title-norm:${normalizeStr(ext.title)}`] = enrollmentObj;
+            }
+
+            // 4. Index by matching static fallback IDs
+            AUTHENTIC_COURSES.forEach(ac => {
+              const urlMatch = ext?.url && (ac.url === ext.url || ac.url.includes(ext.url) || ext.url.includes(ac.url));
+              const titleMatch = ext?.title && (
+                normalizeStr(ac.title) === normalizeStr(ext.title) ||
+                normalizeStr(ac.title).includes(normalizeStr(ext.title)) ||
+                normalizeStr(ext.title).includes(normalizeStr(ac.title))
+              );
+              if (urlMatch || titleMatch) {
+                map[ac.id] = enrollmentObj;
+              }
+            });
+
+            // Ensure the course exists in mergedMap so it renders in catalog & active roadmap
+            if (ext && ext.id && !mergedMap.has(ext.id)) {
+              mergedMap.set(ext.id, {
+                id: ext.id,
+                title: ext.title || 'Enrolled Course',
+                provider: ext.provider || 'State Provider',
+                institute: ext.institute || ext.provider || 'NPTEL / Swayam',
+                platform: (ext.platform as Course['platform']) || 'NPTEL',
+                sector: ext.sector || 'Vocational Training',
+                duration_weeks: ext.duration_weeks || 8,
+                estimated_hours: ext.estimated_hours || 40,
+                rating: ext.rating || 4.8,
+                enrolled_count: ext.enrolled_count || 1000,
+                is_free: ext.is_free ?? true,
+                has_certificate: ext.has_certificate ?? true,
+                nsqf_level: ext.nsqf_level || 4,
+                deadline: ext.deadline || '15 Sep 2025',
+                exam_date: ext.exam_date || '26 Oct 2025',
+                prerequisites: ext.prerequisites || 'Open Enrollment',
+                description: ext.description || 'Government accredited vocational upskilling program.',
+                syllabus: ext.syllabus || ['Module 1', 'Module 2', 'Certification'],
+                url: ext.url || 'https://onlinecourses.nptel.ac.in',
+                skill_tags: ext.skill_tags || ['Vocational Skill']
+              });
+            }
           });
           setEnrolledCourses(map);
         }
       }
+
+      setCourses(Array.from(mergedMap.values()));
     } catch (e) {
       console.error('Error loading course search:', e);
     }
@@ -345,18 +448,50 @@ export const CourseSearchModule: React.FC = () => {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(course.id);
 
       if (!isUuid) {
-        // Look up or insert into external_courses to get real UUID
-        const { data: found } = await supabase
-          .from('external_courses')
-          .select('id')
-          .ilike('title', course.title)
-          .maybeSingle();
+        // Look up external_courses by URL or fuzzy title
+        let foundCourse: { id: string } | null = null;
 
-        if (found?.id) {
-          targetCourseUuid = found.id;
+        if (course.url) {
+          const { data: byUrl } = await supabase
+            .from('external_courses')
+            .select('id')
+            .eq('url', course.url)
+            .maybeSingle();
+          if (byUrl?.id) {
+            foundCourse = byUrl;
+          }
+        }
+
+        if (!foundCourse && course.title) {
+          const { data: byTitle } = await supabase
+            .from('external_courses')
+            .select('id')
+            .ilike('title', course.title)
+            .maybeSingle();
+          if (byTitle?.id) {
+            foundCourse = byTitle;
+          }
+        }
+
+        if (!foundCourse && course.title) {
+          const titleWords = course.title.split(/\s+/).filter(w => w.length > 3);
+          const searchKeyword = titleWords.length > 0 ? titleWords[0] : course.title.slice(0, 15);
+          const { data: byFuzzy } = await supabase
+            .from('external_courses')
+            .select('id')
+            .ilike('title', `%${searchKeyword}%`)
+            .limit(1)
+            .maybeSingle();
+          if (byFuzzy?.id) {
+            foundCourse = byFuzzy;
+          }
+        }
+
+        if (foundCourse?.id) {
+          targetCourseUuid = foundCourse.id;
         } else {
           // Provision in external_courses
-          const { data: created } = await mutateDb({
+          const { data: created, error: createError } = await mutateDb({
             action: 'insert',
             table: 'external_courses',
             payload: {
@@ -375,37 +510,82 @@ export const CourseSearchModule: React.FC = () => {
               skill_tags: course.skill_tags
             }
           });
+          if (createError) {
+            console.error('Failed to create external course:', createError);
+          }
           if (created && created[0]?.id) {
             targetCourseUuid = created[0].id;
           }
         }
       }
 
+      let enrollmentRecordId = 'enroll-' + Date.now();
       if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetCourseUuid)) {
-        const { error } = await mutateDb({
-          action: 'insert',
+        const { data: enrollRes, error: enrollError } = await mutateDb({
+          action: 'upsert',
           table: 'trainee_course_enrollments',
           payload: {
             trainee_id: profile.id,
             course_id: targetCourseUuid,
             status: 'in_progress',
             progress_pct: 10
-          }
+          },
+          onConflict: 'trainee_id,course_id'
         });
-        if (error) throw error;
+        if (enrollError) throw enrollError;
+        if (enrollRes && enrollRes[0]?.id) {
+          enrollmentRecordId = enrollRes[0].id;
+        }
       }
 
-      // Always update local state for seamless feedback
-      setEnrolledCourses(prev => ({
-        ...prev,
-        [course.id]: { id: 'temp-' + Date.now(), status: 'in_progress', progress_pct: 10 },
-        [targetCourseUuid]: { id: 'temp-' + Date.now(), status: 'in_progress', progress_pct: 10 }
-      }));
+      // Update local state multi-dimensionally for seamless immediate feedback
+      const newEnrollment: EnrolledCourseInfo = {
+        id: enrollmentRecordId,
+        course_id: targetCourseUuid,
+        status: 'in_progress',
+        progress_pct: 10,
+        courseData: course
+      };
+
+      setEnrolledCourses(prev => {
+        const next = { ...prev };
+        next[course.id] = newEnrollment;
+        next[targetCourseUuid] = newEnrollment;
+        if (course.url) next[course.url] = newEnrollment;
+        if (course.title) {
+          next[course.title] = newEnrollment;
+          next[course.title.toLowerCase().trim()] = newEnrollment;
+          next[`title-norm:${normalizeStr(course.title)}`] = newEnrollment;
+        }
+        AUTHENTIC_COURSES.forEach(ac => {
+          if (
+            ac.id === course.id ||
+            ac.url === course.url ||
+            normalizeStr(ac.title) === normalizeStr(course.title) ||
+            ac.title.toLowerCase() === course.title.toLowerCase()
+          ) {
+            next[ac.id] = newEnrollment;
+          }
+        });
+        return next;
+      });
+
+      // Update courses array to use targetCourseUuid
+      setCourses(prev => {
+        return prev.map(c => {
+          if (c.id === course.id || c.url === course.url || normalizeStr(c.title) === normalizeStr(course.title)) {
+            return { ...c, id: targetCourseUuid };
+          }
+          return c;
+        });
+      });
 
       setToastMsg(`Enrolled in "${course.title}"! Added to your learning roadmap.`);
       setTimeout(() => setToastMsg(null), 3500);
     } catch (err: any) {
       console.error('Enrollment error:', err);
+      setToastMsg('Could not complete enrollment. Please try again.');
+      setTimeout(() => setToastMsg(null), 3500);
     } finally {
       setEnrollingId(null);
     }
@@ -414,38 +594,52 @@ export const CourseSearchModule: React.FC = () => {
   const handleUpdateProgress = async (courseId: string, newProgress: number) => {
     if (!profile?.id) return;
     const isComplete = newProgress >= 100;
+    const newStatus = isComplete ? 'completed' : 'in_progress';
     
-    setEnrolledCourses(prev => ({
-      ...prev,
-      [courseId]: { 
-        ...(prev[courseId] || { id: 'local' }), 
-        progress_pct: newProgress,
-        status: isComplete ? 'completed' : 'in_progress'
-      }
-    }));
-
-    try {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
-      let targetId = courseId;
-      if (!isUuid) {
+    // Find target UUID
+    let targetId = courseId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
+    if (!isUuid) {
+      if (enrolledCourses[courseId]?.course_id) {
+        targetId = enrolledCourses[courseId].course_id!;
+      } else {
         const courseObj = courses.find(c => c.id === courseId);
         if (courseObj) {
-          const { data: found } = await supabase
-            .from('external_courses')
-            .select('id')
-            .ilike('title', courseObj.title)
-            .maybeSingle();
-          if (found?.id) targetId = found.id;
+          const enrollObj = getEnrollment(courseObj);
+          if (enrollObj?.course_id) {
+            targetId = enrollObj.course_id;
+          }
         }
       }
+    }
 
+    setEnrolledCourses(prev => {
+      const existing = prev[courseId] || prev[targetId] || { id: 'local', course_id: targetId, status: newStatus, progress_pct: newProgress };
+      const updated: EnrolledCourseInfo = {
+        ...existing,
+        course_id: targetId,
+        progress_pct: newProgress,
+        status: newStatus
+      };
+      const next = { ...prev };
+      Object.keys(prev).forEach(k => {
+        if (prev[k]?.course_id === targetId || k === courseId || k === targetId) {
+          next[k] = updated;
+        }
+      });
+      next[courseId] = updated;
+      next[targetId] = updated;
+      return next;
+    });
+
+    try {
       if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
         await mutateDb({
           action: 'update',
           table: 'trainee_course_enrollments',
           payload: {
             progress_pct: newProgress,
-            status: isComplete ? 'completed' : 'in_progress',
+            status: newStatus,
             completed_at: isComplete ? new Date().toISOString() : null
           },
           match: {
@@ -476,7 +670,21 @@ export const CourseSearchModule: React.FC = () => {
     return matchesSearch && matchesPlatform && matchesSector && matchesLevel && matchesFree;
   });
 
-  const enrolledCourseList = courses.filter(c => !!enrolledCourses[c.id]);
+  const enrolledCourseList = (() => {
+    const seen = new Set<string>();
+    const list: Course[] = [];
+    courses.forEach(c => {
+      const enrollment = getEnrollment(c);
+      if (enrollment) {
+        const key = enrollment.course_id || c.url || c.title.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push(c);
+        }
+      }
+    });
+    return list;
+  })();
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 text-slate-800 animate-in fade-in-50">
@@ -602,8 +810,8 @@ export const CourseSearchModule: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => {
-                const isEnrolled = !!enrolledCourses[course.id];
-                const enrollment = enrolledCourses[course.id];
+                const enrollment = getEnrollment(course);
+                const isEnrolled = !!enrollment;
 
                 return (
                   <div
@@ -656,7 +864,7 @@ export const CourseSearchModule: React.FC = () => {
 
                     {/* Progress Slider or Action Buttons */}
                     <div className="pt-3 border-t border-slate-100 space-y-2.5" onClick={(e) => e.stopPropagation()}>
-                      {isEnrolled ? (
+                      {isEnrolled && enrollment ? (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-bold text-emerald-600 flex items-center space-x-1">
@@ -723,7 +931,8 @@ export const CourseSearchModule: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {enrolledCourseList.map((course) => {
-                const enrollment = enrolledCourses[course.id];
+                const enrollment = getEnrollment(course) || { id: course.id, status: 'in_progress', progress_pct: 10 };
+                const isCompleted = enrollment.progress_pct >= 100 || enrollment.status === 'completed';
                 return (
                   <div key={course.id} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
                     <div className="flex items-start justify-between">
@@ -735,11 +944,11 @@ export const CourseSearchModule: React.FC = () => {
                         <p className="text-xs text-slate-500">{course.institute || course.provider}</p>
                       </div>
                       <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
-                        enrollment.progress_pct >= 100 
+                        isCompleted 
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
-                        {enrollment.progress_pct >= 100 ? 'Completed' : 'In Progress'}
+                        {isCompleted ? 'Completed' : 'In Progress'}
                       </span>
                     </div>
 
@@ -896,10 +1105,10 @@ export const CourseSearchModule: React.FC = () => {
 
             {/* Actions Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
-              {enrolledCourses[selectedCourse.id] ? (
+              {getEnrollment(selectedCourse) ? (
                 <span className="text-xs font-bold text-emerald-600 flex items-center space-x-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Enrolled ({enrolledCourses[selectedCourse.id].progress_pct}% Progress)</span>
+                  <span>Enrolled ({getEnrollment(selectedCourse)!.progress_pct}% Progress)</span>
                 </span>
               ) : (
                 <button

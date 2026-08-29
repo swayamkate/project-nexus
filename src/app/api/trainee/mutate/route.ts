@@ -6,6 +6,7 @@ const ALLOWED_TABLES = new Set([
   'trainee_employment',
   'trainee_enrollments',
   'trainee_course_enrollments',
+  'training_programs',
   'verifications',
   'trainee_followups',
   'trainee_career_goals',

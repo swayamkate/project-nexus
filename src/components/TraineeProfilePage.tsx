@@ -424,15 +424,21 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </button>
             </div>
 
-            {employment?.status === 'employed' && (
+            {/* Wage Employed / Apprenticeship View */}
+            {Boolean(employment && ['employed', 'wage_employed', 'apprenticeship'].includes(employment.status || '')) && (
               <div className="space-y-2 text-xs">
                 <div className="p-3 bg-blue-50/70 border border-blue-200/70 rounded-xl space-y-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Wage Employed</div>
-                  <div className="font-bold text-slate-900 text-sm">{employment.company_name || 'Registered Employer'}</div>
-                  <div className="text-slate-600">{employment.designation || 'Technician'}</div>
-                  <div className="font-bold text-emerald-600 pt-1">₹{Number(employment.monthly_salary || 0).toLocaleString()}/month</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                    {employment?.status === 'apprenticeship' ? 'Apprenticeship' : 'Wage Employed'}
+                  </div>
+                  <div className="font-bold text-slate-900 text-sm">{employment?.company_name || 'Registered Employer'}</div>
+                  <div className="text-slate-600">{employment?.designation || 'Technician'}</div>
+                  <div className="font-bold text-emerald-600 pt-1">₹{Number(employment?.monthly_salary || 0).toLocaleString()}/month</div>
+                  {employment?.work_location && (
+                    <div className="text-[11px] text-slate-500">{employment.work_location}</div>
+                  )}
                 </div>
-                {employment.appreciation_details && (
+                {employment?.appreciation_details && (
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600">
                     <span className="font-bold text-slate-700 block">Appreciation / Increment:</span>
                     {employment.appreciation_details}
@@ -441,23 +447,28 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
               </div>
             )}
 
-            {employment?.status === 'self_employed' && (
+            {/* Self Employed / Micro-Enterprise View */}
+            {Boolean(employment && employment.status === 'self_employed') && (
               <div className="space-y-2 text-xs">
                 <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-xl space-y-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Micro-Enterprise</div>
-                  <div className="font-bold text-slate-900 text-sm">{employment.business_name || 'Self-Employed Unit'}</div>
-                  <div className="text-slate-600">{employment.business_category || 'Services'} • {employment.employees_count || 1} Person Team</div>
-                  <div className="font-bold text-emerald-600 pt-1">Profit: ₹{Number(employment.monthly_profit || 0).toLocaleString()}/month</div>
+                  <div className="font-bold text-slate-900 text-sm">{employment?.business_name || 'Self-Employed Unit'}</div>
+                  <div className="text-slate-600">{employment?.business_category || 'Services'} • {employment?.employees_count || employment?.employee_count || 1} Person Team</div>
+                  <div className="font-bold text-emerald-600 pt-1">Profit: ₹{Number(employment?.monthly_profit || 0).toLocaleString()}/month</div>
+                  {Number(employment?.monthly_revenue || 0) > 0 && (
+                    <div className="text-[11px] text-slate-500">Revenue: ₹{Number(employment?.monthly_revenue).toLocaleString()}/month</div>
+                  )}
                 </div>
-                {employment.udyam_number && (
+                {(employment?.udyam_number || employment?.udyam_reg_number) && (
                   <div className="text-[11px] font-mono text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                    MSME: {employment.udyam_number}
+                    MSME: {employment.udyam_number || employment.udyam_reg_number}
                   </div>
                 )}
               </div>
             )}
 
-            {(!employment || employment?.status === 'not_employed') && (
+            {/* Seeking Placement / Unemployed / Transition View */}
+            {(!employment || !['employed', 'wage_employed', 'apprenticeship', 'self_employed'].includes(employment.status || '')) && (
               <div className="space-y-2 text-xs">
                 <div className="p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl space-y-1.5">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Seeking Placement</div>
@@ -467,6 +478,11 @@ export const TraineeProfilePage: React.FC<TraineeProfilePageProps> = ({ onNaviga
                   <div className="text-[11px] text-slate-500">
                     Timeline: {employment?.target_workforce_timeline ? employment.target_workforce_timeline.replace(/_/g, ' ') : 'Immediate'}
                   </div>
+                  {employment?.unemployed_perspective && (
+                    <div className="text-[11px] text-slate-600 bg-amber-50/50 p-2 rounded-lg border border-amber-200/50 italic line-clamp-2">
+                      "{employment.unemployed_perspective}"
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowEmploymentModal(true)}

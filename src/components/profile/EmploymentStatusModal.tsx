@@ -65,8 +65,40 @@ export const EmploymentStatusModal: React.FC<EmploymentStatusModalProps> = ({ is
 
   useEffect(() => {
     if (employment) {
-      setStatus(employment.status || 'employed');
-      setFormData({ ...employment });
+      let initialStatus = employment.status || 'employed';
+      if (['wage_employed', 'employed', 'apprenticeship'].includes(initialStatus)) {
+        initialStatus = 'employed';
+      } else if (initialStatus === 'self_employed') {
+        initialStatus = 'self_employed';
+      } else {
+        initialStatus = 'not_employed';
+      }
+      setStatus(initialStatus);
+      setFormData({
+        status: initialStatus,
+        company_name: employment.company_name || '',
+        designation: employment.designation || '',
+        monthly_salary: employment.monthly_salary ?? 18000,
+        joining_date: employment.joining_date || '',
+        pf_esic_number: employment.pf_esic_number || '',
+        work_location: employment.work_location || '',
+        training_relevance: employment.training_relevance || 'direct_match',
+        contract_type: employment.contract_type || 'permanent',
+        appreciation_details: employment.appreciation_details || '',
+        business_name: employment.business_name || '',
+        business_type: employment.business_type || 'Sole Proprietorship',
+        business_category: employment.business_category || 'Services',
+        monthly_revenue: employment.monthly_revenue ?? 0,
+        monthly_profit: employment.monthly_profit ?? 0,
+        udyam_number: employment.udyam_number || employment.udyam_reg_number || '',
+        gst_number: employment.gst_number || '',
+        employees_count: employment.employees_count ?? employment.employee_count ?? 0,
+        establishment_date: employment.establishment_date || '',
+        unemployed_reason: employment.unemployed_reason || 'lack_of_local_vacancies',
+        unemployed_perspective: employment.unemployed_perspective || '',
+        target_workforce_timeline: employment.target_workforce_timeline || 'immediate',
+        support_needed: employment.support_needed || 'placement_drive',
+      });
     } else {
       setStatus('employed');
       setFormData({
@@ -77,6 +109,8 @@ export const EmploymentStatusModal: React.FC<EmploymentStatusModalProps> = ({ is
         joining_date: '',
         pf_esic_number: '',
         work_location: '',
+        training_relevance: 'direct_match',
+        contract_type: 'permanent',
         appreciation_details: '',
         business_name: '',
         business_type: 'Sole Proprietorship',
@@ -86,6 +120,7 @@ export const EmploymentStatusModal: React.FC<EmploymentStatusModalProps> = ({ is
         udyam_number: '',
         gst_number: '',
         employees_count: 0,
+        establishment_date: '',
         unemployed_reason: 'lack_of_local_vacancies',
         unemployed_perspective: '',
         target_workforce_timeline: 'immediate',
@@ -134,6 +169,12 @@ export const EmploymentStatusModal: React.FC<EmploymentStatusModalProps> = ({ is
       const payload: Partial<TraineeEmployment> = {
         ...formData,
         status: status,
+        joining_date: formData.joining_date?.trim() ? formData.joining_date.trim() : undefined,
+        establishment_date: formData.establishment_date?.trim() ? formData.establishment_date.trim() : undefined,
+        monthly_salary: isNaN(Number(formData.monthly_salary)) ? 0 : Number(formData.monthly_salary),
+        monthly_revenue: isNaN(Number(formData.monthly_revenue)) ? 0 : Number(formData.monthly_revenue),
+        monthly_profit: isNaN(Number(formData.monthly_profit)) ? 0 : Number(formData.monthly_profit),
+        employees_count: isNaN(Number(formData.employees_count)) ? 0 : Number(formData.employees_count),
       };
 
       const ok = await updateEmployment(payload);

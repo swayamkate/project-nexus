@@ -410,32 +410,65 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateEmployment = async (data: Partial<TraineeEmployment>): Promise<boolean> => {
     if (!profile) return false;
     try {
-      const payload = {
-        ...data,
+      // 1. Sanitize payload fields for Postgres compatibility
+      const sanitizedPayload: Record<string, any> = {
         trainee_id: profile.id,
+        status: data.status || 'not_employed',
         updated_at: new Date().toISOString(),
       };
 
-      if (employment?.id) {
-        const { error } = await mutateDb({
-          action: 'update',
-          table: 'trainee_employment',
-          payload,
-          match: { id: employment.id }
-        });
-        if (error) throw error;
-        setEmployment(prev => prev ? { ...prev, ...payload } : null);
-      } else {
-        const { data: inserted, error } = await mutateDb({
-          action: 'insert',
-          table: 'trainee_employment',
-          payload
-        });
-        if (error) throw error;
-        if (inserted && inserted[0]) {
-          setEmployment(inserted[0]);
-        }
+      if (employment?.id || data.id) {
+        sanitizedPayload.id = data.id || employment?.id;
       }
+
+      // Wage employment fields
+      if (data.company_name !== undefined) sanitizedPayload.company_name = data.company_name?.trim() || null;
+      if (data.designation !== undefined) sanitizedPayload.designation = data.designation?.trim() || null;
+      if (data.joining_date !== undefined) sanitizedPayload.joining_date = data.joining_date?.trim() ? data.joining_date.trim() : null;
+      if (data.monthly_salary !== undefined) sanitizedPayload.monthly_salary = isNaN(Number(data.monthly_salary)) ? 0 : Number(data.monthly_salary);
+      if (data.work_location !== undefined) sanitizedPayload.work_location = data.work_location?.trim() || null;
+      if (data.pf_esic_number !== undefined) sanitizedPayload.pf_esic_number = data.pf_esic_number?.trim() || null;
+      if (data.training_relevance !== undefined) sanitizedPayload.training_relevance = data.training_relevance || 'direct_match';
+      if (data.contract_type !== undefined) sanitizedPayload.contract_type = data.contract_type || 'permanent';
+      if (data.offer_letter_url !== undefined) sanitizedPayload.offer_letter_url = data.offer_letter_url?.trim() || null;
+      if (data.employer_gstin !== undefined) sanitizedPayload.employer_gstin = data.employer_gstin?.trim() || null;
+
+      // Self employment fields
+      if (data.business_name !== undefined) sanitizedPayload.business_name = data.business_name?.trim() || null;
+      if (data.business_type !== undefined) sanitizedPayload.business_type = data.business_type?.trim() || null;
+      if (data.business_category !== undefined) sanitizedPayload.business_category = data.business_category || 'Services';
+      if (data.business_status !== undefined) sanitizedPayload.business_status = data.business_status || 'active';
+      if (data.establishment_date !== undefined) sanitizedPayload.establishment_date = data.establishment_date?.trim() ? data.establishment_date.trim() : null;
+      if (data.monthly_revenue !== undefined) sanitizedPayload.monthly_revenue = isNaN(Number(data.monthly_revenue)) ? 0 : Number(data.monthly_revenue);
+      if (data.monthly_profit !== undefined) sanitizedPayload.monthly_profit = isNaN(Number(data.monthly_profit)) ? 0 : Number(data.monthly_profit);
+      if (data.monthly_income_range !== undefined) sanitizedPayload.monthly_income_range = data.monthly_income_range?.trim() || null;
+      if (data.udyam_number !== undefined) sanitizedPayload.udyam_number = data.udyam_number?.trim() || null;
+      if (data.udyam_reg_number !== undefined) sanitizedPayload.udyam_reg_number = data.udyam_reg_number?.trim() || null;
+      if (data.gst_number !== undefined) sanitizedPayload.gst_number = data.gst_number?.trim() || null;
+      if (data.employees_count !== undefined) sanitizedPayload.employees_count = isNaN(Number(data.employees_count)) ? 0 : Number(data.employees_count);
+      if (data.employee_count !== undefined) sanitizedPayload.employee_count = isNaN(Number(data.employee_count)) ? 0 : Number(data.employee_count);
+      if (data.business_address !== undefined) sanitizedPayload.business_address = data.business_address?.trim() || null;
+
+      // Unemployed / Seeking fields
+      if (data.unemployed_reason !== undefined) sanitizedPayload.unemployed_reason = data.unemployed_reason || null;
+      if (data.unemployed_perspective !== undefined) sanitizedPayload.unemployed_perspective = data.unemployed_perspective?.trim() || null;
+      if (data.target_workforce_timeline !== undefined) sanitizedPayload.target_workforce_timeline = data.target_workforce_timeline || null;
+      if (data.support_needed !== undefined) sanitizedPayload.support_needed = data.support_needed || null;
+      if (data.appreciation_details !== undefined) sanitizedPayload.appreciation_details = data.appreciation_details?.trim() || null;
+
+      // 2. Perform atomic, idempotent upsert on trainee_id
+      const { data: resultData, error } = await mutateDb({
+        action: 'upsert',
+        table: 'trainee_employment',
+        payload: sanitizedPayload,
+        onConflict: 'trainee_id'
+      });
+
+      if (error) throw error;
+
+      // 3. Reliably update React context state with saved or merged record
+      const savedRecord = (resultData && resultData[0]) ? resultData[0] : { ...(employment || {}), ...sanitizedPayload };
+      setEmployment(savedRecord as TraineeEmployment);
       return true;
     } catch (err) {
       console.error('Failed to update employment details:', err);
